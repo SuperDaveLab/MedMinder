@@ -1,0 +1,139 @@
+import { useMemo } from 'react'
+import type {
+  DoseEvent,
+  Medication,
+  MedicationStatus,
+  MedicationStatusLabel,
+  Patient,
+} from '../../domain/types'
+import { calculateMedicationSchedule } from '../../engine/scheduling'
+import { MedicationCard } from './MedicationCard'
+
+interface PatientMedicationListViewProps {
+  patient: Patient
+  medications: Medication[]
+  doseEvents: DoseEvent[]
+  now: Date
+  onGiveDose: (medicationId: string) => void
+}
+
+interface StatusDescriptor {
+  label: MedicationStatusLabel
+  text: string
+}
+
+function describeStatus(status: MedicationStatus): StatusDescriptor {
+  if (status.statusLabel === 'available_prn') {
+    return { label: 'available_prn', text: 'Available now (PRN)' }
+  }
+
+  if (status.statusLabel === 'never_taken') {
+    return { label: 'never_taken', text: 'Never taken' }
+  }
+
+  if (status.statusLabel === 'too_early') {
+    return {
+      label: 'too_early',
+      text: `Too early by ${status.tooEarlyByMinutes ?? 0} min`,
+    }
+  }
+
+  if (status.statusLabel === 'overdue') {
+    return {
+      label: 'overdue',
+      text: `Overdue by ${status.overdueByMinutes ?? 0} min`,
+    }
+  }
+
+  if (status.statusLabel === 'due_soon') {
+    return {
+      label: 'due_soon',
+      text: `Due soon in ${status.minutesUntilEligible ?? 0} min`,
+    }
+  }
+
+  return { label: 'eligible_now', text: 'Eligible now' }
+}
+
+function buildMedicationStatus(
+  medication: Medication,
+  doseEvents: DoseEvent[],
+  now: Date,
+): MedicationStatus {
+  const scheduleResult = calculateMedicationSchedule(medication, doseEvents, now)
+  const minutesUntilEligible = Math.max(
+    0,
+    Math.ceil((scheduleResult.nextEligibleAt.getTime() - now.getTime()) / 60_000),
+  )
+
+  let statusLabel: MedicationStatusLabel
+
+  if (!scheduleResult.lastGivenAt) {
+    statusLabel = 'never_taken'
+  } else if (medication.schedule.type === 'prn' && scheduleResult.eligibleNow) {
+    statusLabel = 'available_prn'
+  } else if (!scheduleResult.eligibleNow) {
+    statusLabel = minutesUntilEligible <= 20 ? 'due_soon' : 'too_early'
+  } else if ((scheduleResult.overdueByMinutes ?? 0) > 0) {
+    statusLabel = 'overdue'
+  } else {
+    statusLabel = 'eligible_now'
+  }
+
+  return {
+    scheduleType: medication.schedule.type,
+    lastGivenAt: scheduleResult.lastGivenAt?.toISOString(),
+    nextEligibleAt: scheduleResult.nextEligibleAt.toISOString(),
+    eligibleNow: scheduleResult.eligibleNow,
+    minutesUntilEligible,
+    tooEarlyByMinutes: scheduleResult.tooEarlyByMinutes ?? undefined,
+    overdueByMinutes: scheduleResult.overdueByMinutes ?? undefined,
+    reminderAt: scheduleResult.reminderAt?.toISOString(),
+    statusLabel,
+  }
+}
+
+export function PatientMedicationListView({
+  patient,
+  medications,
+  doseEvents,
+  now,
+  onGiveDose,
+}: PatientMedicationListViewProps) {
+  const medicationStatuses = useMemo(
+    () =>
+      medications.map((medication) => ({
+        medication,
+        status: buildMedicationStatus(medication, doseEvents, now),
+      })),
+    [medications, doseEvents, now],
+  )
+
+  return (
+    <section className="medication-section">
+      <h2>{patient.displayName}'s medications</h2>
+      <div className="medication-list">
+        {medicationStatuses.map(({ medication, status }) => {
+          const descriptor = describeStatus(status)
+          const recentDoseEvents = doseEvents
+            .filter((doseEvent) => doseEvent.medicationId === medication.id)
+            .sort((a, b) => b.timestampGiven.localeCompare(a.timestampGiven))
+            .slice(0, 5)
+
+          return (
+            <MedicationCard
+              key={medication.id}
+              medication={medication}
+              statusLabel={descriptor.label}
+              statusText={descriptor.text}
+              lastGivenAt={status.lastGivenAt ? new Date(status.lastGivenAt) : null}
+              nextEligibleAt={new Date(status.nextEligibleAt ?? now.toISOString())}
+              recentDoseEvents={recentDoseEvents}
+              onLogDose={onGiveDose}
+            />
+          )
+        })}
+      </div>
+    </section>
+  )
+}

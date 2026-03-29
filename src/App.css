@@ -1,0 +1,256 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap');
+
+:root {
+  --bg: #f4f7f9;
+  --paper: #ffffff;
+  --ink: #12263a;
+  --muted: #53667a;
+  --line: #d8e1e8;
+  --brand: #0f766e;
+  --brand-soft: #d1fae5;
+  --warn: #b45309;
+  --warn-soft: #fef3c7;
+  --alert: #b91c1c;
+  --alert-soft: #fee2e2;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Space Grotesk', 'Avenir Next', 'Trebuchet MS', sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 10% -15%, #cffafe 0%, transparent 45%),
+    radial-gradient(circle at 100% 10%, #ffedd5 0%, transparent 38%),
+    var(--bg);
+}
+
+#root {
+  min-height: 100dvh;
+}
+
+.app-shell {
+  width: min(960px, 100%);
+  margin: 0 auto;
+  padding: 1rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.app-header,
+.medication-section,
+.history-section {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 1rem;
+  box-shadow: 0 14px 28px -22px rgba(15, 23, 42, 0.35);
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--brand);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  font-size: 0.75rem;
+}
+
+h1 {
+  margin: 0.35rem 0 0;
+  font-size: 1.75rem;
+}
+
+h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.15rem;
+}
+
+.subhead {
+  margin: 0.5rem 0 0.85rem;
+  color: var(--muted);
+  max-width: 55ch;
+}
+
+.patient-picker {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 0.85rem;
+  width: min(320px, 100%);
+}
+
+.patient-picker span {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.patient-picker select {
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  font: inherit;
+  background: #ffffff;
+  color: var(--ink);
+}
+
+.notify-button,
+.dose-button {
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.65rem 0.95rem;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.14s ease, box-shadow 0.14s ease;
+}
+
+.notify-button {
+  background: var(--brand);
+  color: #ffffff;
+}
+
+.notify-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.notify-button:not(:disabled):hover,
+.dose-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px -12px rgba(15, 118, 110, 0.8);
+}
+
+.medication-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.med-card {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0.85rem;
+  background: #fbfdff;
+}
+
+.med-card[data-status='due-now'] {
+  border-color: var(--alert);
+  background: var(--alert-soft);
+}
+
+.med-card[data-status='due_soon'] {
+  border-color: var(--warn);
+  background: var(--warn-soft);
+}
+
+.med-card[data-status='too_early'] {
+  border-color: var(--warn);
+  background: var(--warn-soft);
+}
+
+.med-card[data-status='overdue'] {
+  border-color: var(--alert);
+  background: var(--alert-soft);
+}
+
+.med-card[data-status='eligible_now'],
+.med-card[data-status='available_prn'] {
+  border-color: var(--brand);
+}
+
+.med-card-top {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.med-card h3 {
+  margin: 0;
+}
+
+.schedule-label,
+.dose-label,
+.last-given,
+.instructions,
+.next-eligible {
+  margin: 0.4rem 0;
+  color: var(--muted);
+}
+
+.status-pill {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.7rem;
+  padding: 0.3rem 0.55rem;
+  border-radius: 999px;
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-weight: 700;
+}
+
+.dose-button {
+  margin-top: 0.4rem;
+  background: #0f172a;
+  color: #fff;
+}
+
+.med-history-block {
+  margin-top: 0.55rem;
+}
+
+.med-history-block h4 {
+  margin: 0 0 0.4rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.med-history-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.med-history-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.med-history-item {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.45rem 0.55rem;
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.8rem;
+  background: #ffffff;
+}
+
+.med-history-item strong {
+  font-size: 0.82rem;
+}
+
+.med-history-item span {
+  color: var(--muted);
+}
+
+@media (min-width: 740px) {
+  .app-shell {
+    padding: 1.5rem;
+    grid-template-columns: 1.2fr 1fr;
+  }
+
+  .app-header {
+    grid-column: 1 / -1;
+  }
+}
