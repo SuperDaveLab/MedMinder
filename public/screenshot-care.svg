@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="1280" viewBox="0 0 720 1280" role="img" aria-labelledby="title desc">
+  <title id="title">Med-Minder Care View</title>
+  <desc id="desc">Mock screenshot showing medication care cards and dose actions.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#f4f7f9" />
+      <stop offset="100%" stop-color="#e2eef7" />
+    </linearGradient>
+  </defs>
+  <rect width="720" height="1280" fill="url(#bg)" />
+  <rect x="48" y="48" width="624" height="180" rx="24" fill="#ffffff" stroke="#d8e1e8"/>
+  <text x="80" y="112" font-family="Space Grotesk, sans-serif" font-size="32" fill="#0f766e">Med-Minder</text>
+  <text x="80" y="156" font-family="Space Grotesk, sans-serif" font-size="24" fill="#12263a">Alex Rivera</text>
+  <rect x="48" y="260" width="624" height="430" rx="20" fill="#ffffff" stroke="#d8e1e8"/>
+  <text x="80" y="320" font-family="Space Grotesk, sans-serif" font-size="30" fill="#12263a">Care</text>
+  <rect x="80" y="350" width="560" height="300" rx="18" fill="#fbfdff" stroke="#d8e1e8"/>
+  <text x="108" y="402" font-family="Space Grotesk, sans-serif" font-size="24" fill="#12263a">Amoxicillin</text>
+  <text x="108" y="438" font-family="Space Grotesk, sans-serif" font-size="20" fill="#53667a">Eligible now</text>
+  <rect x="108" y="500" width="220" height="56" rx="28" fill="#0f172a"/>
+  <text x="145" y="536" font-family="Space Grotesk, sans-serif" font-size="22" fill="#ffffff">Give Dose</text>
+  <rect x="48" y="730" width="624" height="450" rx="20" fill="#ffffff" stroke="#d8e1e8"/>
+  <text x="80" y="790" font-family="Space Grotesk, sans-serif" font-size="30" fill="#12263a">Recent dose history</text>
+  <rect x="80" y="826" width="560" height="92" rx="14" fill="#ffffff" stroke="#d8e1e8"/>
+  <rect x="80" y="936" width="560" height="92" rx="14" fill="#ffffff" stroke="#d8e1e8"/>
+</svg>

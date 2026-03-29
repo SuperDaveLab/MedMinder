@@ -14,7 +14,13 @@ interface PatientMedicationListViewProps {
   medications: Medication[]
   doseEvents: DoseEvent[]
   now: Date
+  actionsDisabled?: boolean
   onGiveDose: (medicationId: string) => void
+  onCorrectDose: (
+    originalDoseEventId: string,
+    replacementTimestampGiven: string,
+    notes?: string,
+  ) => Promise<void>
 }
 
 interface StatusDescriptor {
@@ -98,7 +104,9 @@ export function PatientMedicationListView({
   medications,
   doseEvents,
   now,
+  actionsDisabled,
   onGiveDose,
+  onCorrectDose,
 }: PatientMedicationListViewProps) {
   const medicationStatuses = useMemo(
     () =>
@@ -112,13 +120,15 @@ export function PatientMedicationListView({
   return (
     <section className="medication-section">
       <h2>{patient.displayName}'s medications</h2>
+      {medicationStatuses.length === 0 ? (
+        <p className="med-list-empty">No active medications for this patient. Add one in Admin.</p>
+      ) : null}
       <div className="medication-list">
         {medicationStatuses.map(({ medication, status }) => {
           const descriptor = describeStatus(status)
-          const recentDoseEvents = doseEvents
+          const medicationDoseEvents = doseEvents
             .filter((doseEvent) => doseEvent.medicationId === medication.id)
             .sort((a, b) => b.timestampGiven.localeCompare(a.timestampGiven))
-            .slice(0, 5)
 
           return (
             <MedicationCard
@@ -128,8 +138,11 @@ export function PatientMedicationListView({
               statusText={descriptor.text}
               lastGivenAt={status.lastGivenAt ? new Date(status.lastGivenAt) : null}
               nextEligibleAt={new Date(status.nextEligibleAt ?? now.toISOString())}
-              recentDoseEvents={recentDoseEvents}
+              now={now}
+              medicationDoseEvents={medicationDoseEvents}
+              actionsDisabled={Boolean(actionsDisabled)}
               onLogDose={onGiveDose}
+              onCorrectDose={onCorrectDose}
             />
           )
         })}

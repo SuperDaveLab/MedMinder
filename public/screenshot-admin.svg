@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="1280" viewBox="0 0 720 1280" role="img" aria-labelledby="title desc">
+  <title id="title">Med-Minder Admin View</title>
+  <desc id="desc">Mock screenshot showing patient, medication, and backup admin sections.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#f4f7f9" />
+      <stop offset="100%" stop-color="#f1f8ee" />
+    </linearGradient>
+  </defs>
+  <rect width="720" height="1280" fill="url(#bg)" />
+  <rect x="48" y="48" width="624" height="170" rx="24" fill="#ffffff" stroke="#d8e1e8"/>
+  <text x="80" y="116" font-family="Space Grotesk, sans-serif" font-size="32" fill="#0f766e">Med-Minder</text>
+  <text x="80" y="162" font-family="Space Grotesk, sans-serif" font-size="26" fill="#12263a">Admin</text>
+  <rect x="48" y="244" width="624" height="280" rx="20" fill="#ffffff" stroke="#d8e1e8"/>
+  <text x="80" y="302" font-family="Space Grotesk, sans-serif" font-size="28" fill="#12263a">Patient records</text>
+  <rect x="80" y="330" width="560" height="60" rx="12" fill="#ffffff" stroke="#d8e1e8"/>
+  <rect x="80" y="406" width="560" height="60" rx="12" fill="#ffffff" stroke="#d8e1e8"/>
+  <rect x="48" y="554" width="624" height="336" rx="20" fill="#ffffff" stroke="#d8e1e8"/>
+  <text x="80" y="612" font-family="Space Grotesk, sans-serif" font-size="28" fill="#12263a">Medication records</text>
+  <rect x="80" y="642" width="560" height="60" rx="12" fill="#ffffff" stroke="#d8e1e8"/>
+  <rect x="80" y="718" width="560" height="60" rx="12" fill="#ffffff" stroke="#d8e1e8"/>
+  <rect x="48" y="920" width="624" height="300" rx="20" fill="#ffffff" stroke="#d8e1e8"/>
+  <text x="80" y="978" font-family="Space Grotesk, sans-serif" font-size="28" fill="#12263a">Backup and restore</text>
+  <rect x="80" y="1010" width="260" height="56" rx="28" fill="#ffffff" stroke="#d8e1e8"/>
+  <rect x="352" y="1010" width="260" height="56" rx="28" fill="#ffffff" stroke="#d8e1e8"/>
+</svg>

@@ -6,7 +6,10 @@ import { cleanup, render, screen, waitFor, within } from '@testing-library/react
 import userEvent from '@testing-library/user-event'
 import App from './App'
 import { medMinderDb } from './storage/database'
-import { loadPatientMedicationView } from './storage/repository'
+import {
+  loadPatientMedicationView,
+  saveReminderNotificationLog,
+} from './storage/repository'
 
 async function clearDatabase(): Promise<void> {
   await medMinderDb.transaction(
@@ -28,6 +31,8 @@ describe('App persistence flow', () => {
   beforeEach(async () => {
     await clearDatabase()
 
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+
     if (!globalThis.crypto.randomUUID) {
       vi.stubGlobal('crypto', {
         ...globalThis.crypto,
@@ -38,6 +43,21 @@ describe('App persistence flow', () => {
         .spyOn(globalThis.crypto, 'randomUUID')
         .mockReturnValue('00000000-0000-4000-8000-000000000001')
     }
+
+    vi.stubGlobal(
+      'Notification',
+      class MockNotification {
+        static permission: NotificationPermission = 'granted'
+        static requestPermission = vi
+          .fn<() => Promise<NotificationPermission>>()
+          .mockResolvedValue('granted')
+        static instances: Array<{ title: string; options?: NotificationOptions }> = []
+
+        constructor(title: string, options?: NotificationOptions) {
+          MockNotification.instances.push({ title, options })
+        }
+      } as unknown as typeof Notification,
+    )
   })
 
   afterEach(() => {
@@ -66,8 +86,11 @@ describe('App persistence flow', () => {
       expect(matchingDoseEvents.length).toBe(2)
     })
 
-    const updatedHistory = within(medicationCard).getByTestId('med-history-med-interval-1')
-    expect(within(updatedHistory).getAllByRole('listitem').length).toBe(2)
+    await waitFor(() => {
+      const refreshedCard = screen.getByTestId('med-card-med-interval-1')
+      const updatedHistory = within(refreshedCard).getByTestId('med-history-med-interval-1')
+      expect(within(updatedHistory).getAllByRole('listitem').length).toBe(2)
+    })
 
     cleanup()
     render(<App />)
@@ -77,5 +100,128 @@ describe('App persistence flow', () => {
     const reloadedHistory = within(reloadedCard).getByTestId('med-history-med-interval-1')
 
     expect(within(reloadedHistory).getAllByRole('listitem').length).toBe(2)
+  })
+
+  it('creates a correction event, supersedes original dose, and updates medication status', async () => {
+    const user = userEvent.setup()
+
+    render(<App />)
+
+    await screen.findByRole('heading', { name: 'Alex Rivera' })
+    const medicationCard = await screen.findByTestId('med-card-med-interval-1')
+
+    expect(within(medicationCard).getByText(/Overdue by/)).toBeTruthy()
+
+    await user.click(within(medicationCard).getByTestId('correct-dose-dose-seed-1'))
+    await user.clear(within(medicationCard).getByLabelText('Replacement timestamp (local time)'))
+    await user.type(
+      within(medicationCard).getByLabelText('Replacement timestamp (local time)'),
+      '2099-01-01T00:00',
+    )
+    await user.type(
+      within(medicationCard).getByLabelText('Notes (optional)'),
+      'Correction test note',
+    )
+    await user.click(within(medicationCard).getByRole('button', { name: 'Save correction' }))
+
+    expect(window.confirm).toHaveBeenCalledTimes(1)
+
+    await waitFor(async () => {
+      const { doseEvents } = await loadPatientMedicationView('patient-1')
+      const originalDoseEvent = doseEvents.find((doseEvent) => doseEvent.id === 'dose-seed-1')
+      const correctionDoseEvent = doseEvents.find((doseEvent) => doseEvent.corrected)
+
+      expect(originalDoseEvent).toBeTruthy()
+      expect(originalDoseEvent?.corrected).toBe(false)
+      expect(correctionDoseEvent?.supersedesDoseEventId).toBe('dose-seed-1')
+      expect(correctionDoseEvent?.notes).toBe('Correction test note')
+    })
+
+    await waitFor(() => {
+      expect(screen.getByTestId('entry-tag-corrected-00000000-0000-4000-8000-000000000001')).toBeTruthy()
+      expect(screen.getByTestId('entry-tag-superseded-dose-seed-1')).toBeTruthy()
+      expect(screen.getByText(/Superseded by correction at/)).toBeTruthy()
+    })
+
+    await waitFor(() => {
+      expect(within(medicationCard).getByText(/Too early by/)).toBeTruthy()
+    })
+  })
+
+  it('does not save correction when confirmation is canceled', async () => {
+    vi.mocked(window.confirm).mockReturnValue(false)
+    const user = userEvent.setup()
+
+    render(<App />)
+
+    await screen.findByRole('heading', { name: 'Alex Rivera' })
+    const medicationCard = await screen.findByTestId('med-card-med-interval-1')
+
+    await user.click(within(medicationCard).getByTestId('correct-dose-dose-seed-1'))
+    await user.type(
+      within(medicationCard).getByLabelText('Replacement timestamp (local time)'),
+      '2099-01-01T00:00',
+    )
+    await user.click(within(medicationCard).getByRole('button', { name: 'Save correction' }))
+
+    await waitFor(async () => {
+      const { doseEvents } = await loadPatientMedicationView('patient-1')
+      expect(doseEvents.some((doseEvent) => doseEvent.corrected)).toBe(false)
+    })
+  })
+
+  it('shows validation error when correction timestamp is missing', async () => {
+    const user = userEvent.setup()
+
+    render(<App />)
+
+    await screen.findByRole('heading', { name: 'Alex Rivera' })
+    const medicationCard = await screen.findByTestId('med-card-med-interval-1')
+
+    await user.click(within(medicationCard).getByTestId('correct-dose-dose-seed-1'))
+    await user.clear(within(medicationCard).getByLabelText('Replacement timestamp (local time)'))
+    await user.click(within(medicationCard).getByRole('button', { name: 'Save correction' }))
+
+    expect(within(medicationCard).getByText('Replacement timestamp (local time) is required.')).toBeTruthy()
+    expect(window.confirm).not.toHaveBeenCalled()
+  })
+
+  it('triggers due-now reminder once and avoids duplicates using local dedupe log', async () => {
+    const NotificationMock = Notification as unknown as {
+      instances: Array<{ title: string; options?: NotificationOptions }>
+    }
+
+    await saveReminderNotificationLog({
+      'med-prn-1:due-now:2026-03-28T10:30:00.000Z': '2026-03-28T10:31:00.000Z',
+      'med-taper-1:due-now:2026-03-28T20:00:00.000Z': '2026-03-28T20:01:00.000Z',
+    })
+
+    render(<App />)
+
+    await screen.findByRole('heading', { name: 'Alex Rivera' })
+
+    await waitFor(() => {
+      expect(NotificationMock.instances.some((entry) => entry.title.includes('Amoxicillin: due now'))).toBe(true)
+    })
+
+    const firstCount = NotificationMock.instances.length
+    expect(firstCount).toBeGreaterThanOrEqual(1)
+    const firstAmoxicillinCount = NotificationMock.instances.filter(
+      (entry) => entry.title === 'Amoxicillin: due now',
+    ).length
+    expect(firstAmoxicillinCount).toBe(1)
+
+    cleanup()
+    render(<App />)
+    await screen.findByRole('heading', { name: 'Alex Rivera' })
+
+    await waitFor(() => {
+      expect(NotificationMock.instances.length).toBe(firstCount)
+    })
+
+    const secondAmoxicillinCount = NotificationMock.instances.filter(
+      (entry) => entry.title === 'Amoxicillin: due now',
+    ).length
+    expect(secondAmoxicillinCount).toBe(1)
   })
 })
