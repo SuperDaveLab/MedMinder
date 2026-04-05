@@ -17,6 +17,22 @@ export interface ReminderNotificationCandidate {
   body: string
 }
 
+function formatLocalReminderDateTime(isoDateTime: string): string {
+  const date = new Date(isoDateTime)
+
+  if (Number.isNaN(date.getTime())) {
+    return isoDateTime
+  }
+
+  return date.toLocaleString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
+
 export function getReminderPermissionState(): ReminderPermissionState {
   if (typeof Notification === 'undefined') {
     return 'unsupported'
@@ -63,6 +79,7 @@ export function buildReminderNotificationCandidates(
     }
 
     const nextEligibleAtIso = schedule.nextEligibleAt.toISOString()
+    const nextEligibleAtDisplay = formatLocalReminderDateTime(nextEligibleAtIso)
 
     if (now.getTime() >= schedule.nextEligibleAt.getTime()) {
       const dedupeKey = `${medication.id}:due-now:${nextEligibleAtIso}`
@@ -73,7 +90,7 @@ export function buildReminderNotificationCandidates(
         nextEligibleAtIso,
         dedupeKey,
         title: `${medication.name}: due now`,
-        body: `Next eligible at ${nextEligibleAtIso}.`,
+        body: `Next eligible at ${nextEligibleAtDisplay}.`,
       })
       continue
     }
@@ -91,7 +108,7 @@ export function buildReminderNotificationCandidates(
         nextEligibleAtIso,
         dedupeKey,
         title: `${medication.name}: due soon`,
-        body: `Eligible at ${nextEligibleAtIso}.`,
+        body: `Eligible at ${nextEligibleAtDisplay}.`,
       })
     }
   }

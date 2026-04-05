@@ -1,8 +1,10 @@
 import type {
   DoseEvent,
   Medication,
+  MedicationStatusLabel,
   MedicationStatus,
 } from '../domain/types'
+import { calculateMedicationSchedule } from './scheduling'
 
 /**
  * Reference-only engine contract for architecture/docs discussions.
@@ -60,10 +62,44 @@ export interface ComputeMedicationStatusOptions {
  *   as `nextEligibleAt - earlyReminderMinutes`.
  */
 export function computeMedicationStatus(
-  _input: ComputeMedicationStatusInput,
-  _options: ComputeMedicationStatusOptions = {},
+  input: ComputeMedicationStatusInput,
+  options: ComputeMedicationStatusOptions = {},
 ): MedicationStatus {
-  throw new Error(
-    'Non-runtime reference contract only. Use scheduling.ts for executable logic.',
+  const scheduleResult = calculateMedicationSchedule(
+    input.medication,
+    input.doseEvents,
+    input.now,
   )
+
+  const dueSoonWindowMinutes = options.dueSoonWindowMinutes ?? 20
+  const minutesUntilEligible = Math.max(
+    0,
+    Math.ceil((scheduleResult.nextEligibleAt.getTime() - input.now.getTime()) / 60_000),
+  )
+
+  let statusLabel: MedicationStatusLabel
+
+  if (!scheduleResult.lastGivenAt) {
+    statusLabel = 'never_taken'
+  } else if (input.medication.schedule.type === 'prn' && scheduleResult.eligibleNow) {
+    statusLabel = 'available_prn'
+  } else if (!scheduleResult.eligibleNow) {
+    statusLabel = minutesUntilEligible <= dueSoonWindowMinutes ? 'due_soon' : 'too_early'
+  } else if ((scheduleResult.overdueByMinutes ?? 0) > 0) {
+    statusLabel = 'overdue'
+  } else {
+    statusLabel = 'eligible_now'
+  }
+
+  return {
+    scheduleType: input.medication.schedule.type,
+    lastGivenAt: scheduleResult.lastGivenAt?.toISOString(),
+    nextEligibleAt: scheduleResult.nextEligibleAt.toISOString(),
+    eligibleNow: scheduleResult.eligibleNow,
+    minutesUntilEligible,
+    tooEarlyByMinutes: scheduleResult.tooEarlyByMinutes ?? undefined,
+    overdueByMinutes: scheduleResult.overdueByMinutes ?? undefined,
+    reminderAt: scheduleResult.reminderAt?.toISOString(),
+    statusLabel,
+  }
 }

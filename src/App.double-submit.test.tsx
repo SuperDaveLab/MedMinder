@@ -38,7 +38,7 @@ describe('double-submit protection', () => {
           .fn<() => Promise<NotificationPermission>>()
           .mockResolvedValue('denied')
 
-        constructor(_title: string, _options?: NotificationOptions) {}
+        constructor() {}
       } as unknown as typeof Notification,
     )
   })
