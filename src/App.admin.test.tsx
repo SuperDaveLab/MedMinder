@@ -52,8 +52,8 @@ describe('App administration flow', () => {
     const user = userEvent.setup()
 
     render(<App />)
-    await screen.findByRole('heading', { name: 'Alex Rivera' })
-    await user.click(screen.getByTestId('tab-admin'))
+    await screen.findByRole('option', { name: 'Alex Rivera' })
+    await user.click(screen.getByTestId('tab-more'))
 
     await user.type(screen.getByTestId('patient-display-name-input'), 'Jamie Carter')
     await user.type(screen.getByTestId('patient-notes-input'), 'Caregiver note')
@@ -68,8 +68,8 @@ describe('App administration flow', () => {
     const user = userEvent.setup()
 
     render(<App />)
-    await screen.findByRole('heading', { name: 'Alex Rivera' })
-    await user.click(screen.getByTestId('tab-admin'))
+    await screen.findByRole('option', { name: 'Alex Rivera' })
+    await user.click(screen.getByTestId('tab-more'))
 
     await user.click(screen.getByTestId('edit-patient-patient-1'))
     await user.clear(screen.getByTestId('patient-display-name-input'))
@@ -77,7 +77,7 @@ describe('App administration flow', () => {
     await user.click(screen.getByTestId('save-patient-button'))
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Alex Rivera Updated' })).toBeTruthy()
+      expect(screen.getByRole('option', { name: 'Alex Rivera Updated' })).toBeTruthy()
     })
   })
 
@@ -85,8 +85,8 @@ describe('App administration flow', () => {
     const user = userEvent.setup()
 
     render(<App />)
-    await screen.findByRole('heading', { name: 'Alex Rivera' })
-    await user.click(screen.getByTestId('tab-admin'))
+    await screen.findByRole('option', { name: 'Alex Rivera' })
+    await user.click(screen.getByTestId('tab-more'))
 
     await user.click(screen.getByTestId('delete-patient-patient-1'))
 
@@ -99,8 +99,8 @@ describe('App administration flow', () => {
     const user = userEvent.setup()
 
     render(<App />)
-    await screen.findByRole('heading', { name: 'Alex Rivera' })
-    await user.click(screen.getByTestId('tab-admin'))
+    await screen.findByRole('option', { name: 'Alex Rivera' })
+    await user.click(screen.getByTestId('tab-meds'))
 
     await user.type(screen.getByTestId('medication-name-input'), 'Vitamin D')
     await user.type(screen.getByTestId('medication-default-dose-input'), '1 tablet')
@@ -117,8 +117,8 @@ describe('App administration flow', () => {
     const user = userEvent.setup()
 
     render(<App />)
-    await screen.findByRole('heading', { name: 'Alex Rivera' })
-    await user.click(screen.getByTestId('tab-admin'))
+    await screen.findByRole('option', { name: 'Alex Rivera' })
+    await user.click(screen.getByTestId('tab-meds'))
 
     await user.click(screen.getByTestId('edit-medication-med-interval-1'))
     await user.clear(screen.getByTestId('medication-name-input'))
@@ -134,8 +134,8 @@ describe('App administration flow', () => {
     const user = userEvent.setup()
 
     render(<App />)
-    await screen.findByRole('heading', { name: 'Alex Rivera' })
-    await user.click(screen.getByTestId('tab-admin'))
+    await screen.findByRole('option', { name: 'Alex Rivera' })
+    await user.click(screen.getByTestId('tab-meds'))
 
     const medicationItem = await screen.findByTestId('medication-item-med-interval-1')
 
@@ -156,8 +156,8 @@ describe('App administration flow', () => {
     const user = userEvent.setup()
 
     render(<App />)
-    await screen.findByRole('heading', { name: 'Alex Rivera' })
-    await user.click(screen.getByTestId('tab-admin'))
+    await screen.findByRole('option', { name: 'Alex Rivera' })
+    await user.click(screen.getByTestId('tab-more'))
 
     const input = screen.getByTestId('backup-file-input') as HTMLInputElement
     const badFile = new File([JSON.stringify({ nope: true })], 'bad-backup.json', {
@@ -175,11 +175,11 @@ describe('App administration flow', () => {
     const user = userEvent.setup()
 
     render(<App />)
-    await screen.findByRole('heading', { name: 'Alex Rivera' })
+    await screen.findByRole('option', { name: 'Alex Rivera' })
 
     const originalBackup = await exportFullBackup()
 
-    await user.click(screen.getByTestId('tab-admin'))
+    await user.click(screen.getByTestId('tab-more'))
     await user.type(screen.getByTestId('patient-display-name-input'), 'Temporary Patient')
     await user.click(screen.getByTestId('save-patient-button'))
 

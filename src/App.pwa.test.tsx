@@ -75,7 +75,8 @@ describe('App PWA polish behavior', () => {
     installEvent.userChoice = Promise.resolve({ outcome: 'accepted', platform: 'web' })
 
     render(<App />)
-    await screen.findByRole('heading', { name: 'Alex Rivera' })
+    await screen.findByRole('option', { name: 'Alex Rivera' })
+    await user.click(screen.getByTestId('tab-more'))
 
     window.dispatchEvent(installEvent)
 
@@ -112,7 +113,8 @@ describe('App PWA polish behavior', () => {
     })
 
     render(<App />)
-    await screen.findByRole('heading', { name: 'Alex Rivera' })
+    await screen.findByRole('option', { name: 'Alex Rivera' })
+    await user.click(screen.getByTestId('tab-more'))
 
     await user.click(screen.getByTestId('wake-lock-button'))
 
@@ -134,9 +136,9 @@ describe('App PWA polish behavior', () => {
     const revokeObjectURLSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
 
     render(<App />)
-    await screen.findByRole('heading', { name: 'Alex Rivera' })
+    await screen.findByRole('option', { name: 'Alex Rivera' })
 
-    await user.click(screen.getByTestId('tab-summary'))
+    await user.click(screen.getByTestId('tab-more'))
     await user.click(screen.getByTestId('share-summary-button'))
 
     await waitFor(() => {

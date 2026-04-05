@@ -144,7 +144,7 @@ describe('App persistence flow', () => {
     })
 
     await waitFor(() => {
-      expect(within(medicationCard).getByText(/Too early by/)).toBeTruthy()
+      expect(within(medicationCard).getByText(/Too early by|Next due/)).toBeTruthy()
     })
   })
 

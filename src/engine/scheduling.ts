@@ -239,12 +239,12 @@ function calculateFixedTimesExpectedDueAt(
     return now
   }
 
-  const year = now.getUTCFullYear()
-  const month = now.getUTCMonth()
-  const day = now.getUTCDate()
+  const year = now.getFullYear()
+  const month = now.getMonth()
+  const day = now.getDate()
 
   const todayCandidates = times.map(({ hours, minutes }) => {
-    return new Date(Date.UTC(year, month, day, hours, minutes, 0, 0))
+    return new Date(year, month, day, hours, minutes, 0, 0)
   })
 
   const latestToday = [...todayCandidates]
@@ -256,15 +256,13 @@ function calculateFixedTimesExpectedDueAt(
   }
 
   return new Date(
-    Date.UTC(
-      year,
-      month,
-      day - 1,
-      times[times.length - 1].hours,
-      times[times.length - 1].minutes,
-      0,
-      0,
-    ),
+    year,
+    month,
+    day - 1,
+    times[times.length - 1].hours,
+    times[times.length - 1].minutes,
+    0,
+    0,
   )
 }
 

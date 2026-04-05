@@ -128,7 +128,7 @@ export function PatientMedicationListView({
 
   return (
     <section className="medication-section">
-      <h2>{patient.displayName}'s medications</h2>
+      <h2 aria-label={patient.displayName}>{patient.displayName}'s medications</h2>
       {medicationStatuses.length === 0 ? (
         <p className="med-list-empty">No active medications for this patient. Add one in Admin.</p>
       ) : null}

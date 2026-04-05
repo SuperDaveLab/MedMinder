@@ -371,7 +371,7 @@ describe('scheduling engine', () => {
   })
 
   it('fixed_times before first time of day uses previous day last slot', () => {
-    const fixedNow = new Date('2026-03-28T05:00:00.000Z')
+    const fixedNow = new Date(2026, 2, 28, 5, 0, 0, 0)
     const medication: Medication = {
       id: 'med-fixed-before-first',
       patientId: 'patient-1',
@@ -386,11 +386,15 @@ describe('scheduling engine', () => {
 
     const result = calculateMedicationSchedule(medication, [], fixedNow)
 
-    expect(result.nextEligibleAt.toISOString()).toBe('2026-03-27T20:00:00.000Z')
+    expect(result.nextEligibleAt.getFullYear()).toBe(2026)
+    expect(result.nextEligibleAt.getMonth()).toBe(2)
+    expect(result.nextEligibleAt.getDate()).toBe(27)
+    expect(result.nextEligibleAt.getHours()).toBe(20)
+    expect(result.nextEligibleAt.getMinutes()).toBe(0)
   })
 
   it('fixed_times between slots uses latest earlier slot', () => {
-    const fixedNow = new Date('2026-03-28T13:15:00.000Z')
+    const fixedNow = new Date(2026, 2, 28, 13, 15, 0, 0)
     const medication: Medication = {
       id: 'med-fixed-between',
       patientId: 'patient-1',
@@ -405,11 +409,15 @@ describe('scheduling engine', () => {
 
     const result = calculateMedicationSchedule(medication, [], fixedNow)
 
-    expect(result.nextEligibleAt.toISOString()).toBe('2026-03-28T12:00:00.000Z')
+    expect(result.nextEligibleAt.getFullYear()).toBe(2026)
+    expect(result.nextEligibleAt.getMonth()).toBe(2)
+    expect(result.nextEligibleAt.getDate()).toBe(28)
+    expect(result.nextEligibleAt.getHours()).toBe(12)
+    expect(result.nextEligibleAt.getMinutes()).toBe(0)
   })
 
   it('fixed_times after last slot uses same day last slot', () => {
-    const fixedNow = new Date('2026-03-28T23:00:00.000Z')
+    const fixedNow = new Date(2026, 2, 28, 23, 0, 0, 0)
     const medication: Medication = {
       id: 'med-fixed-after-last',
       patientId: 'patient-1',
@@ -424,7 +432,11 @@ describe('scheduling engine', () => {
 
     const result = calculateMedicationSchedule(medication, [], fixedNow)
 
-    expect(result.nextEligibleAt.toISOString()).toBe('2026-03-28T20:00:00.000Z')
+    expect(result.nextEligibleAt.getFullYear()).toBe(2026)
+    expect(result.nextEligibleAt.getMonth()).toBe(2)
+    expect(result.nextEligibleAt.getDate()).toBe(28)
+    expect(result.nextEligibleAt.getHours()).toBe(20)
+    expect(result.nextEligibleAt.getMinutes()).toBe(0)
   })
 
   it('uses the new taper rule exactly at a boundary date', () => {
