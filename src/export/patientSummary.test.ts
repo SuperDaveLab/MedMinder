@@ -72,4 +72,14 @@ describe('patient summary export helpers', () => {
     expect(summaryText).toContain('Schedule details: Every 480 minutes')
     expect(summaryText).toContain('Reminder: Enabled (10 min early)')
   })
+
+  it('marks interval medication as missed in summary status after threshold', () => {
+    const rows = buildPatientMedicationSummaryRows(
+      medications,
+      doseEvents,
+      new Date('2026-03-28T18:01:00.000Z'),
+    )
+
+    expect(rows[0].currentStatus).toContain('Missed by')
+  })
 })

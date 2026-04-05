@@ -249,6 +249,11 @@ h2 {
   background: var(--alert-soft);
 }
 
+.med-card[data-status='missed'] {
+  border-color: var(--alert);
+  background: var(--alert-soft);
+}
+
 .med-card[data-status='eligible_now'],
 .med-card[data-status='available_prn'] {
   border-color: var(--brand);

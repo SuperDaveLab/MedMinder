@@ -110,7 +110,7 @@ describe('App persistence flow', () => {
     await screen.findByRole('heading', { name: 'Alex Rivera' })
     const medicationCard = await screen.findByTestId('med-card-med-interval-1')
 
-    expect(within(medicationCard).getByText(/Overdue by/)).toBeTruthy()
+    expect(within(medicationCard).getByText(/Overdue by|Missed by/)).toBeTruthy()
 
     await user.click(within(medicationCard).getByTestId('correct-dose-dose-seed-1'))
     await user.clear(within(medicationCard).getByLabelText('Replacement timestamp (local time)'))

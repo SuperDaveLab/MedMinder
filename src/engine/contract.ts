@@ -78,6 +78,10 @@ export function computeMedicationStatus(
   )
 
   let statusLabel: MedicationStatusLabel
+  const missedThresholdMinutes =
+    input.medication.schedule.type === 'interval'
+      ? Math.ceil(input.medication.schedule.intervalMinutes * 0.5)
+      : Number.POSITIVE_INFINITY
 
   if (!scheduleResult.lastGivenAt) {
     statusLabel = 'never_taken'
@@ -85,6 +89,11 @@ export function computeMedicationStatus(
     statusLabel = 'available_prn'
   } else if (!scheduleResult.eligibleNow) {
     statusLabel = minutesUntilEligible <= dueSoonWindowMinutes ? 'due_soon' : 'too_early'
+  } else if (
+    input.medication.schedule.type === 'interval' &&
+    (scheduleResult.overdueByMinutes ?? 0) >= missedThresholdMinutes
+  ) {
+    statusLabel = 'missed'
   } else if ((scheduleResult.overdueByMinutes ?? 0) > 0) {
     statusLabel = 'overdue'
   } else {

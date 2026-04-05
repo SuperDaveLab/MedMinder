@@ -54,6 +54,7 @@ export type MedicationStatusLabel =
   | 'too_early'
   | 'due_soon'
   | 'overdue'
+  | 'missed'
   | 'available_prn'
   | 'never_taken'
 

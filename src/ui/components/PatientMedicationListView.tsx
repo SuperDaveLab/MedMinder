@@ -2,11 +2,10 @@ import { useMemo } from 'react'
 import type {
   DoseEvent,
   Medication,
-  MedicationStatus,
   MedicationStatusLabel,
   Patient,
 } from '../../domain/types'
-import { calculateMedicationSchedule } from '../../engine/scheduling'
+import { computeMedicationStatus } from '../../engine/contract'
 import { MedicationCard } from './MedicationCard'
 
 interface PatientMedicationListViewProps {
@@ -28,7 +27,7 @@ interface StatusDescriptor {
   text: string
 }
 
-function describeStatus(status: MedicationStatus): StatusDescriptor {
+function describeStatus(status: ReturnType<typeof computeMedicationStatus>): StatusDescriptor {
   if (status.statusLabel === 'available_prn') {
     return { label: 'available_prn', text: 'Available now' }
   }
@@ -60,6 +59,13 @@ function describeStatus(status: MedicationStatus): StatusDescriptor {
     }
   }
 
+  if (status.statusLabel === 'missed') {
+    return {
+      label: 'missed',
+      text: `Missed by: ${formatDuration(status.overdueByMinutes ?? 0)}`,
+    }
+  }
+
   if (status.statusLabel === 'due_soon') {
     return {
       label: 'due_soon',
@@ -68,44 +74,6 @@ function describeStatus(status: MedicationStatus): StatusDescriptor {
   }
 
   return { label: 'eligible_now', text: 'Eligible now' }
-}
-
-function buildMedicationStatus(
-  medication: Medication,
-  doseEvents: DoseEvent[],
-  now: Date,
-): MedicationStatus {
-  const scheduleResult = calculateMedicationSchedule(medication, doseEvents, now)
-  const minutesUntilEligible = Math.max(
-    0,
-    Math.ceil((scheduleResult.nextEligibleAt.getTime() - now.getTime()) / 60_000),
-  )
-
-  let statusLabel: MedicationStatusLabel
-
-  if (!scheduleResult.lastGivenAt) {
-    statusLabel = 'never_taken'
-  } else if (medication.schedule.type === 'prn' && scheduleResult.eligibleNow) {
-    statusLabel = 'available_prn'
-  } else if (!scheduleResult.eligibleNow) {
-    statusLabel = minutesUntilEligible <= 20 ? 'due_soon' : 'too_early'
-  } else if ((scheduleResult.overdueByMinutes ?? 0) > 0) {
-    statusLabel = 'overdue'
-  } else {
-    statusLabel = 'eligible_now'
-  }
-
-  return {
-    scheduleType: medication.schedule.type,
-    lastGivenAt: scheduleResult.lastGivenAt?.toISOString(),
-    nextEligibleAt: scheduleResult.nextEligibleAt.toISOString(),
-    eligibleNow: scheduleResult.eligibleNow,
-    minutesUntilEligible,
-    tooEarlyByMinutes: scheduleResult.tooEarlyByMinutes ?? undefined,
-    overdueByMinutes: scheduleResult.overdueByMinutes ?? undefined,
-    reminderAt: scheduleResult.reminderAt?.toISOString(),
-    statusLabel,
-  }
 }
 
 export function PatientMedicationListView({
@@ -121,7 +89,7 @@ export function PatientMedicationListView({
     () =>
       medications.map((medication) => ({
         medication,
-        status: buildMedicationStatus(medication, doseEvents, now),
+        status: computeMedicationStatus({ medication, doseEvents, now }),
       })),
     [medications, doseEvents, now],
   )

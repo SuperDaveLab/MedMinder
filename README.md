@@ -54,6 +54,10 @@ MedMinder now supports an in-app alarm experience for eligible schedules (`inter
 
 Because this is a browser/PWA app, true OS-native background alarm scheduling is limited by platform/browser rules. For reliability when the app is backgrounded, keep browser notifications enabled as well.
 
+## 🗺️ Roadmap
+
+For planned enhancements and prioritization notes, see [docs/roadmap.md](docs/roadmap.md).
+
 ## 🛠️ Setup & Development
 
 MedMinder is built heavily on React and Vite for blisteringly fast performance.

@@ -66,6 +66,14 @@ function describeCurrentStatus(
     return `Too early by ${tooEarlyByMinutes} min`
   }
 
+  if (
+    medication.schedule.type === 'interval' &&
+    overdueByMinutes !== null &&
+    overdueByMinutes >= Math.ceil(medication.schedule.intervalMinutes * 0.5)
+  ) {
+    return `Missed by ${overdueByMinutes} min`
+  }
+
   if (overdueByMinutes !== null && overdueByMinutes > 0) {
     return `Overdue by ${overdueByMinutes} min`
   }
