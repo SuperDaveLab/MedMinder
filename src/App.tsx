@@ -43,7 +43,7 @@ import {
 import { formatAbsoluteDateTime, formatRelativeTime } from './ui/time'
 import './App.css'
 
-type AppView = 'care' | 'history' | 'admin' | 'summary'
+type AppView = 'care' | 'history' | 'meds' | 'more'
 
 interface DeferredInstallPromptEvent extends Event {
   prompt: () => Promise<void>
@@ -65,9 +65,11 @@ function getInitialViewFromUrl(): AppView {
   const url = new URL(window.location.href)
   const view = url.searchParams.get('view')
 
-  if (view === 'care' || view === 'history' || view === 'admin' || view === 'summary') {
-    return view
+  if (view === 'care' || view === 'history' || view === 'meds' || view === 'more') {
+    return view as AppView
   }
+  if (view === 'admin') return 'meds'
+  if (view === 'summary') return 'more'
 
   return 'care'
 }
@@ -1044,16 +1046,10 @@ function App() {
   }
 
   return (
-    <main className="app-shell">
-      <header className="app-header">
-        <p className="eyebrow">Med-Minder</p>
-        <h1>{patient.displayName}</h1>
-        <p className="subhead">
-          Local-first medication timing tracker. No cloud sync. No diagnosis logic.
-        </p>
-        <p className="app-meta">Version {appVersion} | Local data only</p>
-        <label className="patient-picker">
-          <span>Selected patient</span>
+    <div className="layout-root">
+      <header className="top-app-bar no-print">
+        <label className="patient-selector-compact">
+          <span className="patient-avatar" aria-hidden="true">👤</span>
           <select
             value={patient.id}
             onChange={(event) => void handlePatientChange(event.target.value)}
@@ -1065,79 +1061,45 @@ function App() {
             ))}
           </select>
         </label>
-        <button
-          className="notify-button"
-          onClick={requestNotificationPermission}
-          disabled={notificationPermission !== 'default' || isDoseActionInProgress}
-        >
-          {notificationPermission === 'granted'
-            ? 'Notifications enabled'
-            : notificationPermission === 'unsupported'
-              ? 'Notifications unsupported'
-              : notificationPermission === 'denied'
-                ? 'Notifications denied'
-              : 'Enable due alerts'}
-        </button>
-        <p className="reminder-state">{getReminderStatusLabel(notificationPermission)}</p>
-        <div className="app-actions no-print">
-          <button
-            className="utility-button"
-            onClick={() => void handleInstallApp()}
-            disabled={!installPromptEvent || isInstalled}
-            data-testid="install-app-button"
-          >
-            {isInstalled ? 'Installed' : installPromptEvent ? 'Install app' : 'Install unavailable'}
-          </button>
-          <button
-            className="utility-button"
-            onClick={() => void handleToggleWakeLock()}
-            disabled={!wakeLockSupported}
-            data-testid="wake-lock-button"
-          >
-            {isWakeLockActive ? 'Keep screen awake: on' : 'Keep screen awake'}
-          </button>
-        </div>
-        <p className="pwa-status" data-testid="install-status">
-          {isInstalled
-            ? 'Already installed.'
-            : installPromptEvent
-              ? 'Install available.'
-              : 'Install not supported here. Use browser menu to Add to Home Screen.'}
-        </p>
-        {installHint ? <p className="pwa-status">{installHint}</p> : null}
-        {wakeLockMessage ? <p className="pwa-status">{wakeLockMessage}</p> : null}
-        {uiError ? <p className="form-error">{uiError}</p> : null}
-        <nav className="view-tabs no-print" aria-label="Primary views">
-          <button
-            className={`view-tab ${activeView === 'care' ? 'is-active' : ''}`}
-            data-testid="tab-care"
-            onClick={() => setView('care')}
-          >
-            Care
-          </button>
-          <button
-            className={`view-tab ${activeView === 'history' ? 'is-active' : ''}`}
-            data-testid="tab-history"
-            onClick={() => setView('history')}
-          >
-            History
-          </button>
-          <button
-            className={`view-tab ${activeView === 'admin' ? 'is-active' : ''}`}
-            data-testid="tab-admin"
-            onClick={() => setView('admin')}
-          >
-            Admin
-          </button>
-          <button
-            className={`view-tab ${activeView === 'summary' ? 'is-active' : ''}`}
-            data-testid="tab-summary"
-            onClick={() => setView('summary')}
-          >
-            Summary
-          </button>
-        </nav>
+        {uiError ? <p className="header-error">{uiError}</p> : null}
       </header>
+
+      <nav className="bottom-nav no-print" aria-label="Primary views">
+        <button
+          className={`bottom-nav-item ${activeView === 'care' ? 'is-active' : ''}`}
+          data-testid="tab-care"
+          onClick={() => setView('care')}
+        >
+          <span className="nav-icon" aria-hidden="true">💊</span>
+          <span className="nav-label">Care</span>
+        </button>
+        <button
+          className={`bottom-nav-item ${activeView === 'history' ? 'is-active' : ''}`}
+          data-testid="tab-history"
+          onClick={() => setView('history')}
+        >
+          <span className="nav-icon" aria-hidden="true">📋</span>
+          <span className="nav-label">History</span>
+        </button>
+        <button
+          className={`bottom-nav-item ${activeView === 'meds' ? 'is-active' : ''}`}
+          data-testid="tab-meds"
+          onClick={() => setView('meds')}
+        >
+          <span className="nav-icon" aria-hidden="true">✏️</span>
+          <span className="nav-label">Meds</span>
+        </button>
+        <button
+          className={`bottom-nav-item ${activeView === 'more' ? 'is-active' : ''}`}
+          data-testid="tab-more"
+          onClick={() => setView('more')}
+        >
+          <span className="nav-icon" aria-hidden="true">⚙️</span>
+          <span className="nav-label">More</span>
+        </button>
+      </nav>
+
+      <main className="main-content-scroll">
 
       {activeView === 'care' ? (
         <section className="workflow-section" data-testid="care-view">
@@ -1210,76 +1172,10 @@ function App() {
         </section>
       ) : null}
 
-      {activeView === 'admin' ? (
-        <section className="workflow-section" data-testid="admin-view">
-          <section className="admin-section no-print">
-            <h2>Patient records</h2>
-            <label>
-              Patient display name
-              <input
-                data-testid="patient-display-name-input"
-                type="text"
-                value={patientDisplayNameInput}
-                onChange={(event) => setPatientDisplayNameInput(event.target.value)}
-              />
-            </label>
-            <label>
-              Notes
-              <textarea
-                data-testid="patient-notes-input"
-                value={patientNotesInput}
-                onChange={(event) => setPatientNotesInput(event.target.value)}
-              />
-            </label>
-            {patientFormError ? <p className="form-error">{patientFormError}</p> : null}
-            <div className="form-actions">
-              <button
-                data-testid="save-patient-button"
-                className="utility-button"
-                disabled={isPatientActionInProgress}
-                onClick={() => void handleSavePatient()}
-              >
-                {isPatientActionInProgress
-                  ? 'Saving...'
-                  : editingPatientId
-                    ? 'Save patient'
-                    : 'Add patient'}
-              </button>
-              {editingPatientId ? (
-                <button className="utility-button" disabled={isPatientActionInProgress} onClick={resetPatientForm}>Cancel</button>
-              ) : null}
-            </div>
-            <ul className="admin-list">
-              {appState.patients.map((listedPatient) => (
-                <li key={listedPatient.id} className="admin-item" data-testid={`patient-item-${listedPatient.id}`}>
-                  <div>
-                    <strong>{listedPatient.displayName}</strong>
-                    {listedPatient.notes ? <p>{listedPatient.notes}</p> : null}
-                  </div>
-                  <div className="admin-item-actions">
-                    <button
-                      data-testid={`edit-patient-${listedPatient.id}`}
-                      className="utility-button"
-                      disabled={isPatientActionInProgress}
-                      onClick={() => startEditPatient(listedPatient)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      data-testid={`delete-patient-${listedPatient.id}`}
-                      className="utility-button danger-button"
-                      disabled={isPatientActionInProgress}
-                      onClick={() => void handleDeletePatient(listedPatient.id)}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          <section className="admin-section no-print">
+      
+      {activeView === 'meds' ? (
+        <section className="workflow-section" data-testid="meds-view">
+<section className="admin-section no-print">
             <h2>Medication records</h2>
             <label>
               Medication name
@@ -1456,6 +1352,111 @@ function App() {
               ))}
             </ul>
           </section>
+        </section>
+      ) : null}
+      {activeView === 'more' ? (
+        <section className="workflow-section" data-testid="more-view">
+
+          <section className="admin-section no-print app-settings-section">
+            <h2>App Settings</h2>
+            <div className="app-actions">
+              <button
+                className="utility-button"
+                onClick={requestNotificationPermission}
+                disabled={notificationPermission !== 'default'}
+              >
+                {notificationPermission === 'granted'
+                  ? 'Notifications enabled'
+                  : notificationPermission === 'unsupported'
+                    ? 'Notifications unsupported'
+                    : notificationPermission === 'denied'
+                      ? 'Notifications denied'
+                    : 'Enable due alerts'}
+              </button>
+              <button
+                className="utility-button"
+                onClick={() => void handleInstallApp()}
+                disabled={!installPromptEvent || isInstalled}
+              >
+                {isInstalled ? 'App Installed' : installPromptEvent ? 'Install App' : 'Install Unavailable'}
+              </button>
+              <button
+                className="utility-button"
+                onClick={() => void handleToggleWakeLock()}
+                disabled={!wakeLockSupported}
+              >
+                {isWakeLockActive ? 'Sleep lock: ON' : 'Prevent sleep'}
+              </button>
+            </div>
+          </section>
+          <section className="admin-section no-print">
+            <h2>Patient records</h2>
+            <label>
+              Patient display name
+              <input
+                data-testid="patient-display-name-input"
+                type="text"
+                value={patientDisplayNameInput}
+                onChange={(event) => setPatientDisplayNameInput(event.target.value)}
+              />
+            </label>
+            <label>
+              Notes
+              <textarea
+                data-testid="patient-notes-input"
+                value={patientNotesInput}
+                onChange={(event) => setPatientNotesInput(event.target.value)}
+              />
+            </label>
+            {patientFormError ? <p className="form-error">{patientFormError}</p> : null}
+            <div className="form-actions">
+              <button
+                data-testid="save-patient-button"
+                className="utility-button"
+                disabled={isPatientActionInProgress}
+                onClick={() => void handleSavePatient()}
+              >
+                {isPatientActionInProgress
+                  ? 'Saving...'
+                  : editingPatientId
+                    ? 'Save patient'
+                    : 'Add patient'}
+              </button>
+              {editingPatientId ? (
+                <button className="utility-button" disabled={isPatientActionInProgress} onClick={resetPatientForm}>Cancel</button>
+              ) : null}
+            </div>
+            <ul className="admin-list">
+              {appState.patients.map((listedPatient) => (
+                <li key={listedPatient.id} className="admin-item" data-testid={`patient-item-${listedPatient.id}`}>
+                  <div>
+                    <strong>{listedPatient.displayName}</strong>
+                    {listedPatient.notes ? <p>{listedPatient.notes}</p> : null}
+                  </div>
+                  <div className="admin-item-actions">
+                    <button
+                      data-testid={`edit-patient-${listedPatient.id}`}
+                      className="utility-button"
+                      disabled={isPatientActionInProgress}
+                      onClick={() => startEditPatient(listedPatient)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      data-testid={`delete-patient-${listedPatient.id}`}
+                      className="utility-button danger-button"
+                      disabled={isPatientActionInProgress}
+                      onClick={() => void handleDeletePatient(listedPatient.id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          
           <section className="admin-section no-print" data-testid="backup-section">
             <h2>Backup and restore</h2>
             <p className="subhead">
@@ -1505,8 +1506,8 @@ function App() {
         </section>
       ) : null}
 
-      {activeView === 'summary' ? (
-        <section className="workflow-section" data-testid="summary-view">
+      {activeView === 'more' ? (
+        <section className="workflow-section" data-testid="summary-section">
           <section className="summary-section print-summary">
             <div className="app-actions no-print">
               <button className="utility-button" onClick={handlePrintSummary}>
@@ -1540,7 +1541,8 @@ function App() {
           </section>
         </section>
       ) : null}
-    </main>
+          </main>
+    </div>
   )
 }
 
