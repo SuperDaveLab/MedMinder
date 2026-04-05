@@ -32,6 +32,7 @@ interface MoreViewProps {
   wakeLockSupported: boolean
   isWakeLockActive: boolean
   onToggleWakeLock: () => Promise<void>
+  onTestAlarm: () => void
 }
 
 function downloadBlob(blob: Blob, fileName: string): void {
@@ -61,6 +62,7 @@ export function MoreView({
   wakeLockSupported,
   isWakeLockActive,
   onToggleWakeLock,
+  onTestAlarm,
 }: MoreViewProps) {
   const [editingPatientId, setEditingPatientId] = useState<string | null>(null)
   const [patientDisplayNameInput, setPatientDisplayNameInput] = useState('')
@@ -444,6 +446,13 @@ export function MoreView({
               data-testid="wake-lock-button"
             >
               {isWakeLockActive ? 'Sleep lock: ON' : 'Prevent sleep'}
+            </button>
+            <button
+              className="utility-button"
+              onClick={onTestAlarm}
+              data-testid="test-alarm-button"
+            >
+              Test alarm
             </button>
           </div>
           <p className="subhead">

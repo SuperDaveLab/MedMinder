@@ -125,6 +125,10 @@ export function useAppShell({ appState, now }: UseAppShellParams) {
     }
   }, [playAlarmPulse])
 
+  const triggerAlarmPreview = () => {
+    triggerAlarmPulse()
+  }
+
   useEffect(() => {
     const nav = window.navigator as Navigator & { standalone?: boolean }
     const refreshInstallState = () => {
@@ -388,5 +392,6 @@ export function useAppShell({ appState, now }: UseAppShellParams) {
     activeAlarm,
     acknowledgeActiveAlarm,
     snoozeActiveAlarm,
+    triggerAlarmPreview,
   }
 }

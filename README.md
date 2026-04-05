@@ -40,7 +40,19 @@ The link above leads to the fully functional live production build. To get start
 - **Local-first & Privacy-focused**: Your data never leaves your device. Everything is securely stored in IndexedDB (`med-minder-db`).
 - **Complete History & Auditing**: See exactly what was given when, and log corrections that properly supersede accidental entries.
 - **Local Notifications**: Opt-in to browser-based local notifications when medications become due!
+- **In-App Alarm Mode**: For interval and fixed-time meds, enable alarm mode to trigger repeating in-app sound/vibration with acknowledge/snooze actions when due now.
 - **Data Portability**: Full JSON backup export and import logic allows you to safely copy data across devices.
+
+## ⏰ Alarm Behavior (Important)
+
+MedMinder now supports an in-app alarm experience for eligible schedules (`interval` and `fixed_times`):
+
+- Per-medication alarm toggle in **Meds**
+- Repeating in-app sound + vibration pulses when due now
+- Quick **Acknowledge** and **Snooze (5 min)** actions
+- **Test alarm** button in **More → App Settings**
+
+Because this is a browser/PWA app, true OS-native background alarm scheduling is limited by platform/browser rules. For reliability when the app is backgrounded, keep browser notifications enabled as well.
 
 ## 🛠️ Setup & Development
 

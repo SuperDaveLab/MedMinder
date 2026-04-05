@@ -35,6 +35,7 @@ function App() {
     activeAlarm,
     acknowledgeActiveAlarm,
     snoozeActiveAlarm,
+    triggerAlarmPreview,
   } = useAppShell({ appState, now })
 
   if (!appState) {
@@ -70,6 +71,7 @@ function App() {
             wakeLockSupported={wakeLockSupported}
             isWakeLockActive={isWakeLockActive}
             onToggleWakeLock={handleToggleWakeLock}
+            onTestAlarm={triggerAlarmPreview}
           />
         </section>
       </main>
@@ -178,6 +180,7 @@ function App() {
             wakeLockSupported={wakeLockSupported}
             isWakeLockActive={isWakeLockActive}
             onToggleWakeLock={handleToggleWakeLock}
+            onTestAlarm={triggerAlarmPreview}
           />
         ) : null}
       </main>
