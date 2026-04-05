@@ -34,7 +34,6 @@ import {
   buildReminderNotificationCandidates,
   filterUnsentReminderCandidates,
   getReminderPermissionState,
-  getReminderStatusLabel,
 } from './reminders/notifications'
 import {
   buildPatientMedicationSummaryRows,
@@ -150,15 +149,14 @@ function App() {
     const nav = window.navigator as Navigator & { standalone?: boolean }
     return isStandaloneDisplayMode() || nav.standalone === true
   })
-  const [installHint, setInstallHint] = useState<string | null>(null)
+  const [, setInstallHint] = useState<string | null>(null)
   const [isWakeLockActive, setIsWakeLockActive] = useState(false)
-  const [wakeLockMessage, setWakeLockMessage] = useState<string | null>(null)
+  const [, setWakeLockMessage] = useState<string | null>(null)
 
   const reminderRunInFlightRef = useRef(false)
   const sentReminderKeysRef = useRef<Set<string>>(new Set())
   const backupFileInputRef = useRef<HTMLInputElement>(null)
   const wakeLockRef = useRef<WakeLockSentinelLike | null>(null)
-  const appVersion = __APP_VERSION__
   const wakeLockSupported = Boolean((navigator as Navigator & NavigatorWithWakeLock).wakeLock)
   const shareSupported = typeof navigator.share === 'function'
 
@@ -177,8 +175,8 @@ function App() {
   const [fixedTimesInput, setFixedTimesInput] = useState('08:00, 20:00')
   const [prnMinimumIntervalInput, setPrnMinimumIntervalInput] = useState('360')
   const [taperRulesInput, setTaperRulesInput] = useState('')
-  const [reminderEnabledInput, setReminderEnabledInput] = useState(false)
-  const [reminderMinutesInput, setReminderMinutesInput] = useState<'10' | '15'>('10')
+  const [reminderEnabledInput, setReminderEnabledInput] = useState(true)
+  const [reminderMinutesInput, setReminderMinutesInput] = useState<'0' | '10' | '15'>('0')
   const [medicationFormError, setMedicationFormError] = useState<string | null>(null)
 
   const resetPatientForm = () => {
@@ -199,8 +197,8 @@ function App() {
     setFixedTimesInput('08:00, 20:00')
     setPrnMinimumIntervalInput('360')
     setTaperRulesInput('')
-    setReminderEnabledInput(false)
-    setReminderMinutesInput('10')
+    setReminderEnabledInput(true)
+    setReminderMinutesInput('0')
     setMedicationFormError(null)
   }
 
@@ -683,7 +681,7 @@ function App() {
     }
 
     setReminderEnabledInput(Boolean(medication.reminderSettings?.enabled))
-    setReminderMinutesInput(String(medication.reminderSettings?.earlyReminderMinutes ?? 10) as '10' | '15')
+    setReminderMinutesInput(String(medication.reminderSettings?.earlyReminderMinutes ?? 0) as '0' | '10' | '15')
   }
 
   const handleSaveMedication = async () => {
@@ -725,7 +723,7 @@ function App() {
     const reminderSettings = reminderEnabledInput
       ? {
           enabled: true,
-          earlyReminderMinutes: Number.parseInt(reminderMinutesInput, 10) as 10 | 15,
+          earlyReminderMinutes: Number.parseInt(reminderMinutesInput, 10) as 0 | 10 | 15,
         }
       : { enabled: false as const }
 
@@ -875,7 +873,13 @@ function App() {
       .filter((doseEvent) => doseEvent.corrected)
       .map((doseEvent) => [doseEvent.supersedesDoseEventId, doseEvent]),
   )
+  const patientMedicationIds = new Set(
+    appState.medications
+      .filter((m) => m.patientId === patient.id)
+      .map((m) => m.id)
+  )
   const recentHistory = [...appState.doseEvents]
+    .filter((d) => patientMedicationIds.has(d.medicationId))
     .sort((a, b) => b.timestampGiven.localeCompare(a.timestampGiven))
     .slice(0, 12)
 
@@ -1142,35 +1146,68 @@ function App() {
         </section>
       ) : null}
 
-      {activeView === 'history' ? (
-        <section className="workflow-section" data-testid="history-view">
-          <section className="history-section">
-            <h2>All dose history</h2>
-            <ul className="history-list">
-              {recentHistory.length === 0 ? (
-                <li className="history-item history-item-empty">No doses logged yet.</li>
+      {activeView === 'history' ? (() => {
+        const patientMedIds = new Set(
+          appState.medications
+            .filter((m) => m.patientId === patient.id)
+            .map((m) => m.id)
+        )
+        const allPatientDoses = appState.doseEvents
+          .filter((d) => patientMedIds.has(d.medicationId))
+          .sort((a, b) => b.timestampGiven.localeCompare(a.timestampGiven))
+
+        const groupedHistory = new Map<string, typeof appState.doseEvents>()
+        for (const dose of allPatientDoses) {
+          const date = new Date(dose.timestampGiven)
+          const dateStr = date.toLocaleDateString(undefined, {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          })
+          if (!groupedHistory.has(dateStr)) {
+            groupedHistory.set(dateStr, [])
+          }
+          groupedHistory.get(dateStr)!.push(dose)
+        }
+
+        return (
+          <section className="workflow-section" data-testid="history-view">
+            <section className="history-section">
+              <h2>All dose history for {patient.displayName}</h2>
+              {allPatientDoses.length === 0 ? (
+                <ul className="history-list">
+                  <li className="history-item history-item-empty">No doses logged yet.</li>
+                </ul>
               ) : (
-                recentHistory.map((entry) => (
-                  <li key={entry.id} className="history-item">
-                    <div>
-                      <strong>{medicationById.get(entry.medicationId) ?? 'Unknown medication'}</strong>
-                      <div className="history-tags">
-                        {entry.corrected ? <span className="entry-tag">Corrected</span> : null}
-                        {!entry.corrected && correctionBySupersededId.has(entry.id)
-                          ? <span className="entry-tag entry-tag-muted">Superseded</span>
-                          : null}
-                      </div>
-                    </div>
-                    <span>
-                      {formatAbsoluteDateTime(new Date(entry.timestampGiven))} ({formatRelativeTime(new Date(entry.timestampGiven), now)})
-                    </span>
-                  </li>
+                Array.from(groupedHistory.entries()).map(([dateStr, entries]) => (
+                  <div key={dateStr} className="history-date-group" style={{ marginBottom: '1.5rem' }}>
+                    <h3 style={{ fontSize: '1rem', margin: '0 0 0.65rem', color: 'var(--brand)' }}>{dateStr}</h3>
+                    <ul className="history-list">
+                      {entries.map((entry) => (
+                        <li key={entry.id} className="history-item">
+                          <div>
+                            <strong>{medicationById.get(entry.medicationId) ?? 'Unknown medication'}</strong>
+                            <div className="history-tags">
+                              {entry.corrected ? <span className="entry-tag">Corrected</span> : null}
+                              {!entry.corrected && correctionBySupersededId.has(entry.id)
+                                ? <span className="entry-tag entry-tag-muted">Superseded</span>
+                                : null}
+                            </div>
+                          </div>
+                          <span>
+                            {new Date(entry.timestampGiven).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })} ({formatRelativeTime(new Date(entry.timestampGiven), now)})
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 ))
               )}
-            </ul>
+            </section>
           </section>
-        </section>
-      ) : null}
+        )
+      })() : null}
 
       
       {activeView === 'meds' ? (
@@ -1285,8 +1322,9 @@ function App() {
                 <select
                   data-testid="reminder-minutes-select"
                   value={reminderMinutesInput}
-                  onChange={(event) => setReminderMinutesInput(event.target.value as '10' | '15')}
+                  onChange={(event) => setReminderMinutesInput(event.target.value as '0' | '10' | '15')}
                 >
+                  <option value="0">0</option>
                   <option value="10">10</option>
                   <option value="15">15</option>
                 </select>

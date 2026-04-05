@@ -30,31 +30,38 @@ interface StatusDescriptor {
 
 function describeStatus(status: MedicationStatus): StatusDescriptor {
   if (status.statusLabel === 'available_prn') {
-    return { label: 'available_prn', text: 'Available now (PRN)' }
+    return { label: 'available_prn', text: 'Available now' }
   }
 
   if (status.statusLabel === 'never_taken') {
     return { label: 'never_taken', text: 'Never taken' }
   }
 
+  const formatDuration = (mins: number) => {
+    if (mins < 60) return `${mins} mins`
+    const h = Math.floor(mins / 60)
+    const m = mins % 60
+    return m === 0 ? `${h} hr` : `${h} hr ${m} mins`
+  }
+
   if (status.statusLabel === 'too_early') {
     return {
       label: 'too_early',
-      text: `Too early by ${status.tooEarlyByMinutes ?? 0} min`,
+      text: `Next due: ${formatDuration(status.minutesUntilEligible ?? 0)}`,
     }
   }
 
   if (status.statusLabel === 'overdue') {
     return {
       label: 'overdue',
-      text: `Overdue by ${status.overdueByMinutes ?? 0} min`,
+      text: `Overdue by: ${formatDuration(status.overdueByMinutes ?? 0)}`,
     }
   }
 
   if (status.statusLabel === 'due_soon') {
     return {
       label: 'due_soon',
-      text: `Due soon in ${status.minutesUntilEligible ?? 0} min`,
+      text: `Next due: ${formatDuration(status.minutesUntilEligible ?? 0)}`,
     }
   }
 
