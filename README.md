@@ -2,7 +2,6 @@
   <img src="public/med-minder-icon.svg" width="100" height="100" alt="MedMinder Icon" />
   <h1>MedMinder</h1>
   <p>A beautiful, local-first progressive web app for tracking medication schedules.</p>
-  <p><strong><a href="https://medminder.superdavelab.com">🟢 Try the Live App!</a></strong></p>
 </div>
 
 Med-Minder is a highly responsive, offline-first medication timing tracker built for caregivers. It eliminates the cognitive load of tracking complex medication schedules (intervals, fixed times, PRN, and tapers) by answering a few simple questions at a glance:
@@ -15,6 +14,10 @@ Med-Minder is a highly responsive, offline-first medication timing tracker built
 Built to be installed directly to your phone's home screen as a PWA, it behaves exactly like a native app with zero cloud bloat.
 
 ## 📲 How to Use MedMinder
+
+<div align="center">
+  <p><strong><a href="https://medminder.superdavelab.com">🟢 Try the Live App!</a></strong></p>
+</div>
 
 The link above leads to the fully functional live production build. To get started:
 
