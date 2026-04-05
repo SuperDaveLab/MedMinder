@@ -156,9 +156,20 @@ function App() {
               className="utility-button patient-add-trigger"
               data-testid="open-add-patient-button"
               aria-expanded={isAddPatientFormOpen}
+              aria-label="Add patient"
               onClick={handleOpenAddPatientForm}
             >
-              {isAddPatientFormOpen ? 'Close' : 'Add patient'}
+              {isAddPatientFormOpen ? (
+                <>
+                  <span className="button-label-mobile" aria-hidden="true">×</span>
+                  <span className="button-label-desktop">Close</span>
+                </>
+              ) : (
+                <>
+                  <span className="button-label-mobile" aria-hidden="true">+</span>
+                  <span className="button-label-desktop">Add patient</span>
+                </>
+              )}
             </button>
           </div>
 

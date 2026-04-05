@@ -220,19 +220,22 @@ h2 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: 0.5rem;
   margin-bottom: 0.75rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .medication-section-header h2 {
   margin: 0;
+  min-width: 0;
 }
 
 .medication-add-button {
   background: var(--brand-soft);
   color: var(--brand);
   border-color: transparent;
+  min-width: 44px;
+  padding: 0.55rem 0.75rem;
 }
 
 .med-list-empty {
@@ -828,8 +831,8 @@ h2 {
 .patient-switcher-row {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  flex-wrap: wrap;
+  gap: 0.4rem;
+  flex-wrap: nowrap;
 }
 
 .patient-selector-compact {
@@ -864,6 +867,19 @@ h2 {
   background: var(--brand-soft);
   color: var(--brand);
   border-color: transparent;
+  min-width: 44px;
+  padding: 0.55rem 0.75rem;
+}
+
+.button-label-mobile {
+  display: inline;
+  font-size: 1.2rem;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.button-label-desktop {
+  display: none;
 }
 
 .quick-add-patient-form {
@@ -1030,6 +1046,28 @@ h2 {
 
   .top-app-bar-main {
     max-width: 520px;
+  }
+
+  .patient-switcher-row {
+    gap: 0.6rem;
+  }
+
+  .medication-section-header {
+    gap: 0.75rem;
+  }
+
+  .patient-add-trigger,
+  .medication-add-button {
+    min-width: auto;
+    padding: 0.55rem 0.9rem;
+  }
+
+  .button-label-mobile {
+    display: none;
+  }
+
+  .button-label-desktop {
+    display: inline;
   }
 
   .main-content-scroll {

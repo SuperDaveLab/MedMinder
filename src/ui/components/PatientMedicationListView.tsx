@@ -104,9 +104,11 @@ export function PatientMedicationListView({
           type="button"
           className="utility-button medication-add-button"
           data-testid="care-add-medication-button"
+          aria-label="Add medication"
           onClick={onAddMedication}
         >
-          Add medication
+          <span className="button-label-mobile" aria-hidden="true">+</span>
+          <span className="button-label-desktop">Add medication</span>
         </button>
       </div>
       {medicationStatuses.length === 0 ? (
