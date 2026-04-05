@@ -14,6 +14,14 @@ Med-Minder is a highly responsive, offline-first medication timing tracker built
 
 Built to be installed directly to your phone's home screen as a PWA, it behaves exactly like a native app with zero cloud bloat.
 
+## 📲 How to Use MedMinder
+
+The link above leads to the fully functional live production build. To get started:
+
+1. **Install to your device**: Open the live link on your mobile browser (Safari/Chrome) and select **"Add to Home Screen"**. It will install directly to your device as a native-capable app.
+2. **Make it yours**: A sample patient ("Alex Rivera") is loaded by default so you can see how things work. *It is completely safe to delete this patient and add your own!*
+3. **Your data is your own**: Because MedMinder is architected to be completely local-first, **everything you log is saved exclusively locally on your device**. Deleting the sample data only clears your own local cache, and your personal health data will *never* be sent to our servers.
+
 ### 📱 Screenshots
 
 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
