@@ -8,6 +8,7 @@ interface CareViewProps {
   allMedications: Medication[]
   doseEvents: DoseEvent[]
   now: Date
+  onAddMedication: () => void
   onGiveDose: (medicationId: string) => Promise<void>
   onCorrectDose: (
     originalDoseEventId: string,
@@ -23,6 +24,7 @@ export function CareView({
   allMedications,
   doseEvents,
   now,
+  onAddMedication,
   onGiveDose,
   onCorrectDose,
   actionsDisabled,
@@ -51,6 +53,7 @@ export function CareView({
           medications={medicationsForPatient}
           doseEvents={doseEvents}
           now={now}
+          onAddMedication={onAddMedication}
           onGiveDose={onGiveDose}
           onCorrectDose={onCorrectDose}
           actionsDisabled={actionsDisabled}

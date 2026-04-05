@@ -1,7 +1,8 @@
+import { getMedicationScheduleTypeLabel } from '../domain/types'
 import type { Medication, Patient } from '../domain/types'
 import type { DoseEvent } from '../domain/types'
 import { calculateMedicationSchedule } from '../engine/scheduling'
-import { formatAbsoluteDateTime } from '../ui/time'
+import { formatAbsoluteDateTime, formatDurationMinutesLong } from '../ui/time'
 
 export interface PatientMedicationSummaryRow {
   medicationId: string
@@ -19,34 +20,34 @@ export interface PatientMedicationSummaryRow {
 function describeSchedule(medication: Medication): { type: string; details: string } {
   if (medication.schedule.type === 'interval') {
     return {
-      type: 'interval',
-      details: `Every ${medication.schedule.intervalMinutes} minutes`,
+      type: getMedicationScheduleTypeLabel(medication.schedule.type),
+      details: `Every ${formatDurationMinutesLong(medication.schedule.intervalMinutes)}`,
     }
   }
 
   if (medication.schedule.type === 'fixed_times') {
     return {
-      type: 'fixed_times',
+      type: getMedicationScheduleTypeLabel(medication.schedule.type),
       details: `Times: ${medication.schedule.timesOfDay.join(', ')}`,
     }
   }
 
   if (medication.schedule.type === 'prn') {
     return {
-      type: 'prn',
-      details: `Minimum interval ${medication.schedule.minimumIntervalMinutes} minutes`,
+      type: getMedicationScheduleTypeLabel(medication.schedule.type),
+      details: `Minimum interval ${formatDurationMinutesLong(medication.schedule.minimumIntervalMinutes)}`,
     }
   }
 
   const taperRules = medication.schedule.rules
     .map((rule) => {
       const endPart = rule.endDate ? ` to ${rule.endDate}` : ''
-      return `${rule.startDate}${endPart}: every ${rule.intervalMinutes} minutes`
+      return `${rule.startDate}${endPart}: every ${formatDurationMinutesLong(rule.intervalMinutes)}`
     })
     .join('; ')
 
   return {
-    type: 'taper',
+    type: getMedicationScheduleTypeLabel(medication.schedule.type),
     details: taperRules,
   }
 }

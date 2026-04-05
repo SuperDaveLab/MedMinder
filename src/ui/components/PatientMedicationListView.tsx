@@ -14,6 +14,7 @@ interface PatientMedicationListViewProps {
   doseEvents: DoseEvent[]
   now: Date
   actionsDisabled?: boolean
+  onAddMedication?: () => void
   onGiveDose: (medicationId: string) => void
   onCorrectDose: (
     originalDoseEventId: string,
@@ -82,6 +83,7 @@ export function PatientMedicationListView({
   doseEvents,
   now,
   actionsDisabled,
+  onAddMedication,
   onGiveDose,
   onCorrectDose,
 }: PatientMedicationListViewProps) {
@@ -96,9 +98,19 @@ export function PatientMedicationListView({
 
   return (
     <section className="medication-section">
-      <h2 aria-label={patient.displayName}>{patient.displayName}'s medications</h2>
+      <div className="medication-section-header">
+        <h2 aria-label={patient.displayName}>{patient.displayName}'s medications</h2>
+        <button
+          type="button"
+          className="utility-button medication-add-button"
+          data-testid="care-add-medication-button"
+          onClick={onAddMedication}
+        >
+          Add medication
+        </button>
+      </div>
       {medicationStatuses.length === 0 ? (
-        <p className="med-list-empty">No active medications for this patient. Add one in Admin.</p>
+        <p className="med-list-empty">No active medications for this patient yet.</p>
       ) : null}
       <div className="medication-list">
         {medicationStatuses.map(({ medication, status }) => {

@@ -64,6 +64,122 @@ describe('App administration flow', () => {
     })
   })
 
+  it('shows friendly schedule type labels in the medication form', async () => {
+    const user = userEvent.setup()
+
+    render(<App />)
+    await screen.findByRole('option', { name: 'Alex Rivera' })
+    await user.click(screen.getByTestId('tab-meds'))
+
+    const scheduleTypeSelect = screen.getByTestId('medication-schedule-type-select')
+
+    expect(within(scheduleTypeSelect).getByRole('option', { name: 'Every X hours' })).toBeTruthy()
+    expect(within(scheduleTypeSelect).getByRole('option', { name: 'Specific times of day' })).toBeTruthy()
+    expect(within(scheduleTypeSelect).getByRole('option', { name: 'As needed (PRN)' })).toBeTruthy()
+    expect(within(scheduleTypeSelect).getByRole('option', { name: 'Taper schedule' })).toBeTruthy()
+  })
+
+  it('uses a friendlier fixed-times editor for specific times of day', async () => {
+    const user = userEvent.setup()
+
+    render(<App />)
+    await screen.findByRole('option', { name: 'Alex Rivera' })
+    await user.click(screen.getByTestId('tab-meds'))
+
+    await user.selectOptions(
+      screen.getByTestId('medication-schedule-type-select'),
+      'fixed_times',
+    )
+
+    expect(screen.getByTestId('fixed-times-editor')).toBeTruthy()
+    expect((screen.getByTestId('fixed-time-input-0') as HTMLInputElement).value).toBe('08:00')
+    expect((screen.getByTestId('fixed-time-input-1') as HTMLInputElement).value).toBe('20:00')
+
+    await user.click(screen.getByTestId('add-fixed-time-button'))
+    expect((screen.getByTestId('fixed-time-input-2') as HTMLInputElement).value).toBe('12:00')
+
+    await user.clear(screen.getByTestId('fixed-time-input-1'))
+    await user.type(screen.getByTestId('fixed-time-input-1'), '14:30')
+    await user.click(screen.getByTestId('remove-fixed-time-button-0'))
+
+    await user.type(screen.getByTestId('medication-name-input'), 'Midday antibiotic')
+    await user.type(screen.getByTestId('medication-default-dose-input'), '1 tablet')
+    await user.click(screen.getByTestId('save-medication-button'))
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Midday antibiotic').length).toBeGreaterThan(0)
+    })
+  })
+
+  it('adds a patient from the header picker and selects them', async () => {
+    const user = userEvent.setup()
+
+    render(<App />)
+
+    await screen.findByRole('option', { name: 'Alex Rivera' })
+
+    await user.click(screen.getByTestId('open-add-patient-button'))
+    await user.type(screen.getByTestId('header-patient-display-name-input'), 'Jordan Lee')
+    await user.click(screen.getByTestId('header-save-patient-button'))
+
+    await waitFor(() => {
+      expect(screen.getByRole('option', { name: 'Jordan Lee' })).toBeTruthy()
+    })
+
+    const patientSelect = screen.getByRole('combobox', { name: 'Selected patient' })
+    const selectedOption = within(patientSelect).getByRole('option', { name: 'Jordan Lee' }) as HTMLOptionElement
+
+    expect(selectedOption.selected).toBe(true)
+    expect(screen.queryByTestId('header-patient-display-name-input')).toBeNull()
+
+    await user.click(screen.getByTestId('tab-care'))
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Jordan Lee' })).toBeTruthy()
+    })
+  })
+
+  it('opens the medication form from the patient medications view', async () => {
+    const user = userEvent.setup()
+
+    render(<App />)
+
+    await screen.findByRole('option', { name: 'Alex Rivera' })
+
+    await user.click(screen.getByTestId('open-add-patient-button'))
+    await user.type(screen.getByTestId('header-patient-display-name-input'), 'Taylor Brooks')
+    await user.click(screen.getByTestId('header-save-patient-button'))
+
+    await user.click(screen.getByTestId('tab-care'))
+    await screen.findByRole('heading', { name: 'Taylor Brooks' })
+
+    await user.click(screen.getByTestId('care-add-medication-button'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('meds-view')).toBeTruthy()
+    })
+
+    expect((screen.getByTestId('interval-unit-select') as HTMLSelectElement).value).toBe('hours')
+    expect((screen.getByTestId('interval-value-input') as HTMLInputElement).step).toBe('0.25')
+    expect(screen.queryByRole('option', { name: 'days' })).toBeNull()
+
+    await user.type(screen.getByTestId('medication-name-input'), 'Vitamin D')
+    await user.type(screen.getByTestId('medication-default-dose-input'), '1 tablet')
+    await user.clear(screen.getByTestId('interval-value-input'))
+    await user.type(screen.getByTestId('interval-value-input'), '24')
+    await user.click(screen.getByTestId('save-medication-button'))
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Vitamin D').length).toBeGreaterThan(0)
+    })
+
+    await user.click(screen.getByTestId('tab-care'))
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Vitamin D').length).toBeGreaterThan(0)
+    })
+  })
+
   it('edits an existing patient', async () => {
     const user = userEvent.setup()
 
@@ -102,10 +218,13 @@ describe('App administration flow', () => {
     await screen.findByRole('option', { name: 'Alex Rivera' })
     await user.click(screen.getByTestId('tab-meds'))
 
+    expect((screen.getByTestId('interval-unit-select') as HTMLSelectElement).value).toBe('hours')
+    expect((screen.getByTestId('interval-value-input') as HTMLInputElement).step).toBe('0.25')
+
     await user.type(screen.getByTestId('medication-name-input'), 'Vitamin D')
     await user.type(screen.getByTestId('medication-default-dose-input'), '1 tablet')
-    await user.clear(screen.getByTestId('interval-minutes-input'))
-    await user.type(screen.getByTestId('interval-minutes-input'), '1440')
+    await user.clear(screen.getByTestId('interval-value-input'))
+    await user.type(screen.getByTestId('interval-value-input'), '24')
     await user.click(screen.getByTestId('save-medication-button'))
 
     await waitFor(() => {

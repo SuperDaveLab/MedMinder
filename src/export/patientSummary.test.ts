@@ -48,7 +48,7 @@ describe('patient summary export helpers', () => {
 
     expect(rows).toHaveLength(1)
     expect(rows[0].name).toBe('Amoxicillin')
-    expect(rows[0].scheduleType).toBe('interval')
+    expect(rows[0].scheduleType).toBe('Every X hours')
     expect(rows[0].currentStatus).toContain('Too early by')
     expect(rows[0].reminderSetting).toContain('Enabled')
   })
@@ -69,7 +69,8 @@ describe('patient summary export helpers', () => {
     expect(summaryText).toContain('Includes active medications only.')
     expect(summaryText).toContain('Patient: Alex Rivera')
     expect(summaryText).toContain('Amoxicillin')
-    expect(summaryText).toContain('Schedule details: Every 480 minutes')
+    expect(summaryText).toContain('Schedule type: Every X hours')
+    expect(summaryText).toContain('Schedule details: Every 8 hours')
     expect(summaryText).toContain('Reminder: Enabled (10 min early)')
   })
 

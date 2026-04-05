@@ -5,6 +5,25 @@ export type LocalDateString = string
 // Time-of-day string in HH:mm format, for example: 08:45
 export type TimeOfDayHHmm = string
 
+export const medicationScheduleTypes = ['interval', 'fixed_times', 'prn', 'taper'] as const
+export type MedicationScheduleType = (typeof medicationScheduleTypes)[number]
+
+export interface MedicationScheduleTypeOption {
+  value: MedicationScheduleType
+  label: string
+}
+
+export const medicationScheduleTypeOptions: MedicationScheduleTypeOption[] = [
+  { value: 'interval', label: 'Every X hours' },
+  { value: 'fixed_times', label: 'Specific times of day' },
+  { value: 'prn', label: 'As needed (PRN)' },
+  { value: 'taper', label: 'Taper schedule' },
+]
+
+export function getMedicationScheduleTypeLabel(type: MedicationScheduleType): string {
+  return medicationScheduleTypeOptions.find((option) => option.value === type)?.label ?? type
+}
+
 export interface Patient {
   id: string
   displayName: string
@@ -60,7 +79,7 @@ export type MedicationStatusLabel =
 
 // Computed view model state, not a persisted domain record.
 export interface MedicationStatus {
-  scheduleType: MedicationSchedule['type']
+  scheduleType: MedicationScheduleType
   lastGivenAt?: ISODateString
   nextEligibleAt?: ISODateString
   eligibleNow: boolean

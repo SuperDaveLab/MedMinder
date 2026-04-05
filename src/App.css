@@ -216,6 +216,25 @@ h2 {
   gap: 0.75rem;
 }
 
+.medication-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.medication-section-header h2 {
+  margin: 0;
+}
+
+.medication-add-button {
+  background: var(--brand-soft);
+  color: var(--brand);
+  border-color: transparent;
+}
+
 .med-list-empty {
   margin: 0 0 0.5rem;
   color: var(--muted);
@@ -521,6 +540,49 @@ h2 {
   flex-wrap: wrap;
 }
 
+.duration-input-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(120px, 1fr);
+  gap: 0.75rem;
+}
+
+.fixed-times-editor {
+  display: grid;
+  gap: 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0.75rem;
+  background: #fbfdff;
+}
+
+.fixed-times-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.fixed-times-help {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.fixed-times-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.fixed-time-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.6rem;
+  align-items: end;
+}
+
 .form-error {
   margin: 0;
   color: var(--alert);
@@ -603,6 +665,11 @@ h2 {
   .dose-button,
   .utility-button {
     min-height: 44px;
+  }
+
+  .fixed-time-row,
+  .duration-input-row {
+    grid-template-columns: 1fr;
   }
 
   .admin-item {
@@ -751,6 +818,20 @@ h2 {
   z-index: 10;
 }
 
+.top-app-bar-main {
+  display: grid;
+  gap: 0.55rem;
+  flex: 1 1 360px;
+  min-width: min(100%, 320px);
+}
+
+.patient-switcher-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
 .patient-selector-compact {
   display: flex;
   align-items: center;
@@ -759,6 +840,8 @@ h2 {
   padding: 0.35rem 0.6rem;
   border-radius: 999px;
   border: 1px solid var(--line);
+  flex: 1 1 220px;
+  min-width: 0;
 }
 
 .patient-selector-compact select {
@@ -769,10 +852,57 @@ h2 {
   color: var(--ink);
   outline: none;
   cursor: pointer;
+  min-width: 0;
+  width: 100%;
 }
 
 .patient-avatar {
   font-size: 1.1rem;
+}
+
+.patient-add-trigger {
+  background: var(--brand-soft);
+  color: var(--brand);
+  border-color: transparent;
+}
+
+.quick-add-patient-form {
+  display: grid;
+  gap: 0.6rem;
+  width: min(420px, 100%);
+  padding: 0.8rem;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: #ffffff;
+  box-shadow: 0 14px 28px -22px rgba(15, 23, 42, 0.35);
+}
+
+.quick-add-patient-field {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.quick-add-patient-field input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.7rem 0.8rem;
+  font: inherit;
+  color: var(--ink);
+  background: #ffffff;
+}
+
+.quick-add-patient-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.quick-add-patient-error {
+  margin: 0;
 }
 
 .header-error {
@@ -896,6 +1026,10 @@ h2 {
     padding: 1rem 1.5rem;
     box-shadow: none;
     border-bottom: 1px solid var(--line);
+  }
+
+  .top-app-bar-main {
+    max-width: 520px;
   }
 
   .main-content-scroll {

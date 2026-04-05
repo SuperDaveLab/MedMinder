@@ -1,17 +1,49 @@
 import { useState } from 'react'
-import type { LocalDateString, Medication, MedicationSchedule, TimeOfDayHHmm } from '../../domain/types'
+import {
+  getMedicationScheduleTypeLabel,
+  medicationScheduleTypeOptions,
+} from '../../domain/types'
+import type {
+  LocalDateString,
+  Medication,
+  MedicationSchedule,
+  MedicationScheduleType,
+  TimeOfDayHHmm,
+} from '../../domain/types'
 import {
   createMedication,
   deactivateMedication,
   deleteMedicationCascade,
   updateMedication,
 } from '../../storage/repository'
+import {
+  durationMinutesToValue,
+  durationValueToMinutes,
+} from '../../ui/time'
 
 interface MedsViewProps {
   selectedPatientId: string | null
   medicationsForAdministration: Medication[]
   onDataChanged: (preferredPatientId?: string | null) => Promise<void>
   onUiError: (message: string | null) => void
+}
+
+const medicationDurationUnits: Array<'minutes' | 'hours'> = ['minutes', 'hours']
+
+function chooseMedicationDurationUnit(totalMinutes: number): 'minutes' | 'hours' {
+  if (totalMinutes > 0 && totalMinutes % 60 === 0) {
+    return 'hours'
+  }
+
+  return 'minutes'
+}
+
+function getDurationInputStep(unit: 'minutes' | 'hours'): number {
+  return unit === 'hours' ? 0.25 : 15
+}
+
+function getDurationInputMin(unit: 'minutes' | 'hours'): number {
+  return unit === 'hours' ? 0.25 : 15
 }
 
 function isLocalDateString(value: string): value is LocalDateString {
@@ -38,6 +70,10 @@ function scheduleToTaperText(schedule: MedicationSchedule): string {
     .join('\n')
 }
 
+function createDefaultFixedTimes(): TimeOfDayHHmm[] {
+  return ['08:00', '20:00']
+}
+
 export function MedsView({
   selectedPatientId,
   medicationsForAdministration,
@@ -49,10 +85,12 @@ export function MedsView({
   const [medicationStrengthInput, setMedicationStrengthInput] = useState('')
   const [medicationDefaultDoseInput, setMedicationDefaultDoseInput] = useState('')
   const [medicationInstructionsInput, setMedicationInstructionsInput] = useState('')
-  const [scheduleTypeInput, setScheduleTypeInput] = useState<MedicationSchedule['type']>('interval')
-  const [intervalMinutesInput, setIntervalMinutesInput] = useState('480')
-  const [fixedTimesInput, setFixedTimesInput] = useState('08:00, 20:00')
-  const [prnMinimumIntervalInput, setPrnMinimumIntervalInput] = useState('360')
+  const [scheduleTypeInput, setScheduleTypeInput] = useState<MedicationScheduleType>('interval')
+  const [intervalValueInput, setIntervalValueInput] = useState('8')
+  const [intervalUnitInput, setIntervalUnitInput] = useState<'minutes' | 'hours'>('hours')
+  const [fixedTimesInput, setFixedTimesInput] = useState<TimeOfDayHHmm[]>(createDefaultFixedTimes)
+  const [prnMinimumIntervalValueInput, setPrnMinimumIntervalValueInput] = useState('6')
+  const [prnMinimumIntervalUnitInput, setPrnMinimumIntervalUnitInput] = useState<'minutes' | 'hours'>('hours')
   const [taperRulesInput, setTaperRulesInput] = useState('')
   const [reminderEnabledInput, setReminderEnabledInput] = useState(true)
   const [reminderMinutesInput, setReminderMinutesInput] = useState<'0' | '10' | '15'>('0')
@@ -63,12 +101,59 @@ export function MedsView({
   const supportsAlarmForSchedule =
     scheduleTypeInput === 'interval' || scheduleTypeInput === 'fixed_times'
 
+  const parseDurationMinutes = (
+    rawValue: string,
+    unit: 'minutes' | 'hours',
+    errorMessage: string,
+  ): number | null => {
+    const durationValue = Number.parseFloat(rawValue)
+
+    if (!Number.isFinite(durationValue) || durationValue <= 0) {
+      setMedicationFormError(errorMessage)
+      return null
+    }
+
+    const totalMinutes = durationValueToMinutes(durationValue, unit)
+
+    if (!Number.isFinite(totalMinutes) || totalMinutes <= 0) {
+      setMedicationFormError(errorMessage)
+      return null
+    }
+
+    return totalMinutes
+  }
+
+  const updateFixedTimeInput = (index: number, value: string) => {
+    setFixedTimesInput((current) =>
+      current.map((timeValue, timeIndex) =>
+        timeIndex === index ? value : timeValue,
+      ) as TimeOfDayHHmm[],
+    )
+  }
+
+  const addFixedTimeInput = () => {
+    setFixedTimesInput((current) => [...current, '12:00'])
+  }
+
+  const removeFixedTimeInput = (index: number) => {
+    setFixedTimesInput((current) => {
+      if (current.length <= 1) {
+        return current
+      }
+
+      return current.filter((_, timeIndex) => timeIndex !== index)
+    })
+  }
+
   const buildMedicationScheduleFromForm = (): MedicationSchedule | null => {
     if (scheduleTypeInput === 'interval') {
-      const intervalMinutes = Number.parseInt(intervalMinutesInput, 10)
+      const intervalMinutes = parseDurationMinutes(
+        intervalValueInput,
+        intervalUnitInput,
+        'Interval must be a positive number.',
+      )
 
-      if (!Number.isFinite(intervalMinutes) || intervalMinutes <= 0) {
-        setMedicationFormError('Interval minutes must be a positive number.')
+      if (intervalMinutes === null) {
         return null
       }
 
@@ -80,7 +165,6 @@ export function MedsView({
 
     if (scheduleTypeInput === 'fixed_times') {
       const times = fixedTimesInput
-        .split(',')
         .map((value) => value.trim())
         .filter((value) => value.length > 0)
 
@@ -101,10 +185,13 @@ export function MedsView({
     }
 
     if (scheduleTypeInput === 'prn') {
-      const minimumIntervalMinutes = Number.parseInt(prnMinimumIntervalInput, 10)
+      const minimumIntervalMinutes = parseDurationMinutes(
+        prnMinimumIntervalValueInput,
+        prnMinimumIntervalUnitInput,
+        'PRN minimum interval must be a positive number.',
+      )
 
-      if (!Number.isFinite(minimumIntervalMinutes) || minimumIntervalMinutes <= 0) {
-        setMedicationFormError('PRN minimum interval must be a positive number.')
+      if (minimumIntervalMinutes === null) {
         return null
       }
 
@@ -163,15 +250,21 @@ export function MedsView({
     setMedicationFormError(null)
 
     if (medication.schedule.type === 'interval') {
-      setIntervalMinutesInput(String(medication.schedule.intervalMinutes))
+      const intervalUnit = chooseMedicationDurationUnit(medication.schedule.intervalMinutes)
+      setIntervalUnitInput(intervalUnit)
+      setIntervalValueInput(durationMinutesToValue(medication.schedule.intervalMinutes, intervalUnit))
     }
 
     if (medication.schedule.type === 'fixed_times') {
-      setFixedTimesInput(medication.schedule.timesOfDay.join(', '))
+      setFixedTimesInput(medication.schedule.timesOfDay)
     }
 
     if (medication.schedule.type === 'prn') {
-      setPrnMinimumIntervalInput(String(medication.schedule.minimumIntervalMinutes))
+      const prnUnit = chooseMedicationDurationUnit(medication.schedule.minimumIntervalMinutes)
+      setPrnMinimumIntervalUnitInput(prnUnit)
+      setPrnMinimumIntervalValueInput(
+        durationMinutesToValue(medication.schedule.minimumIntervalMinutes, prnUnit),
+      )
     }
 
     if (medication.schedule.type === 'taper') {
@@ -190,9 +283,11 @@ export function MedsView({
     setMedicationDefaultDoseInput('')
     setMedicationInstructionsInput('')
     setScheduleTypeInput('interval')
-    setIntervalMinutesInput('480')
-    setFixedTimesInput('08:00, 20:00')
-    setPrnMinimumIntervalInput('360')
+    setIntervalValueInput('8')
+    setIntervalUnitInput('hours')
+    setFixedTimesInput(createDefaultFixedTimes())
+    setPrnMinimumIntervalValueInput('6')
+    setPrnMinimumIntervalUnitInput('hours')
     setTaperRulesInput('')
     setReminderEnabledInput(true)
     setReminderMinutesInput('0')
@@ -371,48 +466,109 @@ export function MedsView({
           <select
             data-testid="medication-schedule-type-select"
             value={scheduleTypeInput}
-            onChange={(event) => setScheduleTypeInput(event.target.value as MedicationSchedule['type'])}
+            onChange={(event) => setScheduleTypeInput(event.target.value as MedicationScheduleType)}
           >
-            <option value="interval">interval</option>
-            <option value="fixed_times">fixed_times</option>
-            <option value="prn">prn</option>
-            <option value="taper">taper</option>
+            {medicationScheduleTypeOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {getMedicationScheduleTypeLabel(option.value)}
+              </option>
+            ))}
           </select>
         </label>
         {scheduleTypeInput === 'interval' ? (
-          <label>
-            Interval minutes
-            <input
-              data-testid="interval-minutes-input"
-              type="number"
-              min={1}
-              value={intervalMinutesInput}
-              onChange={(event) => setIntervalMinutesInput(event.target.value)}
-            />
-          </label>
+          <div className="duration-input-row">
+            <label>
+              Interval
+              <input
+                data-testid="interval-value-input"
+                type="number"
+                min={getDurationInputMin(intervalUnitInput)}
+                step={getDurationInputStep(intervalUnitInput)}
+                value={intervalValueInput}
+                onChange={(event) => setIntervalValueInput(event.target.value)}
+              />
+            </label>
+            <label>
+              Unit
+              <select
+                data-testid="interval-unit-select"
+                value={intervalUnitInput}
+                onChange={(event) => setIntervalUnitInput(event.target.value as 'minutes' | 'hours')}
+              >
+                {medicationDurationUnits.map((unit) => (
+                  <option key={unit} value={unit}>{unit}</option>
+                ))}
+              </select>
+            </label>
+          </div>
         ) : null}
         {scheduleTypeInput === 'fixed_times' ? (
-          <label>
-            Fixed times (comma-separated HH:mm)
-            <input
-              data-testid="fixed-times-input"
-              type="text"
-              value={fixedTimesInput}
-              onChange={(event) => setFixedTimesInput(event.target.value)}
-            />
-          </label>
+          <div className="fixed-times-editor" data-testid="fixed-times-editor">
+            <div className="fixed-times-editor-header">
+              <span>Specific times</span>
+              <button
+                type="button"
+                className="utility-button"
+                data-testid="add-fixed-time-button"
+                onClick={addFixedTimeInput}
+              >
+                Add time
+              </button>
+            </div>
+            <p className="fixed-times-help">Use one time per dose window. Quarter-hour steps keep entry simple.</p>
+            <div className="fixed-times-list">
+              {fixedTimesInput.map((timeValue, index) => (
+                <div key={`${index}-${timeValue}`} className="fixed-time-row">
+                  <label>
+                    <span>Time {index + 1}</span>
+                    <input
+                      data-testid={`fixed-time-input-${index}`}
+                      type="time"
+                      step={900}
+                      value={timeValue}
+                      onChange={(event) => updateFixedTimeInput(index, event.target.value)}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    className="utility-button"
+                    data-testid={`remove-fixed-time-button-${index}`}
+                    disabled={fixedTimesInput.length <= 1}
+                    onClick={() => removeFixedTimeInput(index)}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
         ) : null}
         {scheduleTypeInput === 'prn' ? (
-          <label>
-            Minimum interval minutes
-            <input
-              data-testid="prn-minimum-interval-input"
-              type="number"
-              min={1}
-              value={prnMinimumIntervalInput}
-              onChange={(event) => setPrnMinimumIntervalInput(event.target.value)}
-            />
-          </label>
+          <div className="duration-input-row">
+            <label>
+              Minimum interval
+              <input
+                data-testid="prn-minimum-interval-value-input"
+                type="number"
+                min={getDurationInputMin(prnMinimumIntervalUnitInput)}
+                step={getDurationInputStep(prnMinimumIntervalUnitInput)}
+                value={prnMinimumIntervalValueInput}
+                onChange={(event) => setPrnMinimumIntervalValueInput(event.target.value)}
+              />
+            </label>
+            <label>
+              Unit
+              <select
+                data-testid="prn-minimum-interval-unit-select"
+                value={prnMinimumIntervalUnitInput}
+                onChange={(event) => setPrnMinimumIntervalUnitInput(event.target.value as 'minutes' | 'hours')}
+              >
+                {medicationDurationUnits.map((unit) => (
+                  <option key={unit} value={unit}>{unit}</option>
+                ))}
+              </select>
+            </label>
+          </div>
         ) : null}
         {scheduleTypeInput === 'taper' ? (
           <label>

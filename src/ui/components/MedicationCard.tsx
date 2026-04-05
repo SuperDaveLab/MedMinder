@@ -1,7 +1,11 @@
 import { useMemo, useState } from 'react'
 import type { Medication } from '../../domain/types'
 import type { DoseEvent, MedicationStatusLabel } from '../../domain/types'
-import { formatAbsoluteDateTime, formatRelativeTime } from '../time'
+import {
+  formatAbsoluteDateTime,
+  formatDurationMinutesCompact,
+  formatRelativeTime,
+} from '../time'
 
 interface MedicationCardProps {
   medication: Medication
@@ -21,27 +25,12 @@ interface MedicationCardProps {
 }
 
 function renderScheduleLabel(medication: Medication): string {
-  const formatDurationMinutes = (totalMinutes: number): string => {
-    const hours = Math.floor(totalMinutes / 60)
-    const minutes = totalMinutes % 60
-
-    if (hours > 0 && minutes > 0) {
-      return `${hours}h ${minutes}m`
-    }
-
-    if (hours > 0) {
-      return `${hours}h`
-    }
-
-    return `${minutes}m`
-  }
-
   if (medication.schedule.type === 'interval') {
-    return `Fixed interval: every ${formatDurationMinutes(medication.schedule.intervalMinutes)}`
+    return `Fixed interval: every ${formatDurationMinutesCompact(medication.schedule.intervalMinutes)}`
   }
 
   if (medication.schedule.type === 'prn') {
-    return `PRN lockout: ${formatDurationMinutes(medication.schedule.minimumIntervalMinutes)} minimum`
+    return `PRN lockout: ${formatDurationMinutesCompact(medication.schedule.minimumIntervalMinutes)} minimum`
   }
 
   if (medication.schedule.type === 'fixed_times') {

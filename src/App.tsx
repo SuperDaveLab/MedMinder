@@ -1,3 +1,4 @@
+import { useState, type FormEvent } from 'react'
 import { useAppData } from './hooks/useAppData'
 import { useAppShell } from './hooks/useAppShell'
 import { CareView } from './features/care/CareView'
@@ -16,10 +17,16 @@ function App() {
     isDoseActionInProgress,
     refreshSelectedPatientView,
     handlePatientChange,
+    handleCreatePatient,
     handleLogDoseNow,
     handleCorrectDose,
     setUiError,
   } = useAppData()
+
+  const [isAddPatientFormOpen, setIsAddPatientFormOpen] = useState(false)
+  const [newPatientDisplayName, setNewPatientDisplayName] = useState('')
+  const [newPatientError, setNewPatientError] = useState<string | null>(null)
+  const [isAddPatientInProgress, setIsAddPatientInProgress] = useState(false)
 
   const {
     activeView,
@@ -37,6 +44,47 @@ function App() {
     snoozeActiveAlarm,
     triggerAlarmPreview,
   } = useAppShell({ appState, now })
+
+  const resetAddPatientForm = () => {
+    setIsAddPatientFormOpen(false)
+    setNewPatientDisplayName('')
+    setNewPatientError(null)
+  }
+
+  const handleOpenAddPatientForm = () => {
+    setUiError(null)
+    setNewPatientError(null)
+    setIsAddPatientFormOpen((current) => !current)
+  }
+
+  const handleAddPatientSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+
+    if (isAddPatientInProgress) {
+      return
+    }
+
+    const displayName = newPatientDisplayName.trim()
+
+    if (!displayName) {
+      setNewPatientError('Patient display name is required.')
+      return
+    }
+
+    try {
+      setUiError(null)
+      setNewPatientError(null)
+      setIsAddPatientInProgress(true)
+      await handleCreatePatient(displayName)
+      resetAddPatientForm()
+    } catch (error) {
+      setNewPatientError(
+        error instanceof Error ? error.message : 'Unable to add patient right now.',
+      )
+    } finally {
+      setIsAddPatientInProgress(false)
+    }
+  }
 
   if (!appState) {
     return (
@@ -89,14 +137,66 @@ function App() {
   return (
     <div className="layout-root">
       <header className="top-app-bar no-print">
-        <label className="patient-selector-compact">
-          <span className="patient-avatar" aria-hidden="true">👤</span>
-          <select value={patient.id} onChange={(event) => void handlePatientChange(event.target.value)}>
-            {appState.patients.map((item) => (
-              <option key={item.id} value={item.id}>{item.displayName}</option>
-            ))}
-          </select>
-        </label>
+        <div className="top-app-bar-main">
+          <div className="patient-switcher-row">
+            <label className="patient-selector-compact">
+              <span className="patient-avatar" aria-hidden="true">👤</span>
+              <select
+                aria-label="Selected patient"
+                value={patient.id}
+                onChange={(event) => void handlePatientChange(event.target.value)}
+              >
+                {appState.patients.map((item) => (
+                  <option key={item.id} value={item.id}>{item.displayName}</option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              className="utility-button patient-add-trigger"
+              data-testid="open-add-patient-button"
+              aria-expanded={isAddPatientFormOpen}
+              onClick={handleOpenAddPatientForm}
+            >
+              {isAddPatientFormOpen ? 'Close' : 'Add patient'}
+            </button>
+          </div>
+
+          {isAddPatientFormOpen ? (
+            <form className="quick-add-patient-form" onSubmit={(event) => void handleAddPatientSubmit(event)}>
+              <label className="quick-add-patient-field">
+                <span>New patient name</span>
+                <input
+                  data-testid="header-patient-display-name-input"
+                  type="text"
+                  value={newPatientDisplayName}
+                  onChange={(event) => setNewPatientDisplayName(event.target.value)}
+                  placeholder="Add patient name"
+                  autoFocus
+                />
+              </label>
+              {newPatientError ? <p className="form-error quick-add-patient-error">{newPatientError}</p> : null}
+              <div className="quick-add-patient-actions">
+                <button
+                  type="submit"
+                  className="utility-button"
+                  data-testid="header-save-patient-button"
+                  disabled={isAddPatientInProgress}
+                >
+                  {isAddPatientInProgress ? 'Adding...' : 'Save patient'}
+                </button>
+                <button
+                  type="button"
+                  className="utility-button"
+                  disabled={isAddPatientInProgress}
+                  onClick={resetAddPatientForm}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : null}
+        </div>
         {uiError ? <p className="header-error">{uiError}</p> : null}
         {activeAlarm ? (
           <section className="alarm-banner" data-testid="alarm-banner">
@@ -143,6 +243,7 @@ function App() {
             allMedications={appState.medications}
             doseEvents={appState.doseEvents}
             now={now}
+            onAddMedication={() => setView('meds')}
             onGiveDose={handleLogDoseNow}
             onCorrectDose={handleCorrectDose}
             actionsDisabled={isDoseActionInProgress}

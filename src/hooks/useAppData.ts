@@ -3,6 +3,7 @@ import type { DoseEvent, MedMinderState } from '../domain/types'
 import {
   addDoseEvent,
   createDoseCorrectionEvent,
+  createPatient,
   ensureSeeded,
   getLastSelectedPatientId,
   getPatients,
@@ -27,6 +28,7 @@ export interface UseAppDataResult {
   isDoseActionInProgress: boolean
   refreshSelectedPatientView: (preferredPatientId?: string | null) => Promise<void>
   handlePatientChange: (patientId: string) => Promise<void>
+  handleCreatePatient: (displayName: string, notes?: string) => Promise<void>
   handleLogDoseNow: (medicationId: string) => Promise<void>
   handleCorrectDose: (
     originalDoseEventId: string,
@@ -146,6 +148,17 @@ export function useAppData(): UseAppDataResult {
     }
   }
 
+  const handleCreatePatient = async (displayName: string, notes?: string) => {
+    setUiError(null)
+
+    const createdPatient = await createPatient({
+      displayName,
+      notes,
+    })
+
+    await refreshSelectedPatientView(createdPatient.id)
+  }
+
   const handleCorrectDose = async (
     originalDoseEventId: string,
     replacementTimestampGiven: string,
@@ -183,6 +196,7 @@ export function useAppData(): UseAppDataResult {
     isDoseActionInProgress,
     refreshSelectedPatientView,
     handlePatientChange,
+    handleCreatePatient,
     handleLogDoseNow,
     handleCorrectDose,
     setUiError,
