@@ -121,3 +121,10 @@ Do not add a backend unless explicitly requested.
 
 ## When Unsure
 Choose the simplest implementation that preserves correctness, readability, and testability.
+
+## Deployment Workflow
+- For production deploy requests, follow `docs/deployment-runbook.md`.
+- Treat deploys as a release action, not a coding task: verify tests/lint/build first.
+- Do not guess server paths, hostnames, or credentials.
+- If deploy variables are missing, ask for them explicitly.
+- Prefer atomic release patterns (timestamped release folder + `current` symlink) with rollback capability.
