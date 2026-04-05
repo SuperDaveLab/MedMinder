@@ -5,6 +5,7 @@ import {
   filterUnsentReminderCandidates,
   getReminderPermissionState,
 } from '../reminders/notifications'
+import { buildInAppAlarmCandidates, type AlarmCandidate } from '../reminders/alarms'
 import {
   getReminderNotificationLog,
   saveReminderNotificationLog,
@@ -60,6 +61,9 @@ interface UseAppShellParams {
   now: Date
 }
 
+const ALARM_REPEAT_MS = 20_000
+const ALARM_SNOOZE_MINUTES = 5
+
 export function useAppShell({ appState, now }: UseAppShellParams) {
   const [notificationPermission, setNotificationPermission] = useState(getReminderPermissionState())
   const [activeView, setActiveView] = useState<AppView>(getInitialViewFromUrl())
@@ -71,11 +75,55 @@ export function useAppShell({ appState, now }: UseAppShellParams) {
   const [, setInstallHint] = useState<string | null>(null)
   const [isWakeLockActive, setIsWakeLockActive] = useState(false)
   const [, setWakeLockMessage] = useState<string | null>(null)
+  const [activeAlarm, setActiveAlarm] = useState<AlarmCandidate | null>(null)
 
   const reminderRunInFlightRef = useRef(false)
   const sentReminderKeysRef = useRef<Set<string>>(new Set())
+  const acknowledgedAlarmKeysRef = useRef<Set<string>>(new Set())
+  const snoozedAlarmKeysRef = useRef<Map<string, number>>(new Map())
+  const audioContextRef = useRef<AudioContext | null>(null)
   const wakeLockRef = useRef<WakeLockSentinelLike | null>(null)
   const wakeLockSupported = Boolean((navigator as Navigator & NavigatorWithWakeLock).wakeLock)
+
+  const playAlarmPulse = useCallback(async () => {
+    if (typeof window === 'undefined' || typeof window.AudioContext === 'undefined') {
+      return
+    }
+
+    const context = audioContextRef.current ?? new window.AudioContext()
+    audioContextRef.current = context
+
+    if (context.state === 'suspended') {
+      await context.resume()
+    }
+
+    const oscillator = context.createOscillator()
+    const gainNode = context.createGain()
+
+    oscillator.type = 'sine'
+    oscillator.frequency.value = 880
+    gainNode.gain.value = 0.001
+
+    oscillator.connect(gainNode)
+    gainNode.connect(context.destination)
+
+    const startAt = context.currentTime
+    gainNode.gain.exponentialRampToValueAtTime(0.12, startAt + 0.02)
+    gainNode.gain.exponentialRampToValueAtTime(0.001, startAt + 0.35)
+
+    oscillator.start(startAt)
+    oscillator.stop(startAt + 0.38)
+  }, [])
+
+  const triggerAlarmPulse = useCallback(() => {
+    void playAlarmPulse().catch(() => {
+      // ignore audio failures when browser blocks autoplay
+    })
+
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+      navigator.vibrate([300, 160, 300])
+    }
+  }, [playAlarmPulse])
 
   useEffect(() => {
     const nav = window.navigator as Navigator & { standalone?: boolean }
@@ -242,6 +290,85 @@ export function useAppShell({ appState, now }: UseAppShellParams) {
     void checkAndSendReminders(appState, now)
   }, [appState, now, checkAndSendReminders])
 
+  useEffect(() => {
+    if (!appState) {
+      setActiveAlarm(null)
+      return
+    }
+
+    const nowTimestamp = now.getTime()
+    const candidates = buildInAppAlarmCandidates(
+      appState.medications,
+      appState.doseEvents,
+      now,
+    )
+
+    for (const [key, snoozedUntil] of snoozedAlarmKeysRef.current.entries()) {
+      if (snoozedUntil <= nowTimestamp) {
+        snoozedAlarmKeysRef.current.delete(key)
+      }
+    }
+
+    const nextAlarm = candidates.find((candidate) => {
+      if (acknowledgedAlarmKeysRef.current.has(candidate.dedupeKey)) {
+        return false
+      }
+
+      const snoozedUntil = snoozedAlarmKeysRef.current.get(candidate.dedupeKey)
+      return !snoozedUntil || snoozedUntil <= nowTimestamp
+    }) ?? null
+
+    setActiveAlarm((previousAlarm) => {
+      if (!nextAlarm) {
+        return null
+      }
+
+      if (previousAlarm?.dedupeKey === nextAlarm.dedupeKey) {
+        return previousAlarm
+      }
+
+      return nextAlarm
+    })
+  }, [appState, now])
+
+  useEffect(() => {
+    if (!activeAlarm) {
+      return
+    }
+
+    triggerAlarmPulse()
+
+    const timer = window.setInterval(() => {
+      triggerAlarmPulse()
+    }, ALARM_REPEAT_MS)
+
+    return () => {
+      window.clearInterval(timer)
+    }
+  }, [activeAlarm, triggerAlarmPulse])
+
+  const acknowledgeActiveAlarm = () => {
+    if (!activeAlarm) {
+      return
+    }
+
+    acknowledgedAlarmKeysRef.current.add(activeAlarm.dedupeKey)
+    snoozedAlarmKeysRef.current.delete(activeAlarm.dedupeKey)
+    setActiveAlarm(null)
+  }
+
+  const snoozeActiveAlarm = () => {
+    if (!activeAlarm) {
+      return
+    }
+
+    snoozedAlarmKeysRef.current.set(
+      activeAlarm.dedupeKey,
+      now.getTime() + ALARM_SNOOZE_MINUTES * 60_000,
+    )
+    setActiveAlarm(null)
+  }
+
   const setView = (view: AppView) => {
     setActiveView(view)
     updateUrlForView(view)
@@ -258,5 +385,8 @@ export function useAppShell({ appState, now }: UseAppShellParams) {
     wakeLockSupported,
     isWakeLockActive,
     handleToggleWakeLock,
+    activeAlarm,
+    acknowledgeActiveAlarm,
+    snoozeActiveAlarm,
   }
 }

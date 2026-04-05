@@ -56,8 +56,12 @@ export function MedsView({
   const [taperRulesInput, setTaperRulesInput] = useState('')
   const [reminderEnabledInput, setReminderEnabledInput] = useState(true)
   const [reminderMinutesInput, setReminderMinutesInput] = useState<'0' | '10' | '15'>('0')
+  const [alarmEnabledInput, setAlarmEnabledInput] = useState(false)
   const [medicationFormError, setMedicationFormError] = useState<string | null>(null)
   const [isMedicationActionInProgress, setIsMedicationActionInProgress] = useState(false)
+
+  const supportsAlarmForSchedule =
+    scheduleTypeInput === 'interval' || scheduleTypeInput === 'fixed_times'
 
   const buildMedicationScheduleFromForm = (): MedicationSchedule | null => {
     if (scheduleTypeInput === 'interval') {
@@ -176,6 +180,7 @@ export function MedsView({
 
     setReminderEnabledInput(Boolean(medication.reminderSettings?.enabled))
     setReminderMinutesInput(String(medication.reminderSettings?.earlyReminderMinutes ?? 0) as '0' | '10' | '15')
+    setAlarmEnabledInput(Boolean(medication.reminderSettings?.alarmEnabled))
   }
 
   const resetMedicationForm = () => {
@@ -191,6 +196,7 @@ export function MedsView({
     setTaperRulesInput('')
     setReminderEnabledInput(true)
     setReminderMinutesInput('0')
+    setAlarmEnabledInput(false)
     setMedicationFormError(null)
   }
 
@@ -230,12 +236,15 @@ export function MedsView({
       ? medicationsForAdministration.find((medication) => medication.id === editingMedicationId)
       : null
 
-    const reminderSettings = reminderEnabledInput
-      ? {
-          enabled: true,
-          earlyReminderMinutes: Number.parseInt(reminderMinutesInput, 10) as 0 | 10 | 15,
-        }
-      : { enabled: false as const }
+    const reminderSettings = {
+      enabled: reminderEnabledInput,
+      ...(reminderEnabledInput
+        ? {
+            earlyReminderMinutes: Number.parseInt(reminderMinutesInput, 10) as 0 | 10 | 15,
+          }
+        : {}),
+      ...(supportsAlarmForSchedule ? { alarmEnabled: alarmEnabledInput } : {}),
+    }
 
     const medicationInput = {
       patientId: selectedPatientId,
@@ -436,6 +445,17 @@ export function MedsView({
               <option value="10">10</option>
               <option value="15">15</option>
             </select>
+          </label>
+        ) : null}
+        {supportsAlarmForSchedule ? (
+          <label className="checkbox-row">
+            <input
+              data-testid="alarm-enabled-input"
+              type="checkbox"
+              checked={alarmEnabledInput}
+              onChange={(event) => setAlarmEnabledInput(event.target.checked)}
+            />
+            Enable in-app alarm (sound/vibration when due now)
           </label>
         ) : null}
         {medicationFormError ? <p className="form-error">{medicationFormError}</p> : null}

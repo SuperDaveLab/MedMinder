@@ -46,6 +46,7 @@ export type MedicationSchedule =
 export interface ReminderSettings {
   enabled: boolean
   earlyReminderMinutes?: 0 | 10 | 15
+  alarmEnabled?: boolean
 }
 
 export type MedicationStatusLabel =

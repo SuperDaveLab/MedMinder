@@ -4,6 +4,7 @@ import { CareView } from './features/care/CareView'
 import { HistoryView } from './features/history/HistoryView'
 import { MedsView } from './features/meds/MedsView'
 import { MoreView } from './features/more/MoreView'
+import { formatRelativeTime } from './ui/time'
 import './App.css'
 
 function App() {
@@ -31,6 +32,9 @@ function App() {
     wakeLockSupported,
     isWakeLockActive,
     handleToggleWakeLock,
+    activeAlarm,
+    acknowledgeActiveAlarm,
+    snoozeActiveAlarm,
   } = useAppShell({ appState, now })
 
   if (!appState) {
@@ -92,6 +96,22 @@ function App() {
           </select>
         </label>
         {uiError ? <p className="header-error">{uiError}</p> : null}
+        {activeAlarm ? (
+          <section className="alarm-banner" data-testid="alarm-banner">
+            <p className="alarm-banner-title">Alarm: {activeAlarm.medicationName} is due now</p>
+            <p className="alarm-banner-meta">
+              Next eligible {formatRelativeTime(new Date(activeAlarm.nextEligibleAtIso), now)}
+            </p>
+            <div className="alarm-banner-actions">
+              <button className="utility-button" onClick={acknowledgeActiveAlarm} data-testid="alarm-acknowledge-button">
+                Acknowledge
+              </button>
+              <button className="utility-button" onClick={snoozeActiveAlarm} data-testid="alarm-snooze-button">
+                Snooze 5 min
+              </button>
+            </div>
+          </section>
+        ) : null}
       </header>
 
       <nav className="bottom-nav no-print" aria-label="Primary views">
