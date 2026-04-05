@@ -1,109 +1,72 @@
-# Med-Minder
+<div align="center">
+  <img src="public/med-minder-icon.svg" width="100" height="100" alt="MedMinder Icon" />
+  <h1>MedMinder</h1>
+  <p>A beautiful, local-first progressive web app for tracking medication schedules.</p>
+</div>
 
-Med-Minder is a local-first medication timing tracker for one or more patients.
-It helps caregivers answer:
+Med-Minder is a highly responsive, offline-first medication timing tracker built for caregivers. It eliminates the cognitive load of tracking complex medication schedules (intervals, fixed times, PRN, and tapers) by answering a few simple questions at a glance:
 
-- When is this medication next eligible?
-- Is it eligible now?
-- What doses were already given?
-- When should I be reminded?
+- **When is this medication next eligible?**
+- **Is it eligible now?**
+- **What doses were already given?**
+- **When should I be reminded?**
 
-Version: v0.1.0 (MVP)
+Built to be installed directly to your phone's home screen as a PWA, it behaves exactly like a native app with zero cloud bloat.
 
-## MVP Scope
+### 📱 Screenshots
 
-Included:
+<div style="display: flex; gap: 10px; flex-wrap: wrap;">
+  <img src="public/screenshot-care.png" width="30%" alt="Care Dashboard" />
+  <img src="public/screenshot-meds.png" width="30%" alt="Medication Management" />
+  <img src="public/screenshot-history.png" width="30%" alt="Dose History" />
+</div>
 
-- schedule-aware status: eligible now, too early, due soon, overdue
-- dose logging and correction history
-- patient and medication administration
-- local browser reminders (due soon and due now)
-- backup and full restore from local JSON
-- printable and text-exportable patient summary
-- installable offline-capable PWA behavior
+## 🚀 Features
 
-Not included:
+- **Schedule-Aware Status Engine**: Automatically calculates if a medication is "Eligible now", "Due soon", "Too early", or "Overdue" natively within the browser format.
+- **Complex Schedules Supported**: Fully supports `interval` (e.g. every 6 hours), `fixed_times` (e.g. 08:00 and 20:00), `prn` (as needed), and complex `taper` schedules!
+- **Local-first & Privacy-focused**: Your data never leaves your device. Everything is securely stored in IndexedDB (`med-minder-db`).
+- **Complete History & Auditing**: See exactly what was given when, and log corrections that properly supersede accidental entries.
+- **Local Notifications**: Opt-in to browser-based local notifications when medications become due!
+- **Data Portability**: Full JSON backup export and import logic allows you to safely copy data across devices.
 
-- cloud sync
-- authentication / accounts
-- multi-device real-time sync
-- drug interaction checks
-- diagnosis or treatment advice
+## 🛠️ Setup & Development
 
-## Setup
+MedMinder is built heavily on React and Vite for blisteringly fast performance.
 
-Requirements:
-
+**Requirements:**
 - Node.js 20+
 - npm 10+
 
-Install and run:
+**Install and run:**
 
 1. Install dependencies:
+   ```bash
    npm install
-2. Start dev server:
+   ```
+2. Start the hot-reloading development server:
+   ```bash
    npm run dev
-3. Run tests:
+   ```
+3. Run test suite:
+   ```bash
    npm test
-4. Build production bundle:
+   ```
+4. Build for production:
+   ```bash
    npm run build
-5. Preview production bundle:
-   npm run preview
+   ```
 
-## Daily Use
+## 🔒 Data and Privacy
 
-1. Open the app and select a patient.
-2. In Care, review current medication status and tap Give Dose when administered.
-3. In History, review logged events and corrections.
-4. In Admin, manage patients and medications.
-5. In Summary, print or export patient status for handoff.
+Because MedMinder is a caregiver timing tool, privacy and reliability are paramount:
+- **No Backend**: There are no servers processing your data.
+- **Offline Capable**: As a registered PWA, MedMinder functions without an internet connection.
+- **Manual Sync**: Data is tied to the current browser profile unless you use the built-in backup and restore tooling to move it.
 
-## Backup and Restore
+### Disclaimer
+*This app is a caregiver timing tool. It does not provide diagnosis, dosage recommendations, or treatment advice.*
 
-Backup export:
+## 📄 License
 
-1. Open Admin.
-2. Go to Backup and restore.
-3. Select Export backup JSON.
-4. Save the downloaded file in a safe location.
-
-Restore import:
-
-1. Open Admin.
-2. Go to Backup and restore.
-3. Select Import backup JSON.
-4. Choose a previously exported backup file.
-5. Confirm the warning prompt.
-
-Important:
-
-- Restore is full-replace. Existing local data is overwritten.
-- Backups are local JSON files. Protect them as sensitive data.
-
-## Data and Privacy
-
-- All runtime data is stored locally in IndexedDB (database: med-minder-db).
-- No backend is required for MVP use.
-- Notification dedupe log is stored locally and pruned over time.
-
-## Project Structure
-
-- src/domain: strict domain model types
-- src/engine: pure scheduling logic and tests
-- src/storage: Dexie database and repository helpers
-- src/ui: presentational UI components
-- src/reminders: notification candidate and dedupe logic
-
-## Known Limitations
-
-- Data is tied to the current browser profile/device unless manually backed up and restored.
-- Notification delivery behavior depends on browser and OS permission/background policies.
-- No multi-user permission model is present in MVP.
-
-## Safety Boundary
-
-This app is a caregiver timing tool. It does not provide diagnosis, dosage recommendations, or treatment advice.
-
-## License
-
-No license has been selected yet.
+This project is licensed under the MIT License - see the LICENSE file for details.
