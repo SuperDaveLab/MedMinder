@@ -879,7 +879,7 @@ function App() {
       .map((m) => m.id)
   )
   const recentHistory = [...appState.doseEvents]
-    .filter((d) => patientMedicationIds.has(d.medicationId))
+    .filter((d) => patientMedicationIds.has(d.medicationId) && !correctionBySupersededId.has(d.id))
     .sort((a, b) => b.timestampGiven.localeCompare(a.timestampGiven))
     .slice(0, 12)
 

@@ -44,10 +44,12 @@ function describeStatus(status: MedicationStatus): StatusDescriptor {
     return m === 0 ? `${h} hr` : `${h} hr ${m} mins`
   }
 
+  const nextLabel = status.scheduleType === 'prn' ? 'Next available:' : 'Next due:'
+
   if (status.statusLabel === 'too_early') {
     return {
       label: 'too_early',
-      text: `Next due: ${formatDuration(status.minutesUntilEligible ?? 0)}`,
+      text: `${nextLabel} ${formatDuration(status.minutesUntilEligible ?? 0)}`,
     }
   }
 
@@ -61,7 +63,7 @@ function describeStatus(status: MedicationStatus): StatusDescriptor {
   if (status.statusLabel === 'due_soon') {
     return {
       label: 'due_soon',
-      text: `Next due: ${formatDuration(status.minutesUntilEligible ?? 0)}`,
+      text: `${nextLabel} ${formatDuration(status.minutesUntilEligible ?? 0)}`,
     }
   }
 
