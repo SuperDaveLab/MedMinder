@@ -8,51 +8,71 @@ Deploy the latest main branch build safely, with a quick rollback path.
 ## Prerequisites
 - Access to repository and main branch
 - SSH access to production host
-- A web root served by nginx (or equivalent)
+- A web root served by Apache/nginx (or equivalent)
 - Node.js and npm installed locally
 
+## Current Production Profile (as of 2026-04-05)
+- Host: `medminder.davekoons.com`
+- SSH user: `root`
+- Web server: `apache2`
+- Apache vhost `DocumentRoot`: `/var/www/medminder`
+- Backup location: `/var/www/medminder-backups/<RELEASE_ID>`
+
 ## Standard Release Steps
-1. Ensure local branch is up to date.
+1. Ensure local branch is up to date (`git pull --ff-only`).
 2. Run full local verification:
-   - npm ci
-   - npm test
-   - npm run lint
-   - npm run build
-3. Create a timestamped release directory on the server.
-4. Upload dist contents to that release directory.
-5. Switch the current symlink to the new release.
-6. Reload nginx.
-7. Validate the live URL and PWA manifest/service worker.
+    - `npm ci`
+    - `npm test`
+    - `npm run lint`
+    - `npm run build`
+3. Create a timestamped backup of the current live directory.
+4. Sync local `dist/` into live `DocumentRoot`.
+5. Validate web server config and reload the service.
+6. Validate the live URL and PWA manifest/service worker.
 
-## Example SSH + rsync Flow
-Adjust these variables for your server:
+## Canonical Apache Deploy Flow (Current Server)
 
-- APP_HOST=your-server
-- APP_USER=your-user
-- APP_ROOT=/var/www/medminder
-- RELEASE_ID=$(date +%Y%m%d-%H%M%S)
+Set release ID locally:
 
-Local commands:
+- `RELEASE_ID=$(date +%Y%m%d-%H%M%S)`
 
 1) Build and verify
-- npm ci
-- npm test
-- npm run lint
-- npm run build
+- `npm ci`
+- `npm test`
+- `npm run lint`
+- `npm run build`
 
-2) Create release directory
-- ssh ${APP_USER}@${APP_HOST} "mkdir -p ${APP_ROOT}/releases/${RELEASE_ID}"
+2) Create server backup
+- `ssh -o BatchMode=yes root@medminder.davekoons.com "set -e; mkdir -p /var/www/medminder-backups/${RELEASE_ID}; rsync -a --delete /var/www/medminder/ /var/www/medminder-backups/${RELEASE_ID}/"`
 
-3) Upload build
-- rsync -avz --delete dist/ ${APP_USER}@${APP_HOST}:${APP_ROOT}/releases/${RELEASE_ID}/
+3) Upload new build
+- `rsync -avz --delete dist/ root@medminder.davekoons.com:/var/www/medminder/`
 
-4) Activate release and reload web server
-- ssh ${APP_USER}@${APP_HOST} "ln -sfn ${APP_ROOT}/releases/${RELEASE_ID} ${APP_ROOT}/current && sudo systemctl reload nginx"
+4) Validate + reload Apache
+- `ssh -o BatchMode=yes root@medminder.davekoons.com "set -e; apache2ctl configtest; systemctl reload apache2; systemctl is-active apache2"`
 
-## Rollback
-If validation fails, point current back to the previous release and reload nginx:
+5) Post-deploy smoke checks
+- `curl -I https://medminder.davekoons.com`
+- `curl -s https://medminder.davekoons.com/manifest.webmanifest | head -c 200`
 
-- ssh ${APP_USER}@${APP_HOST} "ln -sfn ${APP_ROOT}/releases/<previous_release_id> ${APP_ROOT}/current && sudo systemctl reload nginx"
+## Rollback (Current Server)
+If validation fails, restore from the backup created for that release:
+
+- `ssh -o BatchMode=yes root@medminder.davekoons.com "set -e; rsync -a --delete /var/www/medminder-backups/<RELEASE_ID>/ /var/www/medminder/; apache2ctl configtest; systemctl reload apache2"`
+
+## Generic Template (Other Hosts)
+Use this only when not deploying to the current production host.
+
+- Variables:
+   - `APP_HOST=your-server`
+   - `APP_USER=your-user`
+   - `APP_ROOT=/var/www/medminder`
+   - `RELEASE_ID=$(date +%Y%m%d-%H%M%S)`
+
+- Example commands:
+   - `ssh ${APP_USER}@${APP_HOST} "mkdir -p ${APP_ROOT}/releases/${RELEASE_ID}"`
+   - `rsync -avz --delete dist/ ${APP_USER}@${APP_HOST}:${APP_ROOT}/releases/${RELEASE_ID}/`
+   - `ssh ${APP_USER}@${APP_HOST} "ln -sfn ${APP_ROOT}/releases/${RELEASE_ID} ${APP_ROOT}/current && sudo systemctl reload nginx"`
 
 ## Post-Deploy Checks
 - Open live app URL and hard refresh once
@@ -67,3 +87,4 @@ When asked to deploy:
 - Do not skip test/lint/build
 - Confirm current git status is clean before deploying
 - Ask for missing server variables instead of guessing
+- Detect server stack (Apache/nginx) before issuing reload commands
