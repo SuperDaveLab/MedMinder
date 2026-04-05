@@ -526,6 +526,7 @@ export function MoreView({
             </button>
           </div>
           <h2>Patient medication summary</h2>
+          <p className="summary-meta">Includes active medications only.</p>
           <p className="summary-meta">Patient: {patient?.displayName ?? ''}</p>
           <p className="summary-meta">Generated: {formatAbsoluteDateTime(now)}</p>
           <ul className="summary-list">

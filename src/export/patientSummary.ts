@@ -119,6 +119,7 @@ export function buildPatientSummaryText(
 ): string {
   const headerLines = [
     'Med-Minder Patient Medication Summary',
+    'Includes active medications only.',
     `Patient: ${patient.displayName}`,
     `Generated: ${formatAbsoluteDateTime(generatedAt)}`,
     '',

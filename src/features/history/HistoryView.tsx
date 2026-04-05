@@ -8,6 +8,34 @@ interface HistoryViewProps {
   now: Date
 }
 
+function toTimestamp(value: string): number {
+  const parsed = Date.parse(value)
+  return Number.isNaN(parsed) ? Number.NEGATIVE_INFINITY : parsed
+}
+
+function buildLocalDayKey(timestamp: number): string {
+  const date = new Date(timestamp)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+
+  return `${year}-${month}-${day}`
+}
+
+function formatLocalDayLabel(dayKey: string): string {
+  const [yearLabel, monthLabel, dayLabel] = dayKey.split('-')
+  const year = Number.parseInt(yearLabel, 10)
+  const month = Number.parseInt(monthLabel, 10) - 1
+  const day = Number.parseInt(dayLabel, 10)
+
+  return new Date(year, month, day).toLocaleDateString(undefined, {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+}
+
 export function HistoryView({ patient, medications, doseEvents, now }: HistoryViewProps) {
   const medicationById = new Map(medications.map((medication) => [medication.id, medication.name]))
   const correctionBySupersededId = new Map(
@@ -23,22 +51,18 @@ export function HistoryView({ patient, medications, doseEvents, now }: HistoryVi
   )
   const allPatientDoses = doseEvents
     .filter((doseEvent) => patientMedIds.has(doseEvent.medicationId))
-    .sort((a, b) => b.timestampGiven.localeCompare(a.timestampGiven))
+    .sort((a, b) => toTimestamp(b.timestampGiven) - toTimestamp(a.timestampGiven))
 
   const groupedHistory = new Map<string, DoseEvent[]>()
   for (const dose of allPatientDoses) {
-    const date = new Date(dose.timestampGiven)
-    const dateStr = date.toLocaleDateString(undefined, {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    })
-    if (!groupedHistory.has(dateStr)) {
-      groupedHistory.set(dateStr, [])
+    const dayKey = buildLocalDayKey(toTimestamp(dose.timestampGiven))
+    if (!groupedHistory.has(dayKey)) {
+      groupedHistory.set(dayKey, [])
     }
-    groupedHistory.get(dateStr)?.push(dose)
+    groupedHistory.get(dayKey)?.push(dose)
   }
+
+  const orderedDayKeys = Array.from(groupedHistory.keys()).sort((a, b) => b.localeCompare(a))
 
   return (
     <section className="workflow-section" data-testid="history-view">
@@ -49,11 +73,11 @@ export function HistoryView({ patient, medications, doseEvents, now }: HistoryVi
             <li className="history-item history-item-empty">No doses logged yet.</li>
           </ul>
         ) : (
-          Array.from(groupedHistory.entries()).map(([dateStr, entries]) => (
-            <div key={dateStr} className="history-date-group" style={{ marginBottom: '1.5rem' }}>
-              <h3 style={{ fontSize: '1rem', margin: '0 0 0.65rem', color: 'var(--brand)' }}>{dateStr}</h3>
+          orderedDayKeys.map((dayKey) => (
+            <div key={dayKey} className="history-date-group" style={{ marginBottom: '1.5rem' }}>
+              <h3 style={{ fontSize: '1rem', margin: '0 0 0.65rem', color: 'var(--brand)' }}>{formatLocalDayLabel(dayKey)}</h3>
               <ul className="history-list">
-                {entries.map((entry) => (
+                {groupedHistory.get(dayKey)?.map((entry) => (
                   <li key={entry.id} className="history-item">
                     <div>
                       <strong>{medicationById.get(entry.medicationId) ?? 'Unknown medication'}</strong>

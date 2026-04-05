@@ -115,6 +115,86 @@ describe('backup validation', () => {
     expect(result.valid).toBe(false)
   })
 
+  it('rejects fixed_times schedule with invalid timesOfDay entries', () => {
+    const invalidValueResult = validateBackup({
+      ...buildValidBackup(),
+      medications: [
+        {
+          ...buildValidBackup().medications[0],
+          schedule: {
+            type: 'fixed_times',
+            timesOfDay: [123],
+          },
+        },
+      ],
+    })
+
+    expect(invalidValueResult.valid).toBe(false)
+
+    const invalidFormatResult = validateBackup({
+      ...buildValidBackup(),
+      medications: [
+        {
+          ...buildValidBackup().medications[0],
+          schedule: {
+            type: 'fixed_times',
+            timesOfDay: ['25:00'],
+          },
+        },
+      ],
+    })
+
+    expect(invalidFormatResult.valid).toBe(false)
+  })
+
+  it('rejects taper schedule with invalid or overlapping rules', () => {
+    const invalidRuleResult = validateBackup({
+      ...buildValidBackup(),
+      medications: [
+        {
+          ...buildValidBackup().medications[0],
+          schedule: {
+            type: 'taper',
+            rules: [
+              {
+                startDate: '2026-03-01',
+                intervalMinutes: 0,
+              },
+            ],
+          },
+        },
+      ],
+    })
+
+    expect(invalidRuleResult.valid).toBe(false)
+
+    const overlappingRulesResult = validateBackup({
+      ...buildValidBackup(),
+      medications: [
+        {
+          ...buildValidBackup().medications[0],
+          schedule: {
+            type: 'taper',
+            rules: [
+              {
+                startDate: '2026-03-01',
+                endDate: '2026-03-10',
+                intervalMinutes: 240,
+              },
+              {
+                startDate: '2026-03-05',
+                endDate: '2026-03-15',
+                intervalMinutes: 360,
+              },
+            ],
+          },
+        },
+      ],
+    })
+
+    expect(overlappingRulesResult.valid).toBe(false)
+  })
+
   it('rejects corrected dose event without supersedesDoseEventId', () => {
     const result = validateBackup({
       ...buildValidBackup(),

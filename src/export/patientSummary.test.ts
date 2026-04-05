@@ -66,6 +66,7 @@ describe('patient summary export helpers', () => {
     )
 
     expect(summaryText).toContain('Med-Minder Patient Medication Summary')
+    expect(summaryText).toContain('Includes active medications only.')
     expect(summaryText).toContain('Patient: Alex Rivera')
     expect(summaryText).toContain('Amoxicillin')
     expect(summaryText).toContain('Schedule details: Every 480 minutes')

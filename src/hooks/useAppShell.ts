@@ -78,6 +78,29 @@ export function useAppShell({ appState, now }: UseAppShellParams) {
   const wakeLockSupported = Boolean((navigator as Navigator & NavigatorWithWakeLock).wakeLock)
 
   useEffect(() => {
+    const nav = window.navigator as Navigator & { standalone?: boolean }
+    const refreshInstallState = () => {
+      setIsInstalled(isStandaloneDisplayMode() || nav.standalone === true)
+    }
+
+    const standaloneMediaQuery =
+      typeof window.matchMedia === 'function'
+        ? window.matchMedia('(display-mode: standalone)')
+        : null
+
+    refreshInstallState()
+    standaloneMediaQuery?.addEventListener('change', refreshInstallState)
+    window.addEventListener('pageshow', refreshInstallState)
+    window.addEventListener('focus', refreshInstallState)
+
+    return () => {
+      standaloneMediaQuery?.removeEventListener('change', refreshInstallState)
+      window.removeEventListener('pageshow', refreshInstallState)
+      window.removeEventListener('focus', refreshInstallState)
+    }
+  }, [])
+
+  useEffect(() => {
     const onBeforeInstallPrompt = (event: Event) => {
       event.preventDefault()
       setInstallPromptEvent(event as DeferredInstallPromptEvent)

@@ -1,4 +1,5 @@
 import type { DoseEvent, Medication, Patient } from '../domain/types'
+import { parseLocalDateToTimestamp } from '../domain/dateParsing'
 
 export interface MedMinderBackup {
   schemaVersion: 1
@@ -158,6 +159,13 @@ function checkSchedule(medicationId: string, raw: unknown): string | null {
     if (!Array.isArray(s['timesOfDay']) || (s['timesOfDay'] as unknown[]).length === 0) {
       return `Medication "${medicationId}": fixed_times schedule must have non-empty timesOfDay.`
     }
+
+    for (const timeValue of s['timesOfDay'] as unknown[]) {
+      if (typeof timeValue !== 'string' || !isValidTimeOfDay(timeValue)) {
+        return `Medication "${medicationId}": fixed_times timesOfDay entries must be HH:mm strings.`
+      }
+    }
+
     return null
   }
 
@@ -165,10 +173,79 @@ function checkSchedule(medicationId: string, raw: unknown): string | null {
     if (!Array.isArray(s['rules']) || (s['rules'] as unknown[]).length === 0) {
       return `Medication "${medicationId}": taper schedule must have non-empty rules.`
     }
+
+    const ruleWindows: Array<{ startAt: number; endAt: number }> = []
+
+    for (const ruleValue of s['rules'] as unknown[]) {
+      if (typeof ruleValue !== 'object' || ruleValue === null || Array.isArray(ruleValue)) {
+        return `Medication "${medicationId}": each taper rule must be an object.`
+      }
+
+      const rule = ruleValue as Record<string, unknown>
+
+      if (typeof rule['intervalMinutes'] !== 'number' || !Number.isFinite(rule['intervalMinutes']) || rule['intervalMinutes'] <= 0) {
+        return `Medication "${medicationId}": each taper rule must have positive intervalMinutes.`
+      }
+
+      if (typeof rule['startDate'] !== 'string') {
+        return `Medication "${medicationId}": each taper rule must have startDate in YYYY-MM-DD format.`
+      }
+
+      const startAt = parseLocalDateToTimestamp(rule['startDate'])
+      if (startAt === null) {
+        return `Medication "${medicationId}": taper rule startDate must be a valid YYYY-MM-DD date.`
+      }
+
+      let endAt = Number.POSITIVE_INFINITY
+
+      if (rule['endDate'] !== undefined) {
+        if (typeof rule['endDate'] !== 'string') {
+          return `Medication "${medicationId}": taper rule endDate must be YYYY-MM-DD when provided.`
+        }
+
+        const parsedEndAt = parseLocalDateToTimestamp(rule['endDate'])
+        if (parsedEndAt === null) {
+          return `Medication "${medicationId}": taper rule endDate must be a valid YYYY-MM-DD date.`
+        }
+
+        if (parsedEndAt <= startAt) {
+          return `Medication "${medicationId}": taper rule endDate must be after startDate.`
+        }
+
+        endAt = parsedEndAt
+      }
+
+      ruleWindows.push({ startAt, endAt })
+    }
+
+    const sortedRuleWindows = [...ruleWindows].sort((a, b) => a.startAt - b.startAt)
+
+    for (let index = 1; index < sortedRuleWindows.length; index += 1) {
+      const previousRule = sortedRuleWindows[index - 1]
+      const currentRule = sortedRuleWindows[index]
+
+      if (currentRule.startAt < previousRule.endAt) {
+        return `Medication "${medicationId}": taper rules must not overlap.`
+      }
+    }
+
     return null
   }
 
   return `Medication "${medicationId}": schedule.type must be one of interval, prn, fixed_times, taper.`
+}
+
+function isValidTimeOfDay(value: string): boolean {
+  const match = /^(\d{2}):(\d{2})$/.exec(value)
+
+  if (!match) {
+    return false
+  }
+
+  const hours = Number.parseInt(match[1], 10)
+  const minutes = Number.parseInt(match[2], 10)
+
+  return hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59
 }
 
 function checkDoseEvent(raw: unknown): string | null {
