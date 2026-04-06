@@ -5,12 +5,23 @@ import { VitePWA } from 'vite-plugin-pwa'
 // https://vite.dev/config/
 export default defineConfig({
   base: '/',
+  server: {
+    proxy: {
+      '/api': {
+        target: process.env.VITE_AUTH_PROXY_TARGET ?? 'http://localhost:8787',
+        changeOrigin: true,
+      },
+    },
+  },
   define: {
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version ?? '0.1.0'),
   },
   plugins: [
     react(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       registerType: 'autoUpdate',
       includeAssets: ['med-minder-icon.svg', 'screenshot-care.svg', 'screenshot-admin.svg'],
       manifest: {
@@ -85,7 +96,7 @@ export default defineConfig({
           },
         ],
       },
-      workbox: {
+      injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
       },
     }),

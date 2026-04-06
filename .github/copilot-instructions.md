@@ -128,3 +128,14 @@ Choose the simplest implementation that preserves correctness, readability, and 
 - Do not guess server paths, hostnames, or credentials.
 - If deploy variables are missing, ask for them explicitly.
 - Prefer atomic release patterns (timestamped release folder + `current` symlink) with rollback capability.
+
+## Local Auth Dev Environment
+- For local account/auth work, use the API server under `server/` with `npm run api:dev`.
+- Local MySQL/MariaDB connection env keys:
+  - `AUTH_DB_HOST` (default `127.0.0.1`)
+  - `AUTH_DB_PORT` (default `3306`)
+  - `AUTH_DB_USER` (default `medminder_app`)
+  - `AUTH_DB_PASSWORD` (set in `.env`)
+  - `AUTH_DB_NAME` (default `medminder_auth`)
+- Use `npm run auth:db:reset` to clear local auth tables (`accounts`, `users`, `sessions`) for repeatable testing.
+- Keep auth/database credentials in `.env` and out of committed files.

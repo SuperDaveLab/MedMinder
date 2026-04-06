@@ -2,6 +2,8 @@
 
 This runbook is for deploying the static PWA build to the live host.
 
+For API setup/deploy on the live host, see `docs/api-live-runbook.md`.
+
 ## Goal
 Deploy the latest main branch build safely, with a quick rollback path.
 

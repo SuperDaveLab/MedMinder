@@ -4,6 +4,9 @@ Last updated: 2026-04-05
 
 This roadmap captures candidate enhancements beyond current MVP scope, with prioritization and implementation notes.
 
+Related direction document:
+- See [docs/product-modes-and-cloud-intent.md](docs/product-modes-and-cloud-intent.md) for the agreed product split between local-first mode and optional cloud account mode.
+
 ## Prioritization Summary
 
 ### Next up (recommended)

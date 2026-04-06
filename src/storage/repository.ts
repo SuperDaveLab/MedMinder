@@ -68,6 +68,24 @@ export async function getPatients(): Promise<Patient[]> {
   return medMinderDb.patients.toArray()
 }
 
+export async function getLocalMedMinderState(): Promise<{
+  patients: Patient[]
+  medications: Medication[]
+  doseEvents: DoseEvent[]
+}> {
+  const [patients, medications, doseEvents] = await Promise.all([
+    medMinderDb.patients.toArray(),
+    medMinderDb.medications.toArray(),
+    medMinderDb.doseEvents.toArray(),
+  ])
+
+  return {
+    patients,
+    medications,
+    doseEvents,
+  }
+}
+
 export async function getMedicationsByPatient(
   patientId: string,
 ): Promise<Medication[]> {
@@ -519,6 +537,22 @@ export async function importFullBackup(backup: MedMinderBackup): Promise<void> {
         key: REMINDER_NOTIFICATION_LOG_KEY,
         value: JSON.stringify(backup.reminderNotificationLog),
       })
+    },
+  )
+}
+
+export async function clearLocalClinicalData(): Promise<void> {
+  await medMinderDb.transaction(
+    'rw',
+    medMinderDb.patients,
+    medMinderDb.medications,
+    medMinderDb.doseEvents,
+    medMinderDb.appSettings,
+    async () => {
+      await medMinderDb.patients.clear()
+      await medMinderDb.medications.clear()
+      await medMinderDb.doseEvents.clear()
+      await medMinderDb.appSettings.delete(LAST_SELECTED_PATIENT_ID_KEY)
     },
   )
 }

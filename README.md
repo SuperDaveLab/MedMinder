@@ -121,6 +121,40 @@ MedMinder is built heavily on React and Vite for blisteringly fast performance.
    npm run build
    ```
 
+### Local auth API (optional, for account mode testing)
+
+The app now includes a local auth API stub backed by MySQL/MariaDB for account create/sign-in testing.
+
+1. Ensure `.env` exists (or copy from `.env.example`) with auth DB settings.
+2. Start the auth API:
+   ```bash
+   npm run api:dev
+   ```
+3. In a second terminal, start the app:
+   ```bash
+   npm run dev
+   ```
+4. Open **More -> Account (optional cloud sync)** and test:
+   - Create account
+   - Sign in
+   - Sign out
+
+Account-mode sync behavior (current implementation):
+
+- On **Create account**, the app bootstraps your current local patient/medication/dose data to the server.
+- After bootstrap succeeds, local clinical tables are reset and rehydrated from server state.
+- On **Sign in**, local clinical tables are reset and replaced with server state.
+- While signed in, local data changes are mirrored to the server whenever the app refreshes the patient view after a write.
+- On **Sign out**, local clinical data is cleared.
+
+To clear local auth users/sessions and start fresh:
+
+```bash
+npm run auth:db:reset
+```
+
+The Vite dev server proxies `/api/*` to `http://localhost:8787` by default.
+
 ## 🔒 Data and Privacy
 
 Because MedMinder is a caregiver timing tool, privacy and reliability are paramount:

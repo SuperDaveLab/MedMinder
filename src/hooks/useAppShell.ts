@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import type { AuthSessionState } from '../domain/auth'
 import type { MedMinderState } from '../domain/types'
 import {
   buildReminderNotificationCandidates,
@@ -6,6 +7,7 @@ import {
   getReminderPermissionState,
 } from '../reminders/notifications'
 import { buildInAppAlarmCandidates, type AlarmCandidate } from '../reminders/alarms'
+import { syncPushSubscription } from '../reminders/pushRelay'
 import {
   getReminderNotificationLog,
   saveReminderNotificationLog,
@@ -59,12 +61,13 @@ function isStandaloneDisplayMode(): boolean {
 interface UseAppShellParams {
   appState: MedMinderState | null
   now: Date
+  authState: AuthSessionState | null
 }
 
 const ALARM_REPEAT_MS = 20_000
 const ALARM_SNOOZE_MINUTES = 5
 
-export function useAppShell({ appState, now }: UseAppShellParams) {
+export function useAppShell({ appState, now, authState }: UseAppShellParams) {
   const [notificationPermission, setNotificationPermission] = useState(getReminderPermissionState())
   const [activeView, setActiveView] = useState<AppView>(getInitialViewFromUrl())
   const [installPromptEvent, setInstallPromptEvent] = useState<DeferredInstallPromptEvent | null>(null)
@@ -311,6 +314,16 @@ export function useAppShell({ appState, now }: UseAppShellParams) {
 
     void checkAndSendReminders(appState, now)
   }, [appState, now, checkAndSendReminders])
+
+  useEffect(() => {
+    if (notificationPermission !== 'granted') {
+      return
+    }
+
+    void syncPushSubscription(authState, notificationPermission).catch((error) => {
+      console.error('[push] Failed to sync subscription:', error)
+    })
+  }, [authState, notificationPermission])
 
   useEffect(() => {
     if (!appState) {

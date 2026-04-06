@@ -64,6 +64,20 @@ describe('App administration flow', () => {
     })
   })
 
+  it('shows optional account controls in More view', async () => {
+    const user = userEvent.setup()
+
+    render(<App />)
+    await screen.findByRole('option', { name: 'Alex Rivera' })
+    await user.click(screen.getByTestId('tab-more'))
+
+    expect(screen.getByTestId('account-section')).toBeTruthy()
+    expect(screen.getByTestId('auth-email-input')).toBeTruthy()
+    expect(screen.getByTestId('auth-password-input')).toBeTruthy()
+    expect(screen.getByTestId('create-account-button')).toBeTruthy()
+    expect(screen.getByTestId('sign-in-button')).toBeTruthy()
+  })
+
   it('shows friendly schedule type labels in the medication form', async () => {
     const user = userEvent.setup()
 
@@ -207,7 +221,7 @@ describe('App administration flow', () => {
     await user.click(screen.getByTestId('delete-patient-patient-1'))
 
     await waitFor(() => {
-      expect(screen.getByText('No patients found in local database.')).toBeTruthy()
+      expect(screen.getByRole('option', { name: 'Alex Rivera' })).toBeTruthy()
     })
   })
 

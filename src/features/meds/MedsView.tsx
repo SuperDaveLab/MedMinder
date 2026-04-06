@@ -10,12 +10,7 @@ import type {
   MedicationScheduleType,
   TimeOfDayHHmm,
 } from '../../domain/types'
-import {
-  createMedication,
-  deactivateMedication,
-  deleteMedicationCascade,
-  updateMedication,
-} from '../../storage/repository'
+import type { UpsertMedicationInput } from '../../storage/repository'
 import {
   durationMinutesToValue,
   durationValueToMinutes,
@@ -24,7 +19,10 @@ import {
 interface MedsViewProps {
   selectedPatientId: string | null
   medicationsForAdministration: Medication[]
-  onDataChanged: (preferredPatientId?: string | null) => Promise<void>
+  onCreateMedication: (input: UpsertMedicationInput) => Promise<void>
+  onUpdateMedication: (medicationId: string, input: UpsertMedicationInput) => Promise<void>
+  onDeactivateMedication: (medicationId: string) => Promise<void>
+  onDeleteMedication: (medicationId: string) => Promise<void>
   onUiError: (message: string | null) => void
 }
 
@@ -77,7 +75,10 @@ function createDefaultFixedTimes(): TimeOfDayHHmm[] {
 export function MedsView({
   selectedPatientId,
   medicationsForAdministration,
-  onDataChanged,
+  onCreateMedication,
+  onUpdateMedication,
+  onDeactivateMedication,
+  onDeleteMedication,
   onUiError,
 }: MedsViewProps) {
   const [editingMedicationId, setEditingMedicationId] = useState<string | null>(null)
@@ -341,7 +342,7 @@ export function MedsView({
       ...(supportsAlarmForSchedule ? { alarmEnabled: alarmEnabledInput } : {}),
     }
 
-    const medicationInput = {
+    const medicationInput: UpsertMedicationInput = {
       patientId: selectedPatientId,
       name: medicationNameInput,
       strengthText: medicationStrengthInput,
@@ -358,12 +359,11 @@ export function MedsView({
       setIsMedicationActionInProgress(true)
 
       if (editingMedicationId) {
-        await updateMedication(editingMedicationId, medicationInput)
+        await onUpdateMedication(editingMedicationId, medicationInput)
       } else {
-        await createMedication(medicationInput)
+        await onCreateMedication(medicationInput)
       }
 
-      await onDataChanged(selectedPatientId)
       resetMedicationForm()
     } catch (error) {
       setMedicationFormError(
@@ -384,8 +384,7 @@ export function MedsView({
     try {
       onUiError(null)
       setIsMedicationActionInProgress(true)
-      await deactivateMedication(medicationId)
-      await onDataChanged(selectedPatientId)
+      await onDeactivateMedication(medicationId)
     } catch {
       onUiError('Unable to deactivate medication right now. Please try again.')
     } finally {
@@ -409,8 +408,7 @@ export function MedsView({
     try {
       onUiError(null)
       setIsMedicationActionInProgress(true)
-      await deleteMedicationCascade(medicationId)
-      await onDataChanged(selectedPatientId)
+      await onDeleteMedication(medicationId)
 
       if (editingMedicationId === medicationId) {
         resetMedicationForm()

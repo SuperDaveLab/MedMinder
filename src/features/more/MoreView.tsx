@@ -1,11 +1,10 @@
-import { type ChangeEvent, useRef, useState } from 'react'
+import { type ChangeEvent, useEffect, useRef, useState } from 'react'
+import type { AuthSessionState } from '../../domain/auth'
 import type { DoseEvent, Medication, Patient } from '../../domain/types'
 import {
-  createPatient,
-  deletePatientCascade,
   exportFullBackup,
   importFullBackup,
-  updatePatient,
+  type UpsertPatientInput,
 } from '../../storage/repository'
 import { validateBackup } from '../../storage/backup'
 import {
@@ -33,6 +32,18 @@ interface MoreViewProps {
   isWakeLockActive: boolean
   onToggleWakeLock: () => Promise<void>
   onTestAlarm: () => void
+  onCreatePatient: (displayName: string, notes?: string) => Promise<void>
+  onUpdatePatient: (patientId: string, input: UpsertPatientInput) => Promise<void>
+  onDeletePatient: (patientId: string) => Promise<void>
+  authState: AuthSessionState | null
+  isAuthLoading: boolean
+  isAuthActionInProgress: boolean
+  authError: string | null
+  onCreateAccount: (credentials: { email: string; password: string }) => Promise<void>
+  onSignIn: (credentials: { email: string; password: string }) => Promise<void>
+  onSignOut: () => Promise<void>
+  onUpdatePhoneE164: (phoneE164: string | null) => Promise<void>
+  onClearAuthError: () => void
 }
 
 function downloadBlob(blob: Blob, fileName: string): void {
@@ -47,7 +58,7 @@ function downloadBlob(blob: Blob, fileName: string): void {
 export function MoreView({
   noPatientsMode = false,
   patients,
-  selectedPatientId,
+  selectedPatientId: _selectedPatientId,
   patient,
   medicationsForPatient,
   doseEvents,
@@ -63,6 +74,18 @@ export function MoreView({
   isWakeLockActive,
   onToggleWakeLock,
   onTestAlarm,
+  onCreatePatient,
+  onUpdatePatient,
+  onDeletePatient,
+  authState,
+  isAuthLoading,
+  isAuthActionInProgress,
+  authError,
+  onCreateAccount,
+  onSignIn,
+  onSignOut,
+  onUpdatePhoneE164,
+  onClearAuthError,
 }: MoreViewProps) {
   const [editingPatientId, setEditingPatientId] = useState<string | null>(null)
   const [patientDisplayNameInput, setPatientDisplayNameInput] = useState('')
@@ -76,6 +99,9 @@ export function MoreView({
     text: string
   } | null>(null)
   const backupFileInputRef = useRef<HTMLInputElement>(null)
+  const [authEmailInput, setAuthEmailInput] = useState('')
+  const [authPasswordInput, setAuthPasswordInput] = useState('')
+  const [authPhoneInput, setAuthPhoneInput] = useState('')
 
   const summaryRows = patient
     ? buildPatientMedicationSummaryRows(
@@ -117,17 +143,13 @@ export function MoreView({
       setIsPatientActionInProgress(true)
 
       if (editingPatientId) {
-        await updatePatient(editingPatientId, {
+        await onUpdatePatient(editingPatientId, {
           displayName,
           notes: patientNotesInput,
         })
         await onDataChanged(editingPatientId)
       } else {
-        const createdPatient = await createPatient({
-          displayName,
-          notes: patientNotesInput,
-        })
-        await onDataChanged(createdPatient.id)
+        await onCreatePatient(displayName, patientNotesInput)
       }
 
       resetPatientForm()
@@ -158,8 +180,7 @@ export function MoreView({
     try {
       onUiError(null)
       setIsPatientActionInProgress(true)
-      await deletePatientCascade(patientId)
-      await onDataChanged(patientId === selectedPatientId ? null : selectedPatientId)
+      await onDeletePatient(patientId)
 
       if (editingPatientId === patientId) {
         resetPatientForm()
@@ -408,13 +429,136 @@ export function MoreView({
     </section>
   )
 
+  const handleCreateAccount = async () => {
+    await onCreateAccount({
+      email: authEmailInput,
+      password: authPasswordInput,
+    })
+  }
+
+  const handleSignIn = async () => {
+    await onSignIn({
+      email: authEmailInput,
+      password: authPasswordInput,
+    })
+  }
+
+  const handleSavePhone = async () => {
+    const trimmed = authPhoneInput.trim()
+    await onUpdatePhoneE164(trimmed.length > 0 ? trimmed : null)
+  }
+
+  useEffect(() => {
+    setAuthPhoneInput(authState?.account.phoneE164 ?? '')
+  }, [authState?.account.phoneE164])
+
+  const accountSection = (
+    <section className="admin-section no-print" data-testid="account-section">
+      <h2>Account (optional cloud sync)</h2>
+      {isAuthLoading ? <p className="subhead">Loading account state...</p> : null}
+      {!isAuthLoading && authState ? (
+        <>
+          <p className="subhead">Signed in as {authState.account.email}</p>
+          <p className="subhead">Cloud sync and premium reminder features can be enabled for this account.</p>
+          <label>
+            SMS phone (E.164, e.g. +15551234567)
+            <input
+              data-testid="account-phone-input"
+              type="tel"
+              value={authPhoneInput}
+              onChange={(event) => setAuthPhoneInput(event.target.value)}
+              autoComplete="tel"
+              placeholder="+15551234567"
+            />
+          </label>
+          <div className="form-actions">
+            <button
+              className="utility-button"
+              data-testid="save-account-phone-button"
+              disabled={isAuthActionInProgress}
+              onClick={() => void handleSavePhone()}
+            >
+              {isAuthActionInProgress ? 'Working...' : 'Save phone'}
+            </button>
+            <button
+              className="utility-button"
+              data-testid="sign-out-button"
+              disabled={isAuthActionInProgress}
+              onClick={() => void onSignOut()}
+            >
+              {isAuthActionInProgress ? 'Working...' : 'Sign out'}
+            </button>
+          </div>
+        </>
+      ) : null}
+
+      {!isAuthLoading && !authState ? (
+        <>
+          <p className="subhead">Create an account to opt into cloud backup/sync and premium reminder delivery.</p>
+          <label>
+            Email
+            <input
+              data-testid="auth-email-input"
+              type="email"
+              value={authEmailInput}
+              onChange={(event) => {
+                onClearAuthError()
+                setAuthEmailInput(event.target.value)
+              }}
+              autoComplete="email"
+            />
+          </label>
+          <label>
+            Password
+            <input
+              data-testid="auth-password-input"
+              type="password"
+              value={authPasswordInput}
+              onChange={(event) => {
+                onClearAuthError()
+                setAuthPasswordInput(event.target.value)
+              }}
+              autoComplete="current-password"
+            />
+          </label>
+          {authError ? <p className="form-error">{authError}</p> : null}
+          <div className="form-actions">
+            <button
+              className="utility-button"
+              data-testid="create-account-button"
+              disabled={isAuthActionInProgress}
+              onClick={() => void handleCreateAccount()}
+            >
+              {isAuthActionInProgress ? 'Working...' : 'Create account'}
+            </button>
+            <button
+              className="utility-button"
+              data-testid="sign-in-button"
+              disabled={isAuthActionInProgress}
+              onClick={() => void handleSignIn()}
+            >
+              {isAuthActionInProgress ? 'Working...' : 'Sign in'}
+            </button>
+          </div>
+        </>
+      ) : null}
+    </section>
+  )
+
   if (noPatientsMode) {
-    return patientSection
+    return (
+      <section className="workflow-section" data-testid="more-view">
+        {accountSection}
+        {patientSection}
+      </section>
+    )
   }
 
   return (
     <>
       <section className="workflow-section" data-testid="more-view">
+        {accountSection}
+
         <section className="admin-section no-print app-settings-section">
           <h2>App Settings</h2>
           <div className="app-actions">

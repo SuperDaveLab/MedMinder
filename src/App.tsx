@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { useAppData } from './hooks/useAppData'
+import { useAuth } from './hooks/useAuth'
 import { useAppShell } from './hooks/useAppShell'
 import { CareView } from './features/care/CareView'
 import { HistoryView } from './features/history/HistoryView'
@@ -10,6 +11,18 @@ import './App.css'
 
 function App() {
   const {
+    authState,
+    isAuthLoading,
+    isAuthActionInProgress,
+    authError,
+    createAccount,
+    signIn,
+    signOut,
+    updatePhoneE164,
+    clearAuthError,
+  } = useAuth()
+
+  const {
     appState,
     selectedPatientId,
     now,
@@ -18,10 +31,16 @@ function App() {
     refreshSelectedPatientView,
     handlePatientChange,
     handleCreatePatient,
+    handleUpdatePatient,
+    handleDeletePatient,
+    handleCreateMedication,
+    handleUpdateMedication,
+    handleDeactivateMedication,
+    handleDeleteMedication,
     handleLogDoseNow,
     handleCorrectDose,
     setUiError,
-  } = useAppData()
+  } = useAppData(authState)
 
   const [isAddPatientFormOpen, setIsAddPatientFormOpen] = useState(false)
   const [newPatientDisplayName, setNewPatientDisplayName] = useState('')
@@ -43,7 +62,7 @@ function App() {
     acknowledgeActiveAlarm,
     snoozeActiveAlarm,
     triggerAlarmPreview,
-  } = useAppShell({ appState, now })
+  } = useAppShell({ appState, now, authState })
 
   const resetAddPatientForm = () => {
     setIsAddPatientFormOpen(false)
@@ -120,6 +139,18 @@ function App() {
             isWakeLockActive={isWakeLockActive}
             onToggleWakeLock={handleToggleWakeLock}
             onTestAlarm={triggerAlarmPreview}
+            onCreatePatient={handleCreatePatient}
+            onUpdatePatient={handleUpdatePatient}
+            onDeletePatient={handleDeletePatient}
+            authState={authState}
+            isAuthLoading={isAuthLoading}
+            isAuthActionInProgress={isAuthActionInProgress}
+            authError={authError}
+            onCreateAccount={createAccount}
+            onSignIn={signIn}
+            onSignOut={signOut}
+            onUpdatePhoneE164={updatePhoneE164}
+            onClearAuthError={clearAuthError}
           />
         </section>
       </main>
@@ -269,7 +300,10 @@ function App() {
           <MedsView
             selectedPatientId={selectedPatientId}
             medicationsForAdministration={medicationsForAdministration}
-            onDataChanged={refreshSelectedPatientView}
+            onCreateMedication={handleCreateMedication}
+            onUpdateMedication={handleUpdateMedication}
+            onDeactivateMedication={handleDeactivateMedication}
+            onDeleteMedication={handleDeleteMedication}
             onUiError={setUiError}
           />
         ) : null}
@@ -293,6 +327,18 @@ function App() {
             isWakeLockActive={isWakeLockActive}
             onToggleWakeLock={handleToggleWakeLock}
             onTestAlarm={triggerAlarmPreview}
+            onCreatePatient={handleCreatePatient}
+            onUpdatePatient={handleUpdatePatient}
+            onDeletePatient={handleDeletePatient}
+            authState={authState}
+            isAuthLoading={isAuthLoading}
+            isAuthActionInProgress={isAuthActionInProgress}
+            authError={authError}
+            onCreateAccount={createAccount}
+            onSignIn={signIn}
+            onSignOut={signOut}
+            onUpdatePhoneE164={updatePhoneE164}
+            onClearAuthError={clearAuthError}
           />
         ) : null}
       </main>
