@@ -9,6 +9,7 @@
     "api:start": "tsx server/index.ts",
     "api:init-db": "tsx server/initSchema.ts",
     "auth:db:reset": "bash ./scripts/reset-auth-db.sh",
+    "deploy:live": "bash ./scripts/deploy-live.sh",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",

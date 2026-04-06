@@ -32,6 +32,26 @@ Deploy the latest main branch build safely, with a quick rollback path.
 5. Validate web server config and reload the service.
 6. Validate the live URL and PWA manifest/service worker.
 
+## One-command Release
+
+For the current production host profile, use:
+
+- `npm run deploy:live`
+
+Behavior:
+
+- Runs local checks (`npm ci`, `npm test`, `npm run lint`) and build.
+- Backs up `/var/www/medminder` to `/var/www/medminder-backups/<RELEASE_ID>`.
+- Deploys frontend `dist/` to `/var/www/medminder`.
+- Syncs API code to `/opt/med-minder`, runs `npm ci`, applies schema (`npm run api:init-db`), and restarts `medminder-api`.
+- Validates Apache config/reload and performs smoke checks.
+
+Common options:
+
+- `npm run deploy:live -- --skip-checks`
+- `npm run deploy:live -- --release-id 20260406-210000`
+- `DEPLOY_HOST=root@other-host npm run deploy:live`
+
 ## Canonical Apache Deploy Flow (Current Server)
 
 Set release ID locally:
