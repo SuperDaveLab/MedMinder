@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { DoseEvent, MedMinderState } from '../domain/types'
+import { getCurrentTime } from '../ui/clock'
 import {
   addDoseEvent,
   createDoseCorrectionEvent,
@@ -15,7 +16,7 @@ function createDoseEntry(medicationId: string): DoseEvent {
   return {
     id: crypto.randomUUID(),
     medicationId,
-    timestampGiven: new Date().toISOString(),
+    timestampGiven: getCurrentTime().toISOString(),
     corrected: false,
   }
 }
@@ -41,9 +42,13 @@ export interface UseAppDataResult {
 export function useAppData(): UseAppDataResult {
   const [appState, setAppState] = useState<MedMinderState | null>(null)
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null)
-  const [now, setNow] = useState(new Date())
+  const [now, setNow] = useState(getCurrentTime())
   const [uiError, setUiError] = useState<string | null>(null)
   const [isDoseActionInProgress, setIsDoseActionInProgress] = useState(false)
+
+  const refreshNow = useCallback(() => {
+    setNow(getCurrentTime())
+  }, [])
 
   const refreshSelectedPatientView = async (preferredPatientId?: string | null) => {
     const patients = await getPatients()
@@ -106,11 +111,31 @@ export function useAppData(): UseAppDataResult {
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      setNow(new Date())
+      refreshNow()
     }, 60_000)
 
     return () => window.clearInterval(timer)
-  }, [])
+  }, [refreshNow])
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshNow()
+      }
+    }
+
+    window.addEventListener('focus', refreshNow)
+    window.addEventListener('pageshow', refreshNow)
+    window.addEventListener('online', refreshNow)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.removeEventListener('focus', refreshNow)
+      window.removeEventListener('pageshow', refreshNow)
+      window.removeEventListener('online', refreshNow)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [refreshNow])
 
   const handleLogDoseNow = async (medicationId: string) => {
     if (!appState || !selectedPatientId || isDoseActionInProgress) {
@@ -131,7 +156,7 @@ export function useAppData(): UseAppDataResult {
       await addDoseEvent(doseEntry)
 
       await refreshSelectedPatientView(selectedPatientId)
-      setNow(new Date())
+      refreshNow()
     } catch {
       setUiError('Unable to log dose right now. Please try again.')
     } finally {
@@ -179,7 +204,7 @@ export function useAppData(): UseAppDataResult {
       })
 
       await refreshSelectedPatientView(selectedPatientId)
-      setNow(new Date())
+      refreshNow()
     } catch {
       setUiError('Unable to save correction right now. Please try again.')
       throw new Error('Correction save failed')

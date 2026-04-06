@@ -85,6 +85,15 @@ export function useAppShell({ appState, now }: UseAppShellParams) {
   const wakeLockRef = useRef<WakeLockSentinelLike | null>(null)
   const wakeLockSupported = Boolean((navigator as Navigator & NavigatorWithWakeLock).wakeLock)
 
+  const focusCareView = useCallback(() => {
+    if (typeof window.focus === 'function') {
+      window.focus()
+    }
+
+    setActiveView('care')
+    updateUrlForView('care')
+  }, [])
+
   const playAlarmPulse = useCallback(async () => {
     if (typeof window === 'undefined' || typeof window.AudioContext === 'undefined') {
       return
@@ -272,10 +281,20 @@ export function useAppShell({ appState, now }: UseAppShellParams) {
       const updatedReminderLog = { ...reminderLog }
 
       for (const candidate of unsentCandidates) {
-        new Notification(candidate.title, {
+        const notification = new Notification(candidate.title, {
           body: candidate.body,
           tag: candidate.dedupeKey,
+          badge: 'med-minder-icon.svg',
+          icon: 'med-minder-icon.svg',
+          renotify: candidate.kind !== 'due-soon',
+          requireInteraction: candidate.kind !== 'due-soon',
         })
+
+        notification.onclick = () => {
+          focusCareView()
+          notification.close()
+        }
+
         updatedReminderLog[candidate.dedupeKey] = currentNow.toISOString()
         sentReminderKeysRef.current.add(candidate.dedupeKey)
       }
@@ -284,7 +303,7 @@ export function useAppShell({ appState, now }: UseAppShellParams) {
     } finally {
       reminderRunInFlightRef.current = false
     }
-  }, [notificationPermission])
+  }, [focusCareView, notificationPermission])
 
   useEffect(() => {
     if (!appState) {
@@ -348,6 +367,28 @@ export function useAppShell({ appState, now }: UseAppShellParams) {
 
     return () => {
       window.clearInterval(timer)
+    }
+  }, [activeAlarm, triggerAlarmPulse])
+
+  useEffect(() => {
+    if (!activeAlarm) {
+      return
+    }
+
+    const replayAlarmPulse = () => {
+      if (document.visibilityState !== 'hidden') {
+        triggerAlarmPulse()
+      }
+    }
+
+    window.addEventListener('focus', replayAlarmPulse)
+    window.addEventListener('pageshow', replayAlarmPulse)
+    document.addEventListener('visibilitychange', replayAlarmPulse)
+
+    return () => {
+      window.removeEventListener('focus', replayAlarmPulse)
+      window.removeEventListener('pageshow', replayAlarmPulse)
+      document.removeEventListener('visibilitychange', replayAlarmPulse)
     }
   }, [activeAlarm, triggerAlarmPulse])
 

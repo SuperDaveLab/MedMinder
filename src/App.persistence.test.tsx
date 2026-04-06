@@ -4,6 +4,15 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+
+const mockClock = vi.hoisted(() => ({
+  now: '2026-04-06T09:59:00.000Z',
+}))
+
+vi.mock('./ui/clock', () => ({
+  getCurrentTime: () => new Date(mockClock.now),
+}))
+
 import App from './App'
 import { medMinderDb } from './storage/database'
 import {
@@ -29,6 +38,8 @@ async function clearDatabase(): Promise<void> {
 
 describe('App persistence flow', () => {
   beforeEach(async () => {
+    mockClock.now = '2026-04-06T09:59:00.000Z'
+
     await clearDatabase()
 
     vi.spyOn(window, 'confirm').mockReturnValue(true)
@@ -187,6 +198,8 @@ describe('App persistence flow', () => {
   })
 
   it('triggers due-now reminder once and avoids duplicates using local dedupe log', async () => {
+    mockClock.now = '2026-03-28T14:01:00.000Z'
+
     const NotificationMock = Notification as unknown as {
       instances: Array<{ title: string; options?: NotificationOptions }>
     }
@@ -223,5 +236,23 @@ describe('App persistence flow', () => {
       (entry) => entry.title === 'Amoxicillin: due now',
     ).length
     expect(secondAmoxicillinCount).toBe(1)
+  })
+
+  it('refreshes medication timing on page show so overdue state catches up after resume', async () => {
+    mockClock.now = '2026-03-28T13:50:00.000Z'
+
+    render(<App />)
+
+    await screen.findByRole('heading', { name: 'Alex Rivera' })
+    const medicationCard = await screen.findByTestId('med-card-med-interval-1')
+
+    expect(within(medicationCard).getByText(/Too early by|Next due/)).toBeTruthy()
+
+    mockClock.now = '2026-03-28T14:01:00.000Z'
+    window.dispatchEvent(new Event('pageshow'))
+
+    await waitFor(() => {
+      expect(within(screen.getByTestId('med-card-med-interval-1')).getByText(/Overdue by|Eligible now/)).toBeTruthy()
+    })
   })
 })

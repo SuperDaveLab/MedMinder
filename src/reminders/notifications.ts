@@ -7,10 +7,12 @@ export type ReminderPermissionState =
   | 'granted'
   | 'denied'
 
+const OVERDUE_REMINDER_INTERVAL_MINUTES = 30
+
 export interface ReminderNotificationCandidate {
   medicationId: string
   medicationName: string
-  kind: 'due-soon' | 'due-now'
+  kind: 'due-soon' | 'due-now' | 'overdue'
   nextEligibleAtIso: string
   dedupeKey: string
   title: string
@@ -62,10 +64,14 @@ export function buildReminderNotificationCandidates(
   doseEvents: DoseEvent[],
   now: Date,
 ): ReminderNotificationCandidate[] {
+  if (Number.isNaN(now.getTime())) {
+    return []
+  }
+
   const candidates: ReminderNotificationCandidate[] = []
 
   for (const medication of medications) {
-    if (!medication.active) {
+    if (!medication.active || medication.reminderSettings?.enabled === false) {
       continue
     }
 
@@ -82,6 +88,28 @@ export function buildReminderNotificationCandidates(
     const nextEligibleAtDisplay = formatLocalReminderDateTime(nextEligibleAtIso)
 
     if (now.getTime() >= schedule.nextEligibleAt.getTime()) {
+      const overdueMinutes = Math.floor(
+        (now.getTime() - schedule.nextEligibleAt.getTime()) / 60_000,
+      )
+
+      if (overdueMinutes >= OVERDUE_REMINDER_INTERVAL_MINUTES) {
+        const overdueBucket = Math.floor(
+          overdueMinutes / OVERDUE_REMINDER_INTERVAL_MINUTES,
+        )
+        const dedupeKey = `${medication.id}:overdue:${nextEligibleAtIso}:${String(overdueBucket)}`
+
+        candidates.push({
+          medicationId: medication.id,
+          medicationName: medication.name,
+          kind: 'overdue',
+          nextEligibleAtIso,
+          dedupeKey,
+          title: `${medication.name}: still overdue`,
+          body: `Was eligible at ${nextEligibleAtDisplay}.`,
+        })
+        continue
+      }
+
       const dedupeKey = `${medication.id}:due-now:${nextEligibleAtIso}`
       candidates.push({
         medicationId: medication.id,

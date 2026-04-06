@@ -64,6 +64,37 @@ describe('reminder notifications', () => {
     expect(dueNow[0].kind).toBe('due-now')
   })
 
+  it('skips medications with reminders explicitly disabled', () => {
+    const disabledMedication: Medication = {
+      ...baseMedication,
+      reminderSettings: {
+        enabled: false,
+        earlyReminderMinutes: 10,
+      },
+    }
+
+    const candidates = buildReminderNotificationCandidates(
+      [disabledMedication],
+      baseDoseEvents,
+      new Date('2026-03-28T14:01:00.000Z'),
+    )
+
+    expect(candidates).toEqual([])
+  })
+
+  it('creates overdue follow-up candidates in 30-minute buckets', () => {
+    const overdue = buildReminderNotificationCandidates(
+      [baseMedication],
+      baseDoseEvents,
+      new Date('2026-03-28T14:31:00.000Z'),
+    )
+
+    expect(overdue).toHaveLength(1)
+    expect(overdue[0].kind).toBe('overdue')
+    expect(overdue[0].title).toContain('still overdue')
+    expect(overdue[0].dedupeKey).toBe('med-1:overdue:2026-03-28T14:00:00.000Z:1')
+  })
+
   it('filters out already-sent notifications using dedupe keys', () => {
     const dueSoonCandidates = buildReminderNotificationCandidates(
       [baseMedication],

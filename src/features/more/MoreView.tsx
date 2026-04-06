@@ -469,6 +469,9 @@ export function MoreView({
                 ? 'Wake lock available.'
                 : 'Wake lock unsupported.'}
           </p>
+          <p className="subhead">
+            Best results: install the app, enable due alerts, and use Prevent sleep during active care windows.
+          </p>
         </section>
 
         {patientSection}
