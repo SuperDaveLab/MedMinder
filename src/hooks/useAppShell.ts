@@ -286,7 +286,6 @@ export function useAppShell({ appState, now }: UseAppShellParams) {
           tag: candidate.dedupeKey,
           badge: 'med-minder-icon.svg',
           icon: 'med-minder-icon.svg',
-          renotify: candidate.kind !== 'due-soon',
           requireInteraction: candidate.kind !== 'due-soon',
         })
 
