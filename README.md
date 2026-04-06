@@ -54,6 +54,42 @@ MedMinder now supports an in-app alarm experience for eligible schedules (`inter
 
 Because this is a browser/PWA app, true OS-native background alarm scheduling is limited by platform/browser rules. For reliability when the app is backgrounded, keep browser notifications enabled as well.
 
+## 🔔 Reminder Limits
+
+MedMinder can be a very capable installed PWA, but it is still subject to web platform limits:
+
+- The app cannot schedule exact OS-level alarms the way a fully native mobile app can.
+- Local browser notifications are best-effort and may be delayed or missed if the browser suspends the app, the device is aggressively power-managed, or notification permissions are disabled.
+- In-app sound and vibration alarms are strongest while the app is open, installed, and allowed to stay active in the foreground.
+- Offline/local-first reminder behavior is intentionally self-contained, which means it does not have a cloud scheduler backing it up.
+
+For best current reliability:
+
+- Install the app to the home screen.
+- Enable browser notifications.
+- Use the in-app alarm option for interval and fixed-time medications.
+- Use Prevent sleep during active care windows when appropriate.
+
+## ☁️ Planned Premium Reminder Relay
+
+To improve reliability beyond what a plain PWA can guarantee, MedMinder is expected to support an optional premium reminder relay service.
+
+Planned behavior:
+
+- Send one **Due now** reminder per medication when reminders are enabled.
+- Deliver that reminder through at least two channels:
+   - Web push to the installed MedMinder app
+   - Email
+- Support optional SMS later.
+
+Important product tradeoff:
+
+- The core app can remain local-first.
+- The premium reminder relay cannot remain purely local-first, because the backend must know about reminder-enabled medications and schedule changes in order to deliver backup notifications.
+- If a user opts into the premium service, reminder-relevant patient and medication updates will need to sync to the backend whenever they change.
+
+This is the practical ceiling for a web-based app: a PWA plus a server-backed reminder relay can be substantially more robust than local-only browser reminders, but it still is not the same as native device alarm APIs.
+
 ## 🗺️ Roadmap
 
 For planned enhancements and prioritization notes, see [docs/roadmap.md](docs/roadmap.md).
@@ -91,6 +127,9 @@ Because MedMinder is a caregiver timing tool, privacy and reliability are paramo
 - **No Backend**: There are no servers processing your data.
 - **Offline Capable**: As a registered PWA, MedMinder functions without an internet connection.
 - **Manual Sync**: Data is tied to the current browser profile unless you use the built-in backup and restore tooling to move it.
+
+Current note:
+- The optional premium reminder relay described above is planned work, not current app behavior. If added, it will be opt-in and will require sending reminder-related data to a backend service.
 
 ### Disclaimer
 *This app is a caregiver timing tool. It does not provide diagnosis, dosage recommendations, or treatment advice.*
