@@ -37,10 +37,17 @@ function trimOptional(value?: string): string | undefined {
   return trimmed ? trimmed : undefined
 }
 
-function getPreferredPatientIdFromUrl(): string | null {
+function consumePreferredPatientIdFromUrl(): string | null {
   const url = new URL(window.location.href)
   const patientId = url.searchParams.get('patientId')?.trim()
-  return patientId && patientId.length > 0 ? patientId : null
+
+  if (!patientId || patientId.length === 0) {
+    return null
+  }
+
+  url.searchParams.delete('patientId')
+  window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`)
+  return patientId
 }
 
 export interface UseAppDataResult {
@@ -108,7 +115,7 @@ export function useAppData(authState: AuthSessionState | null): UseAppDataResult
     }
 
     const cloudState = await fetchCloudState(authState)
-    await resolveAndSetState(cloudState, preferredPatientId ?? getPreferredPatientIdFromUrl())
+    await resolveAndSetState(cloudState, preferredPatientId ?? consumePreferredPatientIdFromUrl())
   }, [authState, resolveAndSetState])
 
   const loadLocalWorkspaceState = useCallback(async (preferredPatientId?: string | null) => {
@@ -125,7 +132,7 @@ export function useAppData(authState: AuthSessionState | null): UseAppDataResult
     const persistedSelectedPatientId = await getLastSelectedPatientId()
     const resolvedPatientId =
       preferredPatientId
-      ?? getPreferredPatientIdFromUrl()
+      ?? consumePreferredPatientIdFromUrl()
       ?? selectedPatientId
       ?? persistedSelectedPatientId
       ?? patients[0].id
@@ -172,7 +179,7 @@ export function useAppData(authState: AuthSessionState | null): UseAppDataResult
 
           const cloudState = await fetchCloudState(authState)
           if (!cancelled) {
-            await resolveAndSetState(cloudState, getPreferredPatientIdFromUrl())
+            await resolveAndSetState(cloudState, consumePreferredPatientIdFromUrl())
           }
           return
         }

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { useAppData } from './hooks/useAppData'
 import { useAuth } from './hooks/useAuth'
 import { useAppShell } from './hooks/useAppShell'
@@ -114,6 +114,40 @@ function App() {
   const handleTogglePatientNotifications = async (patientId: string, enabled: boolean) => {
     await handleSetPatientNotificationsEnabled(patientId, enabled)
   }
+
+  useEffect(() => {
+    if (activeView !== 'care') {
+      return
+    }
+
+    let cancelled = false
+    let inFlight = false
+
+    const refreshCareView = async () => {
+      if (cancelled || inFlight || document.visibilityState !== 'visible') {
+        return
+      }
+
+      inFlight = true
+      try {
+        await refreshSelectedPatientView()
+      } catch {
+        // Keep polling; transient errors should not break the care screen.
+      } finally {
+        inFlight = false
+      }
+    }
+
+    void refreshCareView()
+    const timer = window.setInterval(() => {
+      void refreshCareView()
+    }, 5_000)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+    }
+  }, [activeView, refreshSelectedPatientView])
 
   if (!appState) {
     return (
