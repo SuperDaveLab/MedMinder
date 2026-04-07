@@ -16,7 +16,7 @@ Built to be installed directly to your phone's home screen as a PWA, it behaves 
 ## 📲 How to Use MedMinder
 
 <div align="center">
-  <p><strong><a href="https://medminder.superdavelab.com">🟢 Try the Live App!</a></strong></p>
+   <p><strong><a href="https://medminder.superdavelab.com" target="_blank" rel="noopener noreferrer">🟢 Try the Live App!</a></strong></p>
 </div>
 
 The link above leads to the fully functional live production build. To get started:
