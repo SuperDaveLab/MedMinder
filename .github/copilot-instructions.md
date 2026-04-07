@@ -126,6 +126,8 @@ Choose the simplest implementation that preserves correctness, readability, and 
 - For production deploy requests, follow `docs/deployment-runbook.md`.
 - Treat deploys as a release action, not a coding task: verify tests/lint/build first.
 - Do not guess server paths, hostnames, or credentials.
+- Do not hardcode personal hostnames, domains, or server addresses in committed scripts.
+- Keep deploy targets runtime-configured via env/CLI flags (for example, `DEPLOY_HOST` and `DEPLOY_PUBLIC_BASE_URL`).
 - If deploy variables are missing, ask for them explicitly.
 - Prefer atomic release patterns (timestamped release folder + `current` symlink) with rollback capability.
 

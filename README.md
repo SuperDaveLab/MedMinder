@@ -37,9 +37,11 @@ The link above leads to the fully functional live production build. To get start
 
 - **Schedule-Aware Status Engine**: Automatically calculates if a medication is "Eligible now", "Due soon", "Too early", or "Overdue" natively within the browser format.
 - **Complex Schedules Supported**: Fully supports `interval` (e.g. every 6 hours), `fixed_times` (e.g. 08:00 and 20:00), `prn` (as needed), and complex `taper` schedules!
+- **Patient-first Workflow**: Dedicated Patients management, patient-scoped Meds view, and fast add/edit medication workflows optimized for mobile care rounds.
 - **Local-first & Privacy-focused**: Your data never leaves your device. Everything is securely stored in IndexedDB (`med-minder-db`).
 - **Complete History & Auditing**: See exactly what was given when, and log corrections that properly supersede accidental entries.
-- **Local Notifications**: Opt-in to browser-based local notifications when medications become due!
+- **Smart Notifications**: Per-medication notification toggles, optional early notice (10/15 min), PRN default-off behavior, and overdue reminders.
+- **Noise Reduction for Caregivers**: Notifications are grouped per patient so multiple due medications can be delivered as a single alert.
 - **In-App Alarm Mode**: For interval and fixed-time meds, enable alarm mode to trigger repeating in-app sound/vibration with acknowledge/snooze actions when due now.
 - **Data Portability**: Full JSON backup export and import logic allows you to safely copy data across devices.
 
@@ -69,6 +71,15 @@ For best current reliability:
 - Enable browser notifications.
 - Use the in-app alarm option for interval and fixed-time medications.
 - Use Prevent sleep during active care windows when appropriate.
+
+Current reminder behavior (implemented):
+
+- Deactivated medications never generate notification candidates.
+- Medications with notifications disabled never generate notification candidates.
+- `due-soon` only applies when early reminder minutes is set to 10 or 15.
+- PRN defaults notifications to off when reminder settings are unset.
+- PRN emits a single `due-now` notification per eligibility window (no `due-soon` or recurring overdue buckets).
+- Overdue notifications use a 30-minute default interval and support per-medication override in domain data.
 
 ## ☁️ Planned Premium Reminder Relay
 
