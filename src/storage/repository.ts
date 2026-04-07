@@ -215,6 +215,19 @@ export async function updatePatient(
   return updatedPatient
 }
 
+export async function setPatientNotificationsEnabled(patientId: string, enabled: boolean): Promise<void> {
+  const patient = await medMinderDb.patients.get(patientId)
+
+  if (!patient) {
+    throw new Error('Patient not found for notification update.')
+  }
+
+  await medMinderDb.patients.put({
+    ...patient,
+    notificationsEnabled: enabled,
+  })
+}
+
 /**
  * Safe destructive delete for patient administration.
  * Cascades to all medications for the patient and all associated dose events.

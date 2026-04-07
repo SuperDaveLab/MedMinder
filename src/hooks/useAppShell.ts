@@ -263,10 +263,16 @@ export function useAppShell({ appState, now, authState }: UseAppShellParams) {
     reminderRunInFlightRef.current = true
 
     try {
+      const disabledPatientIds = new Set(
+        currentState.patients
+          .filter((patient) => patient.notificationsEnabled === false)
+          .map((patient) => patient.id),
+      )
       const candidates = buildReminderNotificationCandidates(
         currentState.medications,
         currentState.doseEvents,
         currentNow,
+        disabledPatientIds,
       )
 
       if (candidates.length === 0) {

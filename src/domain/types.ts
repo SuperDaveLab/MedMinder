@@ -28,6 +28,7 @@ export interface Patient {
   id: string
   displayName: string
   notes?: string
+  notificationsEnabled?: boolean
 }
 
 export interface IntervalSchedule {

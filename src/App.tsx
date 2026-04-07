@@ -35,6 +35,7 @@ function App() {
     handlePatientChange,
     handleCreatePatient,
     handleUpdatePatient,
+    handleSetPatientNotificationsEnabled,
     handleDeletePatient,
     handleCreateMedication,
     handleUpdateMedication,
@@ -110,6 +111,10 @@ function App() {
     }
   }
 
+  const handleTogglePatientNotifications = async (patientId: string, enabled: boolean) => {
+    await handleSetPatientNotificationsEnabled(patientId, enabled)
+  }
+
   if (!appState) {
     return (
       <main className="app-shell">
@@ -132,6 +137,7 @@ function App() {
             onUiError={setUiError}
             onCreatePatient={handleCreatePatient}
             onUpdatePatient={handleUpdatePatient}
+            onTogglePatientNotifications={handleTogglePatientNotifications}
             onDeletePatient={handleDeletePatient}
           />
         </section>
@@ -306,6 +312,7 @@ function App() {
             onGiveDose={handleLogDoseNow}
             onCorrectDose={handleCorrectDose}
             onToggleMedicationReminder={handleToggleMedicationReminder}
+            onTogglePatientNotifications={handleTogglePatientNotifications}
             actionsDisabled={isDoseActionInProgress}
           />
         ) : null}
@@ -341,6 +348,7 @@ function App() {
             onUiError={setUiError}
             onCreatePatient={handleCreatePatient}
             onUpdatePatient={handleUpdatePatient}
+            onTogglePatientNotifications={handleTogglePatientNotifications}
             onDeletePatient={handleDeletePatient}
           />
         ) : null}

@@ -9,6 +9,7 @@ interface PatientsViewProps {
   onUiError: (message: string | null) => void
   onCreatePatient: (displayName: string, notes?: string) => Promise<void>
   onUpdatePatient: (patientId: string, input: UpsertPatientInput) => Promise<void>
+  onTogglePatientNotifications: (patientId: string, enabled: boolean) => Promise<void>
   onDeletePatient: (patientId: string) => Promise<void>
 }
 
@@ -19,6 +20,7 @@ export function PatientsView({
   onUiError,
   onCreatePatient,
   onUpdatePatient,
+  onTogglePatientNotifications,
   onDeletePatient,
 }: PatientsViewProps) {
   const [editingPatientId, setEditingPatientId] = useState<string | null>(null)
@@ -125,6 +127,23 @@ export function PatientsView({
     }
   }
 
+  const handleTogglePatientNotifications = async (patientId: string, enabled: boolean) => {
+    if (isPatientActionInProgress) {
+      return
+    }
+
+    try {
+      onUiError(null)
+      setIsPatientActionInProgress(true)
+      await onTogglePatientNotifications(patientId, enabled)
+      await onDataChanged(patientId)
+    } catch {
+      onUiError('Unable to update patient notifications right now. Please try again.')
+    } finally {
+      setIsPatientActionInProgress(false)
+    }
+  }
+
   return (
     <section className="workflow-section" data-testid="patients-view">
       <section className="admin-section no-print">
@@ -199,6 +218,18 @@ export function PatientsView({
                     {listedPatient.notes ? <p>{listedPatient.notes}</p> : null}
                   </div>
                   <div className="admin-item-actions">
+                    <button
+                      type="button"
+                      data-testid={`toggle-patient-notifications-${listedPatient.id}`}
+                      className={`utility-button patient-notifications-toggle ${listedPatient.notificationsEnabled === false ? 'is-muted' : ''}`}
+                      disabled={isPatientActionInProgress}
+                      aria-label={listedPatient.notificationsEnabled === false ? 'Enable notifications for this patient' : 'Disable notifications for this patient'}
+                      aria-pressed={listedPatient.notificationsEnabled !== false}
+                      title={listedPatient.notificationsEnabled === false ? 'Notifications off' : 'Notifications on'}
+                      onClick={() => void handleTogglePatientNotifications(listedPatient.id, listedPatient.notificationsEnabled === false)}
+                    >
+                      {listedPatient.notificationsEnabled === false ? '🔕' : '🔔'}
+                    </button>
                     <button
                       data-testid={`edit-patient-${listedPatient.id}`}
                       className="utility-button"

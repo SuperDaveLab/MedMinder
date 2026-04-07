@@ -424,4 +424,39 @@ describe('reminder notifications', () => {
     const grouped = groupReminderNotificationsByPatient([])
     expect(grouped).toEqual([])
   })
+
+  it('skips all medications for a patient when their id is in disabledPatientIds', () => {
+    const now = new Date('2026-03-28T14:01:00.000Z')
+
+    const medForDisabledPatient: Medication = {
+      ...baseMedication,
+      id: 'med-p2',
+      patientId: 'patient-2',
+      reminderSettings: { enabled: true, earlyReminderMinutes: 10 },
+    }
+    const doseForDisabledPatient: DoseEvent = {
+      id: 'dose-p2',
+      medicationId: 'med-p2',
+      timestampGiven: '2026-03-28T06:00:00.000Z',
+      corrected: false,
+    }
+
+    // Without disabledPatientIds: both patients produce candidates
+    const all = buildReminderNotificationCandidates(
+      [baseMedication, medForDisabledPatient],
+      [...baseDoseEvents, doseForDisabledPatient],
+      now,
+    )
+    expect(all).toHaveLength(2)
+
+    // With patient-2 disabled: only patient-1 produces a candidate
+    const filtered = buildReminderNotificationCandidates(
+      [baseMedication, medForDisabledPatient],
+      [...baseDoseEvents, doseForDisabledPatient],
+      now,
+      new Set(['patient-2']),
+    )
+    expect(filtered).toHaveLength(1)
+    expect(filtered[0].patientId).toBe('patient-1')
+  })
 })

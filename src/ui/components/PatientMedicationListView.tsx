@@ -22,6 +22,7 @@ interface PatientMedicationListViewProps {
     notes?: string,
   ) => Promise<void>
   onToggleMedicationReminder: (medication: Medication, enabled: boolean) => Promise<void>
+  onTogglePatientNotifications: (patientId: string, enabled: boolean) => Promise<void>
 }
 
 interface StatusDescriptor {
@@ -88,6 +89,7 @@ export function PatientMedicationListView({
   onGiveDose,
   onCorrectDose,
   onToggleMedicationReminder,
+  onTogglePatientNotifications,
 }: PatientMedicationListViewProps) {
   const medicationStatuses = useMemo(
     () =>
@@ -123,16 +125,28 @@ export function PatientMedicationListView({
     <section className="medication-section">
       <div className="medication-section-header">
         <h2 aria-label={patient.displayName}>{patient.displayName}'s medications</h2>
-        <button
-          type="button"
-          className="utility-button medication-add-button"
-          data-testid="care-add-medication-button"
-          aria-label="Add medication"
-          onClick={onAddMedication}
-        >
-          <span className="button-label-mobile" aria-hidden="true">+</span>
-          <span className="button-label-desktop">Add medication</span>
-        </button>
+        <div className="medication-section-header-actions">
+          <button
+            type="button"
+            className={`utility-button patient-notifications-toggle ${patient.notificationsEnabled === false ? 'is-muted' : ''}`}
+            aria-label={patient.notificationsEnabled === false ? 'Enable notifications for this patient' : 'Disable notifications for this patient'}
+            aria-pressed={patient.notificationsEnabled !== false}
+            title={patient.notificationsEnabled === false ? 'Notifications off' : 'Notifications on'}
+            onClick={() => void onTogglePatientNotifications(patient.id, patient.notificationsEnabled === false)}
+          >
+            {patient.notificationsEnabled === false ? '🔕' : '🔔'}
+          </button>
+          <button
+            type="button"
+            className="utility-button medication-add-button"
+            data-testid="care-add-medication-button"
+            aria-label="Add medication"
+            onClick={onAddMedication}
+          >
+            <span className="button-label-mobile" aria-hidden="true">+</span>
+            <span className="button-label-desktop">Add medication</span>
+          </button>
+        </div>
       </div>
       {medicationStatuses.length === 0 ? (
         <p className="med-list-empty">No active medications for this patient yet.</p>

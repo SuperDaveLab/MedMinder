@@ -18,6 +18,7 @@ import {
   getPatients,
   loadPatientMedicationView,
   saveLastSelectedPatientId,
+  setPatientNotificationsEnabled,
   updateMedication,
   updatePatient,
 } from '../storage/repository'
@@ -46,6 +47,7 @@ export interface UseAppDataResult {
   handlePatientChange: (patientId: string) => Promise<void>
   handleCreatePatient: (displayName: string, notes?: string) => Promise<void>
   handleUpdatePatient: (patientId: string, input: UpsertPatientInput) => Promise<void>
+  handleSetPatientNotificationsEnabled: (patientId: string, enabled: boolean) => Promise<void>
   handleDeletePatient: (patientId: string) => Promise<void>
   handleCreateMedication: (input: UpsertMedicationInput) => Promise<void>
   handleUpdateMedication: (medicationId: string, input: UpsertMedicationInput) => Promise<void>
@@ -293,6 +295,28 @@ export function useAppData(authState: AuthSessionState | null): UseAppDataResult
     }
 
     await updatePatient(patientId, input)
+    await refreshSelectedPatientView(patientId)
+  }
+
+  const handleSetPatientNotificationsEnabled = async (patientId: string, enabled: boolean) => {
+    if (!appState) {
+      throw new Error('App state is not loaded yet.')
+    }
+
+    if (isCloudMode) {
+      await commitCloudState(
+        {
+          ...appState,
+          patients: appState.patients.map((patient) =>
+            patient.id === patientId ? { ...patient, notificationsEnabled: enabled } : patient,
+          ),
+        },
+        patientId,
+      )
+      return
+    }
+
+    await setPatientNotificationsEnabled(patientId, enabled)
     await refreshSelectedPatientView(patientId)
   }
 
@@ -589,6 +613,7 @@ export function useAppData(authState: AuthSessionState | null): UseAppDataResult
     handlePatientChange,
     handleCreatePatient,
     handleUpdatePatient,
+    handleSetPatientNotificationsEnabled,
     handleDeletePatient,
     handleCreateMedication,
     handleUpdateMedication,
