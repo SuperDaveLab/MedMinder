@@ -100,6 +100,7 @@ export interface Medication {
   defaultDoseText: string
   schedule: MedicationSchedule
   reminderSettings?: ReminderSettings
+  overdueReminderIntervalMinutes?: number
 }
 
 export interface DoseEventBase {

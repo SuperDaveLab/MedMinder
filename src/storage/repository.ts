@@ -253,6 +253,7 @@ export interface UpsertMedicationInput {
   active: boolean
   schedule: Medication['schedule']
   reminderSettings?: Medication['reminderSettings']
+  overdueReminderIntervalMinutes?: number
 }
 
 export async function createMedication(
@@ -287,6 +288,7 @@ export async function createMedication(
     active: input.active,
     schedule: input.schedule,
     reminderSettings: input.reminderSettings,
+    overdueReminderIntervalMinutes: input.overdueReminderIntervalMinutes ?? 30,
   }
 
   await medMinderDb.medications.add(medication)
@@ -333,6 +335,7 @@ export async function updateMedication(
     active: input.active,
     schedule: input.schedule,
     reminderSettings: input.reminderSettings,
+    overdueReminderIntervalMinutes: input.overdueReminderIntervalMinutes ?? 30,
   }
 
   await medMinderDb.medications.put(updatedMedication)

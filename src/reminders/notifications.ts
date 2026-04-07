@@ -7,14 +7,21 @@ export type ReminderPermissionState =
   | 'granted'
   | 'denied'
 
-const OVERDUE_REMINDER_INTERVAL_MINUTES = 30
-
 export interface ReminderNotificationCandidate {
   medicationId: string
   patientId: string
   medicationName: string
   kind: 'due-soon' | 'due-now' | 'overdue'
   nextEligibleAtIso: string
+  dedupeKey: string
+  title: string
+  body: string
+}
+
+export interface GroupedReminderNotification {
+  patientId: string
+  kind: 'due-soon' | 'due-now' | 'overdue'
+  medicationNames: string[]
   dedupeKey: string
   title: string
   body: string
@@ -112,10 +119,11 @@ export function buildReminderNotificationCandidates(
       const overdueMinutes = Math.floor(
         (now.getTime() - schedule.nextEligibleAt.getTime()) / 60_000,
       )
+      const overdueInterval = medication.overdueReminderIntervalMinutes ?? 30
 
-      if (overdueMinutes >= OVERDUE_REMINDER_INTERVAL_MINUTES) {
+      if (overdueMinutes >= overdueInterval) {
         const overdueBucket = Math.floor(
-          overdueMinutes / OVERDUE_REMINDER_INTERVAL_MINUTES,
+          overdueMinutes / overdueInterval,
         )
         const dedupeKey = `${medication.id}:overdue:${nextEligibleAtIso}:${String(overdueBucket)}`
 
@@ -177,4 +185,57 @@ export function filterUnsentReminderCandidates(
   sentReminderLog: Record<string, string>,
 ): ReminderNotificationCandidate[] {
   return candidates.filter((candidate) => !sentReminderLog[candidate.dedupeKey])
+}
+
+export function groupReminderNotificationsByPatient(
+  candidates: ReminderNotificationCandidate[],
+): GroupedReminderNotification[] {
+  if (candidates.length === 0) {
+    return []
+  }
+
+  // Group candidates by patientId + kind
+  const grouped = new Map<string, ReminderNotificationCandidate[]>()
+
+  for (const candidate of candidates) {
+    const groupKey = `${candidate.patientId}:${candidate.kind}`
+    const existing = grouped.get(groupKey) ?? []
+    grouped.set(groupKey, [...existing, candidate])
+  }
+
+  // Convert to grouped notifications
+  const grouped_notifications: GroupedReminderNotification[] = []
+
+  for (const [_groupKey, group] of grouped) {
+    const patientId = group[0].patientId
+    const kind = group[0].kind
+    const medicationNames = group.map((c) => c.medicationName)
+
+    // Create a sorted, stable dedupe key combining patient, kind, and sorted med IDs
+    const sortedMedIds = group.map((c) => c.medicationId).sort()
+    const compositeDedupeKey = `${patientId}:${kind}:${sortedMedIds.join(',')}`
+
+    const title =
+      medicationNames.length === 1
+        ? `${medicationNames[0]}: ${kind === 'due-soon' ? 'due soon' : kind === 'due-now' ? 'due now' : 'still overdue'}`
+        : `${medicationNames.length} medications: ${kind === 'due-soon' ? 'due soon' : kind === 'due-now' ? 'available now' : 'overdue'}`
+
+    const body =
+      medicationNames.length === 1
+        ? kind === 'due-soon'
+          ? `Eligible at ${group[0].body.split(' ').slice(2).join(' ')}`
+          : group[0].body
+        : medicationNames.join(', ')
+
+    grouped_notifications.push({
+      patientId,
+      kind,
+      medicationNames,
+      dedupeKey: compositeDedupeKey,
+      title,
+      body,
+    })
+  }
+
+  return grouped_notifications
 }
