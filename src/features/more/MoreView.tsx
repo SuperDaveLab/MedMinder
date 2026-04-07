@@ -9,7 +9,6 @@ import type { DoseEvent, Medication, Patient } from '../../domain/types'
 import {
   exportFullBackup,
   importFullBackup,
-  type UpsertPatientInput,
 } from '../../storage/repository'
 import { validateBackup } from '../../storage/backup'
 import {
@@ -19,15 +18,11 @@ import {
 import { formatAbsoluteDateTime } from '../../ui/time'
 
 interface MoreViewProps {
-  noPatientsMode?: boolean
-  patients: Patient[]
-  selectedPatientId: string | null
   patient: Patient | null
   medicationsForPatient: Medication[]
   doseEvents: DoseEvent[]
   now: Date
   onDataChanged: (preferredPatientId?: string | null) => Promise<void>
-  onUiError: (message: string | null) => void
   notificationPermission: NotificationPermission | 'unsupported'
   requestNotificationPermission: () => Promise<void>
   installPromptAvailable: boolean
@@ -37,9 +32,6 @@ interface MoreViewProps {
   isWakeLockActive: boolean
   onToggleWakeLock: () => Promise<void>
   onTestAlarm: () => void
-  onCreatePatient: (displayName: string, notes?: string) => Promise<void>
-  onUpdatePatient: (patientId: string, input: UpsertPatientInput) => Promise<void>
-  onDeletePatient: (patientId: string) => Promise<void>
   authState: AuthSessionState | null
   isAuthLoading: boolean
   isAuthActionInProgress: boolean
@@ -64,15 +56,11 @@ function downloadBlob(blob: Blob, fileName: string): void {
 }
 
 export function MoreView({
-  noPatientsMode = false,
-  patients,
-  selectedPatientId,
   patient,
   medicationsForPatient,
   doseEvents,
   now,
   onDataChanged,
-  onUiError,
   notificationPermission,
   requestNotificationPermission,
   installPromptAvailable,
@@ -82,9 +70,6 @@ export function MoreView({
   isWakeLockActive,
   onToggleWakeLock,
   onTestAlarm,
-  onCreatePatient,
-  onUpdatePatient,
-  onDeletePatient,
   authState,
   isAuthLoading,
   isAuthActionInProgress,
@@ -95,12 +80,6 @@ export function MoreView({
   onUpdateAccountSettings,
   onClearAuthError,
 }: MoreViewProps) {
-  const [editingPatientId, setEditingPatientId] = useState<string | null>(null)
-  const [patientDisplayNameInput, setPatientDisplayNameInput] = useState('')
-  const [patientNotesInput, setPatientNotesInput] = useState('')
-  const [patientFormError, setPatientFormError] = useState<string | null>(null)
-  const [isPatientActionInProgress, setIsPatientActionInProgress] = useState(false)
-
   const [isBackupActionInProgress, setIsBackupActionInProgress] = useState(false)
   const [backupStatusMessage, setBackupStatusMessage] = useState<{
     kind: 'error' | 'success'
@@ -112,8 +91,6 @@ export function MoreView({
   const [authPhoneInput, setAuthPhoneInput] = useState('')
   const [authNotificationPolicyInput, setAuthNotificationPolicyInput] = useState<NotificationDeliveryPolicy>('push_then_email_fallback')
 
-  void selectedPatientId
-
   const summaryRows = patient
     ? buildPatientMedicationSummaryRows(
         medicationsForPatient,
@@ -121,87 +98,6 @@ export function MoreView({
         now,
       )
     : []
-
-  const resetPatientForm = () => {
-    setEditingPatientId(null)
-    setPatientDisplayNameInput('')
-    setPatientNotesInput('')
-    setPatientFormError(null)
-  }
-
-  const startEditPatient = (listedPatient: Patient) => {
-    setEditingPatientId(listedPatient.id)
-    setPatientDisplayNameInput(listedPatient.displayName)
-    setPatientNotesInput(listedPatient.notes ?? '')
-    setPatientFormError(null)
-  }
-
-  const handleSavePatient = async () => {
-    if (isPatientActionInProgress) {
-      return
-    }
-
-    const displayName = patientDisplayNameInput.trim()
-
-    if (!displayName) {
-      setPatientFormError('Patient display name is required.')
-      return
-    }
-
-    try {
-      onUiError(null)
-      setPatientFormError(null)
-      setIsPatientActionInProgress(true)
-
-      if (editingPatientId) {
-        await onUpdatePatient(editingPatientId, {
-          displayName,
-          notes: patientNotesInput,
-        })
-        await onDataChanged(editingPatientId)
-      } else {
-        await onCreatePatient(displayName, patientNotesInput)
-      }
-
-      resetPatientForm()
-    } catch (error) {
-      setPatientFormError(
-        error instanceof Error
-          ? error.message
-          : 'Unable to save patient right now.',
-      )
-    } finally {
-      setIsPatientActionInProgress(false)
-    }
-  }
-
-  const handleDeletePatient = async (patientId: string) => {
-    if (isPatientActionInProgress) {
-      return
-    }
-
-    const confirmed = window.confirm(
-      'Permanently delete this patient and all associated medications and dose events?\n\nThis action cannot be undone.',
-    )
-
-    if (!confirmed) {
-      return
-    }
-
-    try {
-      onUiError(null)
-      setIsPatientActionInProgress(true)
-      await onDeletePatient(patientId)
-
-      if (editingPatientId === patientId) {
-        resetPatientForm()
-      }
-    } catch {
-      onUiError('Unable to delete patient right now. Please try again.')
-    } finally {
-      setIsPatientActionInProgress(false)
-    }
-  }
 
   const handlePrintSummary = () => {
     window.print()
@@ -367,79 +263,6 @@ export function MoreView({
     }
   }
 
-  const patientSection = (
-    <section className="admin-section no-print">
-      <h2>{noPatientsMode ? 'Patient administration' : 'Patient records'}</h2>
-      <label>
-        Patient display name
-        <input
-          data-testid="patient-display-name-input"
-          type="text"
-          value={patientDisplayNameInput}
-          onChange={(event) => setPatientDisplayNameInput(event.target.value)}
-        />
-      </label>
-      <label>
-        Notes
-        <textarea
-          data-testid="patient-notes-input"
-          value={patientNotesInput}
-          onChange={(event) => setPatientNotesInput(event.target.value)}
-        />
-      </label>
-      {patientFormError ? <p className="form-error">{patientFormError}</p> : null}
-      <div className="form-actions">
-        <button
-          data-testid="save-patient-button"
-          className="utility-button"
-          disabled={isPatientActionInProgress}
-          onClick={() => void handleSavePatient()}
-        >
-          {isPatientActionInProgress
-            ? 'Saving...'
-            : noPatientsMode
-              ? 'Add patient'
-              : editingPatientId
-                ? 'Save patient'
-                : 'Add patient'}
-        </button>
-        {!noPatientsMode && editingPatientId ? (
-          <button className="utility-button" disabled={isPatientActionInProgress} onClick={resetPatientForm}>Cancel</button>
-        ) : null}
-      </div>
-      {!noPatientsMode ? (
-        <ul className="admin-list">
-          {patients.map((listedPatient) => (
-            <li key={listedPatient.id} className="admin-item" data-testid={`patient-item-${listedPatient.id}`}>
-              <div>
-                <strong>{listedPatient.displayName}</strong>
-                {listedPatient.notes ? <p>{listedPatient.notes}</p> : null}
-              </div>
-              <div className="admin-item-actions">
-                <button
-                  data-testid={`edit-patient-${listedPatient.id}`}
-                  className="utility-button"
-                  disabled={isPatientActionInProgress}
-                  onClick={() => startEditPatient(listedPatient)}
-                >
-                  Edit
-                </button>
-                <button
-                  data-testid={`delete-patient-${listedPatient.id}`}
-                  className="utility-button danger-button"
-                  disabled={isPatientActionInProgress}
-                  onClick={() => void handleDeletePatient(listedPatient.id)}
-                >
-                  Delete
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-    </section>
-  )
-
   const handleCreateAccount = async () => {
     await onCreateAccount({
       email: authEmailInput,
@@ -577,15 +400,6 @@ export function MoreView({
     </section>
   )
 
-  if (noPatientsMode) {
-    return (
-      <section className="workflow-section" data-testid="more-view">
-        {accountSection}
-        {patientSection}
-      </section>
-    )
-  }
-
   return (
     <>
       <section className="workflow-section" data-testid="more-view">
@@ -649,8 +463,6 @@ export function MoreView({
             Best results: install the app, enable due alerts, and use Prevent sleep during active care windows.
           </p>
         </section>
-
-        {patientSection}
 
         <section className="admin-section no-print" data-testid="backup-section">
           <h2>Backup and restore</h2>

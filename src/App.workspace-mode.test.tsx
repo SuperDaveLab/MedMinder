@@ -229,7 +229,8 @@ describe('App workspace mode flow', () => {
     render(<App />)
     await screen.findByRole('option', { name: 'Alex Rivera' })
 
-    await user.click(screen.getByTestId('tab-more'))
+    await user.click(screen.getByTestId('tab-patients'))
+    await user.click(screen.getByTestId('start-add-patient-button'))
     await user.type(screen.getByTestId('patient-display-name-input'), 'Jamie Carter')
     await user.click(screen.getByTestId('save-patient-button'))
 
@@ -237,6 +238,7 @@ describe('App workspace mode flow', () => {
       expect(screen.getByRole('option', { name: 'Jamie Carter' })).toBeTruthy()
     })
 
+    await user.click(screen.getByTestId('tab-more'))
     await user.type(screen.getByTestId('auth-email-input'), 'caregiver@example.com')
     await user.type(screen.getByTestId('auth-password-input'), 'password123')
     await user.click(screen.getByTestId('create-account-button'))
@@ -296,6 +298,8 @@ describe('App workspace mode flow', () => {
     let localState = await getLocalMedMinderState()
     expect(localState).toEqual({ patients: [], medications: [], doseEvents: [] })
 
+    await user.click(screen.getByTestId('tab-patients'))
+    await user.click(screen.getByTestId('start-add-patient-button'))
     await user.clear(screen.getByTestId('patient-display-name-input'))
     await user.type(screen.getByTestId('patient-display-name-input'), 'Cloud Added')
     await user.click(screen.getByTestId('save-patient-button'))
@@ -313,6 +317,7 @@ describe('App workspace mode flow', () => {
     localState = await getLocalMedMinderState()
     expect(localState).toEqual({ patients: [], medications: [], doseEvents: [] })
 
+    await user.click(screen.getByTestId('tab-more'))
     await user.click(screen.getByTestId('sign-out-button'))
 
     await waitFor(() => {

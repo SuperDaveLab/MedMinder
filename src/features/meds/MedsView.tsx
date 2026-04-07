@@ -18,6 +18,7 @@ import {
 
 interface MedsViewProps {
   selectedPatientId: string | null
+  patientDisplayName: string | null
   medicationsForAdministration: Medication[]
   onCreateMedication: (input: UpsertMedicationInput) => Promise<void>
   onUpdateMedication: (medicationId: string, input: UpsertMedicationInput) => Promise<void>
@@ -74,6 +75,7 @@ function createDefaultFixedTimes(): TimeOfDayHHmm[] {
 
 export function MedsView({
   selectedPatientId,
+  patientDisplayName,
   medicationsForAdministration,
   onCreateMedication,
   onUpdateMedication,
@@ -302,6 +304,15 @@ export function MedsView({
     setIsMedicationFormOpen(false)
   }
 
+  const toggleMedicationForm = () => {
+    if (isMedicationFormOpen) {
+      closeMedicationForm()
+      return
+    }
+
+    startCreateMedication()
+  }
+
   const handleSaveMedication = async () => {
     if (isMedicationActionInProgress) {
       return
@@ -429,20 +440,21 @@ export function MedsView({
   return (
     <section className="workflow-section" data-testid="meds-view">
       <section className="admin-section no-print">
-        <h2>Medication records</h2>
-        <div className="form-actions">
+        <h2>Medication records for {patientDisplayName ?? 'Unknown patient'}</h2>
+        <div className="form-actions meds-toolbar">
           <button
             type="button"
             data-testid="start-add-medication-button"
             className="utility-button"
             disabled={isMedicationActionInProgress}
-            onClick={startCreateMedication}
+            onClick={toggleMedicationForm}
           >
-            Add medication
+            {isMedicationFormOpen ? 'Close medication form' : 'Add medication'}
           </button>
         </div>
         {isMedicationFormOpen ? (
-          <>
+          <section className="meds-form-panel" data-testid="medication-form-panel">
+            <h3>{editingMedicationId ? 'Edit medication' : 'New medication'}</h3>
         <label>
           Medication name
           <input
@@ -632,7 +644,7 @@ export function MedsView({
               ? 'Saving...'
               : editingMedicationId
                 ? 'Save medication'
-                : 'Add medication'}
+                : 'Save new medication'}
           </button>
           <button
             type="button"
@@ -643,8 +655,10 @@ export function MedsView({
             Cancel
           </button>
         </div>
-          </>
+          </section>
         ) : null}
+        <section className="meds-list-panel" data-testid="medication-list-panel">
+          <h3>Medication list</h3>
         <ul className="admin-list">
           {medicationsForAdministration.length === 0 ? (
             <li className="admin-item admin-item-empty">No medications for this patient yet.</li>
@@ -686,6 +700,7 @@ export function MedsView({
             </li>
           ))}
         </ul>
+        </section>
       </section>
     </section>
   )

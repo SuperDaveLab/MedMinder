@@ -13,7 +13,7 @@ import {
   saveReminderNotificationLog,
 } from '../storage/repository'
 
-export type AppView = 'care' | 'history' | 'meds' | 'more'
+export type AppView = 'care' | 'history' | 'meds' | 'patients' | 'more'
 
 interface DeferredInstallPromptEvent extends Event {
   prompt: () => Promise<void>
@@ -35,7 +35,7 @@ function getInitialViewFromUrl(): AppView {
   const url = new URL(window.location.href)
   const view = url.searchParams.get('view')
 
-  if (view === 'care' || view === 'history' || view === 'meds' || view === 'more') {
+  if (view === 'care' || view === 'history' || view === 'meds' || view === 'patients' || view === 'more') {
     return view as AppView
   }
   if (view === 'admin') return 'meds'

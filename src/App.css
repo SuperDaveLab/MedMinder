@@ -543,6 +543,56 @@ h2 {
   flex-wrap: wrap;
 }
 
+.meds-toolbar {
+  margin-bottom: 0.25rem;
+}
+
+.meds-form-panel,
+.meds-list-panel {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0.75rem;
+  background: #fbfdff;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.meds-form-panel h3,
+.meds-list-panel h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.meds-list-panel {
+  margin-top: 0.5rem;
+}
+
+.patients-toolbar {
+  margin-bottom: 0.25rem;
+}
+
+.patients-form-panel,
+.patients-list-panel {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0.75rem;
+  background: #fbfdff;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.patients-form-panel h3,
+.patients-list-panel h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.patients-list-panel {
+  margin-top: 0.5rem;
+}
+
 .duration-input-row {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(120px, 1fr);

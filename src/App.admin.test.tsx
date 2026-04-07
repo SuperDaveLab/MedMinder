@@ -53,7 +53,8 @@ describe('App administration flow', () => {
 
     render(<App />)
     await screen.findByRole('option', { name: 'Alex Rivera' })
-    await user.click(screen.getByTestId('tab-more'))
+    await user.click(screen.getByTestId('tab-patients'))
+    await user.click(screen.getByTestId('start-add-patient-button'))
 
     await user.type(screen.getByTestId('patient-display-name-input'), 'Jamie Carter')
     await user.type(screen.getByTestId('patient-notes-input'), 'Caregiver note')
@@ -203,7 +204,7 @@ describe('App administration flow', () => {
 
     render(<App />)
     await screen.findByRole('option', { name: 'Alex Rivera' })
-    await user.click(screen.getByTestId('tab-more'))
+    await user.click(screen.getByTestId('tab-patients'))
 
     await user.click(screen.getByTestId('edit-patient-patient-1'))
     await user.clear(screen.getByTestId('patient-display-name-input'))
@@ -220,7 +221,7 @@ describe('App administration flow', () => {
 
     render(<App />)
     await screen.findByRole('option', { name: 'Alex Rivera' })
-    await user.click(screen.getByTestId('tab-more'))
+    await user.click(screen.getByTestId('tab-patients'))
 
     await user.click(screen.getByTestId('delete-patient-patient-1'))
 
@@ -317,13 +318,16 @@ describe('App administration flow', () => {
 
     const originalBackup = await exportFullBackup()
 
-    await user.click(screen.getByTestId('tab-more'))
+    await user.click(screen.getByTestId('tab-patients'))
+    await user.click(screen.getByTestId('start-add-patient-button'))
     await user.type(screen.getByTestId('patient-display-name-input'), 'Temporary Patient')
     await user.click(screen.getByTestId('save-patient-button'))
 
     await waitFor(() => {
       expect(screen.getByRole('option', { name: 'Temporary Patient' })).toBeTruthy()
     })
+
+    await user.click(screen.getByTestId('tab-more'))
 
     const input = screen.getByTestId('backup-file-input') as HTMLInputElement
     const backupFile = new File([JSON.stringify(originalBackup)], 'backup.json', {

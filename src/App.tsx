@@ -5,6 +5,7 @@ import { useAppShell } from './hooks/useAppShell'
 import { CareView } from './features/care/CareView'
 import { HistoryView } from './features/history/HistoryView'
 import { MedsView } from './features/meds/MedsView'
+import { PatientsView } from './features/patients/PatientsView'
 import { MoreView } from './features/more/MoreView'
 import { formatRelativeTime } from './ui/time'
 import './App.css'
@@ -120,37 +121,14 @@ function App() {
       <main className="app-shell">
         <section className="app-header">
           <p className="subhead">No patients found in local database.</p>
-          <MoreView
+          <PatientsView
             noPatientsMode
             patients={appState.patients}
-            selectedPatientId={selectedPatientId}
-            patient={null}
-            medicationsForPatient={[]}
-            doseEvents={appState.doseEvents}
-            now={now}
             onDataChanged={refreshSelectedPatientView}
             onUiError={setUiError}
-            notificationPermission={notificationPermission}
-            requestNotificationPermission={requestNotificationPermission}
-            installPromptAvailable={installPromptAvailable}
-            isInstalled={isInstalled}
-            onInstallApp={handleInstallApp}
-            wakeLockSupported={wakeLockSupported}
-            isWakeLockActive={isWakeLockActive}
-            onToggleWakeLock={handleToggleWakeLock}
-            onTestAlarm={triggerAlarmPreview}
             onCreatePatient={handleCreatePatient}
             onUpdatePatient={handleUpdatePatient}
             onDeletePatient={handleDeletePatient}
-            authState={authState}
-            isAuthLoading={isAuthLoading}
-            isAuthActionInProgress={isAuthActionInProgress}
-            authError={authError}
-            onCreateAccount={createAccount}
-            onSignIn={signIn}
-            onSignOut={signOut}
-            onUpdateAccountSettings={updateAccountSettings}
-            onClearAuthError={clearAuthError}
           />
         </section>
       </main>
@@ -271,6 +249,10 @@ function App() {
           <span className="nav-icon" aria-hidden="true">✏️</span>
           <span className="nav-label">Meds</span>
         </button>
+        <button className={`bottom-nav-item ${activeView === 'patients' ? 'is-active' : ''}`} data-testid="tab-patients" onClick={() => setView('patients')}>
+          <span className="nav-icon" aria-hidden="true">👥</span>
+          <span className="nav-label">Patients</span>
+        </button>
         <button className={`bottom-nav-item ${activeView === 'more' ? 'is-active' : ''}`} data-testid="tab-more" onClick={() => setView('more')}>
           <span className="nav-icon" aria-hidden="true">⚙️</span>
           <span className="nav-label">More</span>
@@ -299,6 +281,7 @@ function App() {
         {activeView === 'meds' ? (
           <MedsView
             selectedPatientId={selectedPatientId}
+            patientDisplayName={patient.displayName}
             medicationsForAdministration={medicationsForAdministration}
             onCreateMedication={handleCreateMedication}
             onUpdateMedication={handleUpdateMedication}
@@ -308,16 +291,24 @@ function App() {
           />
         ) : null}
 
+        {activeView === 'patients' ? (
+          <PatientsView
+            patients={appState.patients}
+            onDataChanged={refreshSelectedPatientView}
+            onUiError={setUiError}
+            onCreatePatient={handleCreatePatient}
+            onUpdatePatient={handleUpdatePatient}
+            onDeletePatient={handleDeletePatient}
+          />
+        ) : null}
+
         {activeView === 'more' ? (
           <MoreView
-            patients={appState.patients}
-            selectedPatientId={selectedPatientId}
             patient={patient}
             medicationsForPatient={medicationsForPatient}
             doseEvents={appState.doseEvents}
             now={now}
             onDataChanged={refreshSelectedPatientView}
-            onUiError={setUiError}
             notificationPermission={notificationPermission}
             requestNotificationPermission={requestNotificationPermission}
             installPromptAvailable={installPromptAvailable}
@@ -327,9 +318,6 @@ function App() {
             isWakeLockActive={isWakeLockActive}
             onToggleWakeLock={handleToggleWakeLock}
             onTestAlarm={triggerAlarmPreview}
-            onCreatePatient={handleCreatePatient}
-            onUpdatePatient={handleUpdatePatient}
-            onDeletePatient={handleDeletePatient}
             authState={authState}
             isAuthLoading={isAuthLoading}
             isAuthActionInProgress={isAuthActionInProgress}
