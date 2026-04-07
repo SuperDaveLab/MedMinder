@@ -9,6 +9,11 @@ import type {
   SignInWithPasswordRequest,
   SignInWithPasswordResponse,
 } from '../src/domain/auth'
+import {
+  defaultNotificationDeliveryPolicy,
+  type NotificationDeliveryPolicy,
+  notificationDeliveryPolicies,
+} from '../src/domain/notificationPolicy'
 import { dbPool } from './db'
 import { serverConfig } from './config'
 
@@ -17,6 +22,7 @@ interface DbUserRow {
   account_id: string
   email: string
   phone_e164: string | null
+  notification_delivery_policy: string | null
   password_hash: string
   created_at: Date
 }
@@ -40,11 +46,18 @@ function buildSessionTimestamps(now: Date): { issuedAt: Date; expiresAt: Date; a
 }
 
 function toAuthAccount(row: DbUserRow): AuthAccount {
+  const notificationDeliveryPolicy = notificationDeliveryPolicies.includes(
+    row.notification_delivery_policy as NotificationDeliveryPolicy,
+  )
+    ? (row.notification_delivery_policy as NotificationDeliveryPolicy)
+    : defaultNotificationDeliveryPolicy
+
   return {
     accountId: row.account_id,
     userId: row.user_id,
     email: row.email,
     phoneE164: row.phone_e164 ?? undefined,
+    notificationDeliveryPolicy,
     createdAt: row.created_at.toISOString(),
   }
 }
@@ -119,7 +132,7 @@ export async function createAccount(
   }
 
   const [[existingUser]] = await dbPool.query<DbUserRow[]>(
-    `SELECT user_id, account_id, email, phone_e164, password_hash, created_at FROM users WHERE email = ? LIMIT 1`,
+    `SELECT user_id, account_id, email, phone_e164, notification_delivery_policy, password_hash, created_at FROM users WHERE email = ? LIMIT 1`,
     [email],
   )
 
@@ -150,6 +163,7 @@ export async function createAccount(
     account_id: accountId,
     email,
     phone_e164: null,
+    notification_delivery_policy: defaultNotificationDeliveryPolicy,
     password_hash: passwordHash,
     created_at: createdAt,
   }
@@ -174,7 +188,7 @@ export async function signInWithPassword(
   }
 
   const [[userRow]] = await dbPool.query<DbUserRow[]>(
-    `SELECT user_id, account_id, email, phone_e164, password_hash, created_at FROM users WHERE email = ? LIMIT 1`,
+    `SELECT user_id, account_id, email, phone_e164, notification_delivery_policy, password_hash, created_at FROM users WHERE email = ? LIMIT 1`,
     [email],
   )
 
@@ -214,7 +228,7 @@ export async function signOutBySessionId(sessionId: string): Promise<void> {
 
 export async function getAccountById(accountId: string): Promise<AuthAccount> {
   const [[userRow]] = await dbPool.query<DbUserRow[]>(
-    `SELECT user_id, account_id, email, phone_e164, password_hash, created_at
+    `SELECT user_id, account_id, email, phone_e164, notification_delivery_policy, password_hash, created_at
      FROM users
      WHERE account_id = ?
      LIMIT 1`,
@@ -230,15 +244,24 @@ export async function getAccountById(accountId: string): Promise<AuthAccount> {
 
 export async function updateAccountPhoneE164(
   accountId: string,
-  phoneE164: string | null,
+  phoneE164?: string | null,
+  notificationDeliveryPolicy?: NotificationDeliveryPolicy,
+  shouldUpdatePhoneE164 = true,
 ): Promise<AuthAccount> {
+  const normalizedPolicy = notificationDeliveryPolicy
+    && notificationDeliveryPolicies.includes(notificationDeliveryPolicy)
+    ? notificationDeliveryPolicy
+    : undefined
+
   await dbPool.query(
     `
       UPDATE users
-      SET phone_e164 = ?
+      SET
+        phone_e164 = CASE WHEN ? THEN ? ELSE phone_e164 END,
+        notification_delivery_policy = COALESCE(?, notification_delivery_policy)
       WHERE account_id = ?
     `,
-    [phoneE164, accountId],
+    [shouldUpdatePhoneE164, phoneE164 ?? null, normalizedPolicy ?? null, accountId],
   )
 
   return getAccountById(accountId)

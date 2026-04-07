@@ -1,5 +1,10 @@
 import { type ChangeEvent, useEffect, useRef, useState } from 'react'
 import type { AuthSessionState } from '../../domain/auth'
+import {
+  getNotificationDeliveryPolicyLabel,
+  notificationDeliveryPolicies,
+  type NotificationDeliveryPolicy,
+} from '../../domain/notificationPolicy'
 import type { DoseEvent, Medication, Patient } from '../../domain/types'
 import {
   exportFullBackup,
@@ -42,7 +47,10 @@ interface MoreViewProps {
   onCreateAccount: (credentials: { email: string; password: string }) => Promise<void>
   onSignIn: (credentials: { email: string; password: string }) => Promise<void>
   onSignOut: () => Promise<void>
-  onUpdatePhoneE164: (phoneE164: string | null) => Promise<void>
+  onUpdateAccountSettings: (input: {
+    phoneE164: string | null
+    notificationDeliveryPolicy: NotificationDeliveryPolicy
+  }) => Promise<void>
   onClearAuthError: () => void
 }
 
@@ -84,7 +92,7 @@ export function MoreView({
   onCreateAccount,
   onSignIn,
   onSignOut,
-  onUpdatePhoneE164,
+  onUpdateAccountSettings,
   onClearAuthError,
 }: MoreViewProps) {
   const [editingPatientId, setEditingPatientId] = useState<string | null>(null)
@@ -102,6 +110,7 @@ export function MoreView({
   const [authEmailInput, setAuthEmailInput] = useState('')
   const [authPasswordInput, setAuthPasswordInput] = useState('')
   const [authPhoneInput, setAuthPhoneInput] = useState('')
+  const [authNotificationPolicyInput, setAuthNotificationPolicyInput] = useState<NotificationDeliveryPolicy>('push_then_email_fallback')
 
   void selectedPatientId
 
@@ -445,14 +454,18 @@ export function MoreView({
     })
   }
 
-  const handleSavePhone = async () => {
+  const handleSaveAccountSettings = async () => {
     const trimmed = authPhoneInput.trim()
-    await onUpdatePhoneE164(trimmed.length > 0 ? trimmed : null)
+    await onUpdateAccountSettings({
+      phoneE164: trimmed.length > 0 ? trimmed : null,
+      notificationDeliveryPolicy: authNotificationPolicyInput,
+    })
   }
 
   useEffect(() => {
     setAuthPhoneInput(authState?.account.phoneE164 ?? '')
-  }, [authState?.account.phoneE164])
+    setAuthNotificationPolicyInput(authState?.account.notificationDeliveryPolicy ?? 'push_then_email_fallback')
+  }, [authState?.account.notificationDeliveryPolicy, authState?.account.phoneE164])
 
   const accountSection = (
     <section className="admin-section no-print" data-testid="account-section">
@@ -462,6 +475,23 @@ export function MoreView({
         <>
           <p className="subhead">Signed in as {authState.account.email}</p>
           <p className="subhead">Cloud sync and premium reminder features can be enabled for this account.</p>
+          <label>
+            Notification delivery
+            <select
+              data-testid="account-notification-policy-select"
+              value={authNotificationPolicyInput}
+              onChange={(event) => setAuthNotificationPolicyInput(event.target.value as NotificationDeliveryPolicy)}
+            >
+              {notificationDeliveryPolicies.map((policy) => (
+                <option key={policy} value={policy}>
+                  {getNotificationDeliveryPolicyLabel(policy)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <p className="subhead">
+            Default recommended: Push first, then email if push does not deliver.
+          </p>
           <label>
             SMS phone (E.164, e.g. +15551234567)
             <input
@@ -476,11 +506,11 @@ export function MoreView({
           <div className="form-actions">
             <button
               className="utility-button"
-              data-testid="save-account-phone-button"
+              data-testid="save-account-settings-button"
               disabled={isAuthActionInProgress}
-              onClick={() => void handleSavePhone()}
+              onClick={() => void handleSaveAccountSettings()}
             >
-              {isAuthActionInProgress ? 'Working...' : 'Save phone'}
+              {isAuthActionInProgress ? 'Working...' : 'Save notification settings'}
             </button>
             <button
               className="utility-button"

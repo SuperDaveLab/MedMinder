@@ -9,6 +9,10 @@ import { getCloudAccountState } from './cloudService'
 import { sendPushReminderNotification } from './pushNotifier'
 import { getAccountNotificationChannels } from './notificationChannelsService'
 import { sendNotificationSms } from './smsNotifier'
+import {
+  shouldAttemptEmail,
+  shouldAttemptPush,
+} from '../src/domain/notificationPolicy'
 
 // How long to keep notification log entries before pruning them.
 const LOG_RETENTION_DAYS = 30
@@ -77,13 +81,17 @@ async function checkAccountNotifications(accountId: string, now: Date): Promise<
   for (const candidate of unsent) {
     try {
       let delivered = false
+      let pushDelivered = false
 
-      const pushResult = await sendPushReminderNotification(accountId, candidate)
-      if (pushResult.delivered > 0) {
-        delivered = true
+      if (shouldAttemptPush(channels.notificationDeliveryPolicy)) {
+        const pushResult = await sendPushReminderNotification(accountId, candidate)
+        if (pushResult.delivered > 0) {
+          delivered = true
+          pushDelivered = true
+        }
       }
 
-      if (channels.email) {
+      if (channels.email && shouldAttemptEmail(channels.notificationDeliveryPolicy, pushDelivered)) {
         const emailDelivered = await sendNotificationEmail({
           to: channels.email,
           candidate,

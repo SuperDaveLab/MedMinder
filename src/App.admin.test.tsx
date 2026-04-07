@@ -84,6 +84,7 @@ describe('App administration flow', () => {
     render(<App />)
     await screen.findByRole('option', { name: 'Alex Rivera' })
     await user.click(screen.getByTestId('tab-meds'))
+    await user.click(screen.getByTestId('start-add-medication-button'))
 
     const scheduleTypeSelect = screen.getByTestId('medication-schedule-type-select')
 
@@ -99,6 +100,7 @@ describe('App administration flow', () => {
     render(<App />)
     await screen.findByRole('option', { name: 'Alex Rivera' })
     await user.click(screen.getByTestId('tab-meds'))
+    await user.click(screen.getByTestId('start-add-medication-button'))
 
     await user.selectOptions(
       screen.getByTestId('medication-schedule-type-select'),
@@ -173,6 +175,8 @@ describe('App administration flow', () => {
       expect(screen.getByTestId('meds-view')).toBeTruthy()
     })
 
+    await user.click(screen.getByTestId('start-add-medication-button'))
+
     expect((screen.getByTestId('interval-unit-select') as HTMLSelectElement).value).toBe('hours')
     expect((screen.getByTestId('interval-value-input') as HTMLInputElement).step).toBe('0.25')
     expect(screen.queryByRole('option', { name: 'days' })).toBeNull()
@@ -231,6 +235,7 @@ describe('App administration flow', () => {
     render(<App />)
     await screen.findByRole('option', { name: 'Alex Rivera' })
     await user.click(screen.getByTestId('tab-meds'))
+    await user.click(screen.getByTestId('start-add-medication-button'))
 
     expect((screen.getByTestId('interval-unit-select') as HTMLSelectElement).value).toBe('hours')
     expect((screen.getByTestId('interval-value-input') as HTMLInputElement).step).toBe('0.25')

@@ -95,12 +95,9 @@ export function MedsView({
   const [taperRulesInput, setTaperRulesInput] = useState('')
   const [reminderEnabledInput, setReminderEnabledInput] = useState(true)
   const [reminderMinutesInput, setReminderMinutesInput] = useState<'0' | '10' | '15'>('0')
-  const [alarmEnabledInput, setAlarmEnabledInput] = useState(false)
+  const [isMedicationFormOpen, setIsMedicationFormOpen] = useState(false)
   const [medicationFormError, setMedicationFormError] = useState<string | null>(null)
   const [isMedicationActionInProgress, setIsMedicationActionInProgress] = useState(false)
-
-  const supportsAlarmForSchedule =
-    scheduleTypeInput === 'interval' || scheduleTypeInput === 'fixed_times'
 
   const parseDurationMinutes = (
     rawValue: string,
@@ -242,6 +239,7 @@ export function MedsView({
   }
 
   const startEditMedication = (medication: Medication) => {
+    setIsMedicationFormOpen(true)
     setEditingMedicationId(medication.id)
     setMedicationNameInput(medication.name)
     setMedicationStrengthInput(medication.strengthText ?? '')
@@ -274,7 +272,11 @@ export function MedsView({
 
     setReminderEnabledInput(Boolean(medication.reminderSettings?.enabled))
     setReminderMinutesInput(String(medication.reminderSettings?.earlyReminderMinutes ?? 0) as '0' | '10' | '15')
-    setAlarmEnabledInput(Boolean(medication.reminderSettings?.alarmEnabled))
+  }
+
+  const startCreateMedication = () => {
+    resetMedicationForm()
+    setIsMedicationFormOpen(true)
   }
 
   const resetMedicationForm = () => {
@@ -292,8 +294,12 @@ export function MedsView({
     setTaperRulesInput('')
     setReminderEnabledInput(true)
     setReminderMinutesInput('0')
-    setAlarmEnabledInput(false)
     setMedicationFormError(null)
+  }
+
+  const closeMedicationForm = () => {
+    resetMedicationForm()
+    setIsMedicationFormOpen(false)
   }
 
   const handleSaveMedication = async () => {
@@ -339,7 +345,7 @@ export function MedsView({
             earlyReminderMinutes: Number.parseInt(reminderMinutesInput, 10) as 0 | 10 | 15,
           }
         : {}),
-      ...(supportsAlarmForSchedule ? { alarmEnabled: alarmEnabledInput } : {}),
+      alarmEnabled: existingMedication?.reminderSettings?.alarmEnabled ?? false,
     }
 
     const medicationInput: UpsertMedicationInput = {
@@ -364,7 +370,7 @@ export function MedsView({
         await onCreateMedication(medicationInput)
       }
 
-      resetMedicationForm()
+      closeMedicationForm()
     } catch (error) {
       setMedicationFormError(
         error instanceof Error
@@ -411,7 +417,7 @@ export function MedsView({
       await onDeleteMedication(medicationId)
 
       if (editingMedicationId === medicationId) {
-        resetMedicationForm()
+        closeMedicationForm()
       }
     } catch {
       onUiError('Unable to delete medication right now. Please try again.')
@@ -424,6 +430,19 @@ export function MedsView({
     <section className="workflow-section" data-testid="meds-view">
       <section className="admin-section no-print">
         <h2>Medication records</h2>
+        <div className="form-actions">
+          <button
+            type="button"
+            data-testid="start-add-medication-button"
+            className="utility-button"
+            disabled={isMedicationActionInProgress}
+            onClick={startCreateMedication}
+          >
+            Add medication
+          </button>
+        </div>
+        {isMedicationFormOpen ? (
+          <>
         <label>
           Medication name
           <input
@@ -601,17 +620,6 @@ export function MedsView({
             </select>
           </label>
         ) : null}
-        {supportsAlarmForSchedule ? (
-          <label className="checkbox-row">
-            <input
-              data-testid="alarm-enabled-input"
-              type="checkbox"
-              checked={alarmEnabledInput}
-              onChange={(event) => setAlarmEnabledInput(event.target.checked)}
-            />
-            Enable in-app alarm (sound/vibration when due now)
-          </label>
-        ) : null}
         {medicationFormError ? <p className="form-error">{medicationFormError}</p> : null}
         <div className="form-actions">
           <button
@@ -626,10 +634,17 @@ export function MedsView({
                 ? 'Save medication'
                 : 'Add medication'}
           </button>
-          {editingMedicationId ? (
-            <button className="utility-button" disabled={isMedicationActionInProgress} onClick={resetMedicationForm}>Cancel</button>
-          ) : null}
+          <button
+            type="button"
+            className="utility-button"
+            disabled={isMedicationActionInProgress}
+            onClick={closeMedicationForm}
+          >
+            Cancel
+          </button>
         </div>
+          </>
+        ) : null}
         <ul className="admin-list">
           {medicationsForAdministration.length === 0 ? (
             <li className="admin-item admin-item-empty">No medications for this patient yet.</li>

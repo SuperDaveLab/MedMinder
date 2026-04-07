@@ -22,6 +22,7 @@ function buildAuthResponse(email = 'caregiver@example.com'): CreateAccountRespon
       accountId: 'account-1',
       userId: 'user-1',
       email,
+      notificationDeliveryPolicy: 'push_then_email_fallback',
       createdAt: '2026-04-06T10:00:00.000Z',
     },
     session: {
@@ -112,8 +113,19 @@ function installFetchMock(initialCloudState: MedMinderState, email = 'caregiver@
 
       if (url.endsWith('/api/auth/account')) {
         if ((init?.method ?? 'GET').toUpperCase() === 'PUT') {
-          const body = JSON.parse(String(init?.body ?? '{}')) as { phoneE164?: string | null }
-          authResponse.account.phoneE164 = body.phoneE164 ?? undefined
+          const body = JSON.parse(String(init?.body ?? '{}')) as {
+            phoneE164?: string | null
+            notificationDeliveryPolicy?: 'push_then_email_fallback' | 'push_only' | 'email_only' | 'push_and_email'
+          }
+
+          if (Object.prototype.hasOwnProperty.call(body, 'phoneE164')) {
+            authResponse.account.phoneE164 = body.phoneE164 ?? undefined
+          }
+
+          if (body.notificationDeliveryPolicy) {
+            authResponse.account.notificationDeliveryPolicy = body.notificationDeliveryPolicy
+          }
+
           return jsonResponse(authResponse.account)
         }
 
@@ -349,6 +361,7 @@ describe('App workspace mode flow', () => {
     // Verify medication is visible in cloud-sourced Meds view
     await user.click(screen.getByTestId('tab-meds'))
     await screen.findByTestId('medication-item-cloud-med-1')
+    await user.click(screen.getByTestId('start-add-medication-button'))
 
     // Create a new medication in cloud mode
     await user.type(screen.getByTestId('medication-name-input'), 'Cloud Vitamin D')

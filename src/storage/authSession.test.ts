@@ -30,6 +30,7 @@ function buildAuthState(): AuthSessionState {
       accountId: 'account-1',
       userId: 'user-1',
       email: 'caregiver@example.com',
+      notificationDeliveryPolicy: 'push_then_email_fallback',
       createdAt: '2026-04-06T10:00:00.000Z',
     },
     session: {

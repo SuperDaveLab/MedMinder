@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createAuthApiClient } from '../cloud/authClient'
 import { bootstrapCloudFromLocal, startCloudSession } from '../cloud/syncOrchestrator'
 import type { AuthSessionState } from '../domain/auth'
+import type { NotificationDeliveryPolicy } from '../domain/notificationPolicy'
 import { unregisterPushSubscription } from '../reminders/pushRelay'
 import { clearLocalClinicalData } from '../storage/repository'
 import {
@@ -23,7 +24,10 @@ export interface UseAuthResult {
   createAccount: (credentials: AuthCredentials) => Promise<void>
   signIn: (credentials: AuthCredentials) => Promise<void>
   signOut: () => Promise<void>
-  updatePhoneE164: (phoneE164: string | null) => Promise<void>
+  updateAccountSettings: (input: {
+    phoneE164: string | null
+    notificationDeliveryPolicy: NotificationDeliveryPolicy
+  }) => Promise<void>
   clearAuthError: () => void
 }
 
@@ -147,7 +151,10 @@ export function useAuth(): UseAuthResult {
     }
   }, [authClient])
 
-  const updatePhoneE164 = useCallback(async (phoneE164: string | null) => {
+  const updateAccountSettings = useCallback(async (input: {
+    phoneE164: string | null
+    notificationDeliveryPolicy: NotificationDeliveryPolicy
+  }) => {
     if (!authState) {
       setAuthError('You need to sign in before updating account settings.')
       return
@@ -159,7 +166,10 @@ export function useAuth(): UseAuthResult {
     try {
       const updatedAccount = await authClient.updateAccountProfile(
         authState.session.sessionId,
-        { phoneE164 },
+        {
+          phoneE164: input.phoneE164,
+          notificationDeliveryPolicy: input.notificationDeliveryPolicy,
+        },
       )
 
       const nextState: AuthSessionState = {
@@ -212,7 +222,7 @@ export function useAuth(): UseAuthResult {
     createAccount,
     signIn,
     signOut,
-    updatePhoneE164,
+    updateAccountSettings,
     clearAuthError,
   }
 }

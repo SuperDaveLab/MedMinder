@@ -1,15 +1,25 @@
 import { dbPool } from './db'
+import {
+  defaultNotificationDeliveryPolicy,
+  type NotificationDeliveryPolicy,
+  notificationDeliveryPolicies,
+} from '../src/domain/notificationPolicy'
 
 export interface AccountNotificationChannels {
   email: string | null
   smsPhoneE164: string | null
+  notificationDeliveryPolicy: NotificationDeliveryPolicy
 }
 
 export async function getAccountNotificationChannels(
   accountId: string,
 ): Promise<AccountNotificationChannels> {
-  const [userRows] = await dbPool.query<Array<{ email: string; phone_e164: string | null }>>(
-    'SELECT email, phone_e164 FROM users WHERE account_id = ? LIMIT 1',
+  const [userRows] = await dbPool.query<Array<{
+    email: string
+    phone_e164: string | null
+    notification_delivery_policy: string | null
+  }>>(
+    'SELECT email, phone_e164, notification_delivery_policy FROM users WHERE account_id = ? LIMIT 1',
     [accountId],
   )
 
@@ -18,9 +28,17 @@ export async function getAccountNotificationChannels(
     [accountId],
   )
 
+  const configuredPolicy = userRows[0]?.notification_delivery_policy
+  const notificationDeliveryPolicy = notificationDeliveryPolicies.includes(
+    configuredPolicy as NotificationDeliveryPolicy,
+  )
+    ? (configuredPolicy as NotificationDeliveryPolicy)
+    : defaultNotificationDeliveryPolicy
+
   return {
     email: userRows[0]?.email ?? null,
     smsPhoneE164: userRows[0]?.phone_e164 ?? channelRows[0]?.sms_phone_e164 ?? null,
+    notificationDeliveryPolicy,
   }
 }
 

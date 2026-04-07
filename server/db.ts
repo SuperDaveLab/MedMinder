@@ -40,6 +40,11 @@ export async function initializeAuthSchema(): Promise<void> {
   `)
 
   await dbPool.query(`
+    ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS notification_delivery_policy VARCHAR(48) NOT NULL DEFAULT 'push_then_email_fallback'
+  `)
+
+  await dbPool.query(`
     CREATE TABLE IF NOT EXISTS sessions (
       session_id VARCHAR(36) PRIMARY KEY,
       account_id VARCHAR(36) NOT NULL,

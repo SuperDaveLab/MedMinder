@@ -1,4 +1,5 @@
 import type { ISODateString } from './types'
+import type { NotificationDeliveryPolicy } from './notificationPolicy'
 
 export const authProviders = ['password', 'magic_link', 'oauth_google'] as const
 export type AuthProvider = (typeof authProviders)[number]
@@ -8,6 +9,7 @@ export interface AuthAccount {
   userId: string
   email: string
   phoneE164?: string
+  notificationDeliveryPolicy: NotificationDeliveryPolicy
   createdAt: ISODateString
 }
 
@@ -70,7 +72,8 @@ export interface SignOutRequest {
 }
 
 export interface UpdateAccountProfileRequest {
-  phoneE164: string | null
+  phoneE164?: string | null
+  notificationDeliveryPolicy?: NotificationDeliveryPolicy
 }
 
 export function hasValidSessionExpiry(state: AuthSessionState, now: Date): boolean {

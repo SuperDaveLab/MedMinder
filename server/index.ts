@@ -26,6 +26,7 @@ import type {
   RegisterPushSubscriptionRequest,
 } from '../src/domain/pushNotifications'
 import type { UpdateAccountProfileRequest } from '../src/domain/auth'
+import { notificationDeliveryPolicies } from '../src/domain/notificationPolicy'
 
 const app = express()
 
@@ -158,12 +159,26 @@ app.put('/api/auth/account', async (request: Request, response: Response) => {
   try {
     const account = await requireSession(request)
     const payload = request.body as UpdateAccountProfileRequest
+    const hasPhoneUpdate = payload && Object.prototype.hasOwnProperty.call(payload, 'phoneE164')
     const normalizedPhone =
-      typeof payload?.phoneE164 === 'string' && payload.phoneE164.trim().length > 0
-        ? payload.phoneE164.trim()
-        : null
+      hasPhoneUpdate
+        ? (typeof payload.phoneE164 === 'string' && payload.phoneE164.trim().length > 0
+            ? payload.phoneE164.trim()
+            : null)
+        : undefined
 
-    const updated = await updateAccountPhoneE164(account.accountId, normalizedPhone)
+    const normalizedPolicy =
+      payload?.notificationDeliveryPolicy
+      && notificationDeliveryPolicies.includes(payload.notificationDeliveryPolicy)
+        ? payload.notificationDeliveryPolicy
+        : undefined
+
+    const updated = await updateAccountPhoneE164(
+      account.accountId,
+      normalizedPhone,
+      normalizedPolicy,
+      hasPhoneUpdate,
+    )
     response.status(200).json(updated)
   } catch (error) {
     response.status(401).json({

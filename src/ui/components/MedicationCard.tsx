@@ -200,6 +200,13 @@ export function MedicationCard({
       {medication.instructions ? (
         <p className="instructions">{medication.instructions}</p>
       ) : null}
+      <button
+        onClick={() => onLogDose(medication.id)}
+        className="dose-button"
+        disabled={actionsDisabled}
+      >
+        Give Dose
+      </button>
       <div className="med-history-block">
         <h4>Recent doses</h4>
         {recentDoseEvents.length === 0 ? (
@@ -315,13 +322,6 @@ export function MedicationCard({
           </ul>
         )}
       </div>
-      <button
-        onClick={() => onLogDose(medication.id)}
-        className="dose-button"
-        disabled={actionsDisabled}
-      >
-        Give Dose
-      </button>
     </article>
   )
 }
