@@ -353,6 +353,19 @@ export async function deactivateMedication(medicationId: string): Promise<void> 
   })
 }
 
+export async function activateMedication(medicationId: string): Promise<void> {
+  const medication = await medMinderDb.medications.get(medicationId)
+
+  if (!medication) {
+    throw new Error('Medication not found for activation.')
+  }
+
+  await medMinderDb.medications.put({
+    ...medication,
+    active: true,
+  })
+}
+
 export async function deleteMedicationCascade(medicationId: string): Promise<void> {
   await medMinderDb.transaction(
     'rw',

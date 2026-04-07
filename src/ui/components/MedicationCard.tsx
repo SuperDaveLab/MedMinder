@@ -22,6 +22,7 @@ interface MedicationCardProps {
     replacementTimestampGiven: string,
     notes?: string,
   ) => Promise<void>
+  onToggleReminderEnabled: (medication: Medication, enabled: boolean) => Promise<void>
 }
 
 function renderScheduleLabel(medication: Medication): string {
@@ -73,12 +74,15 @@ export function MedicationCard({
   actionsDisabled,
   onLogDose,
   onCorrectDose,
+  onToggleReminderEnabled,
 }: MedicationCardProps) {
   const [editingDoseEventId, setEditingDoseEventId] = useState<string | null>(null)
   const [replacementTimestampInput, setReplacementTimestampInput] = useState('')
   const [correctionNotes, setCorrectionNotes] = useState('')
   const [isSavingCorrection, setIsSavingCorrection] = useState(false)
   const [correctionError, setCorrectionError] = useState<string | null>(null)
+  const [isReminderToggleInProgress, setIsReminderToggleInProgress] = useState(false)
+  const [reminderToggleError, setReminderToggleError] = useState<string | null>(null)
 
   const recentDoseEvents = useMemo(
     () => medicationDoseEvents.slice(0, 5),
@@ -106,6 +110,7 @@ export function MedicationCard({
   )
 
   const latestDisplayedDoseEvent = recentDoseEvents[0]
+  const reminderEnabled = Boolean(medication.reminderSettings?.enabled)
 
   const latestDisplayedTrustText = latestDisplayedDoseEvent
     ? latestDisplayedDoseEvent.corrected
@@ -168,6 +173,23 @@ export function MedicationCard({
     }
   }
 
+  const handleReminderToggle = async (enabled: boolean) => {
+    if (isReminderToggleInProgress || actionsDisabled) {
+      return
+    }
+
+    setReminderToggleError(null)
+    setIsReminderToggleInProgress(true)
+
+    try {
+      await onToggleReminderEnabled(medication, enabled)
+    } catch {
+      setReminderToggleError('Unable to update reminder setting right now.')
+    } finally {
+      setIsReminderToggleInProgress(false)
+    }
+  }
+
   return (
     <article
       className="med-card"
@@ -177,10 +199,32 @@ export function MedicationCard({
       <div className="med-card-top">
         <div>
           <h3>{medication.name}</h3>
+          <label className="med-card-reminder-toggle">
+            <input
+              type="checkbox"
+              checked={reminderEnabled}
+              disabled={actionsDisabled || isReminderToggleInProgress}
+              onChange={(event) => void handleReminderToggle(event.target.checked)}
+              data-testid={`care-reminder-toggle-${medication.id}`}
+            />
+            <span className="toggle-switch-track" aria-hidden="true">
+              <span className="toggle-switch-thumb" />
+            </span>
+            <span>{reminderEnabled ? 'Notifications on' : 'Notifications off'}</span>
+          </label>
           <p className="dose-label">Default dose: {medication.defaultDoseText}</p>
           <p className="schedule-label">{renderScheduleLabel(medication)}</p>
         </div>
-        <span className="status-pill">{statusText}</span>
+        <div className="med-card-actions">
+          <span className="status-pill">{statusText}</span>
+          <button
+            onClick={() => onLogDose(medication.id)}
+            className="dose-button card-dose-button"
+            disabled={actionsDisabled}
+          >
+            Give Dose
+          </button>
+        </div>
       </div>
       <p className="last-given">
         Last given:{' '}
@@ -200,13 +244,7 @@ export function MedicationCard({
       {medication.instructions ? (
         <p className="instructions">{medication.instructions}</p>
       ) : null}
-      <button
-        onClick={() => onLogDose(medication.id)}
-        className="dose-button"
-        disabled={actionsDisabled}
-      >
-        Give Dose
-      </button>
+      {reminderToggleError ? <p className="correction-error">{reminderToggleError}</p> : null}
       <div className="med-history-block">
         <h4>Recent doses</h4>
         {recentDoseEvents.length === 0 ? (

@@ -25,6 +25,7 @@ import { formatAbsoluteDateTime } from '../../ui/time'
 
 interface MedsViewProps {
   openMedicationFormRequestId?: number
+  onOpenMedicationFormHandled?: () => void
   selectedPatientId: string | null
   patientDisplayName: string | null
   patient: Patient | null
@@ -33,8 +34,10 @@ interface MedsViewProps {
   now: Date
   onCreateMedication: (input: UpsertMedicationInput) => Promise<void>
   onUpdateMedication: (medicationId: string, input: UpsertMedicationInput) => Promise<void>
+  onActivateMedication: (medicationId: string) => Promise<void>
   onDeactivateMedication: (medicationId: string) => Promise<void>
   onDeleteMedication: (medicationId: string) => Promise<void>
+  onToggleMedicationReminder: (medication: Medication, enabled: boolean) => Promise<void>
   onUiError: (message: string | null) => void
 }
 
@@ -95,6 +98,7 @@ function downloadBlob(blob: Blob, fileName: string): void {
 
 export function MedsView({
   openMedicationFormRequestId,
+  onOpenMedicationFormHandled,
   selectedPatientId,
   patientDisplayName,
   patient,
@@ -103,8 +107,10 @@ export function MedsView({
   now,
   onCreateMedication,
   onUpdateMedication,
+  onActivateMedication,
   onDeactivateMedication,
   onDeleteMedication,
+  onToggleMedicationReminder,
   onUiError,
 }: MedsViewProps) {
   const medicationNameInputRef = useRef<HTMLInputElement>(null)
@@ -125,6 +131,7 @@ export function MedsView({
   const [isMedicationFormOpen, setIsMedicationFormOpen] = useState(false)
   const [medicationFormError, setMedicationFormError] = useState<string | null>(null)
   const [isMedicationActionInProgress, setIsMedicationActionInProgress] = useState(false)
+  const [reminderToggleMedicationId, setReminderToggleMedicationId] = useState<string | null>(null)
 
   const parseDurationMinutes = (
     rawValue: string,
@@ -338,13 +345,22 @@ export function MedsView({
     startCreateMedication()
   }
 
+  const handleScheduleTypeChange = (nextScheduleType: MedicationScheduleType) => {
+    setScheduleTypeInput(nextScheduleType)
+
+    if (!editingMedicationId && nextScheduleType === 'prn') {
+      setReminderEnabledInput(false)
+    }
+  }
+
   useEffect(() => {
     if (!openMedicationFormRequestId) {
       return
     }
 
     startCreateMedication()
-  }, [openMedicationFormRequestId])
+    onOpenMedicationFormHandled?.()
+  }, [openMedicationFormRequestId, onOpenMedicationFormHandled])
 
   useEffect(() => {
     if (!isMedicationFormOpen) {
@@ -534,6 +550,41 @@ export function MedsView({
     }
   }
 
+  const handleActivateMedication = async (medicationId: string) => {
+    if (isMedicationActionInProgress) {
+      return
+    }
+
+    try {
+      onUiError(null)
+      setIsMedicationActionInProgress(true)
+      await onActivateMedication(medicationId)
+    } catch {
+      onUiError('Unable to activate medication right now. Please try again.')
+    } finally {
+      setIsMedicationActionInProgress(false)
+    }
+  }
+
+  const handleToggleMedicationReminder = async (
+    medication: Medication,
+    enabled: boolean,
+  ) => {
+    if (isMedicationActionInProgress || reminderToggleMedicationId) {
+      return
+    }
+
+    try {
+      onUiError(null)
+      setReminderToggleMedicationId(medication.id)
+      await onToggleMedicationReminder(medication, enabled)
+    } catch {
+      onUiError('Unable to update medication notifications right now. Please try again.')
+    } finally {
+      setReminderToggleMedicationId(null)
+    }
+  }
+
   return (
     <section className="workflow-section" data-testid="meds-view">
       <section className="admin-section no-print">
@@ -593,7 +644,7 @@ export function MedsView({
           <select
             data-testid="medication-schedule-type-select"
             value={scheduleTypeInput}
-            onChange={(event) => setScheduleTypeInput(event.target.value as MedicationScheduleType)}
+            onChange={(event) => handleScheduleTypeChange(event.target.value as MedicationScheduleType)}
           >
             {medicationScheduleTypeOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -714,11 +765,11 @@ export function MedsView({
             checked={reminderEnabledInput}
             onChange={(event) => setReminderEnabledInput(event.target.checked)}
           />
-          Enable reminders
+          Enable notifications
         </label>
         {reminderEnabledInput ? (
           <label>
-            Reminder minutes early
+            Notification minutes early
             <select
               data-testid="reminder-minutes-select"
               value={reminderMinutesInput}
@@ -763,9 +814,31 @@ export function MedsView({
           ) : null}
           {medicationsForAdministration.map((medication) => (
             <li key={medication.id} className="admin-item" data-testid={`medication-item-${medication.id}`}>
-              <div>
-                <strong>{medication.name}</strong>
-                <p>{medication.active ? 'Active' : 'Inactive'}</p>
+              <div className="meds-item-main">
+                <div>
+                  <strong>{medication.name}</strong>
+                  <label className="meds-reminder-toggle meds-reminder-toggle-inline">
+                    <input
+                      type="checkbox"
+                      checked={medication.active && Boolean(medication.reminderSettings?.enabled)}
+                      disabled={
+                        !medication.active ||
+                        isMedicationActionInProgress ||
+                        reminderToggleMedicationId === medication.id
+                      }
+                      onChange={(event) => void handleToggleMedicationReminder(medication, event.target.checked)}
+                      data-testid={`meds-reminder-toggle-${medication.id}`}
+                    />
+                    <span className="toggle-switch-track" aria-hidden="true">
+                      <span className="toggle-switch-thumb" />
+                    </span>
+                    <span>
+                      {medication.active && Boolean(medication.reminderSettings?.enabled)
+                        ? 'Notifications on'
+                        : 'Notifications off'}
+                    </span>
+                  </label>
+                </div>
               </div>
               <div className="admin-item-actions">
                 <button
@@ -785,7 +858,16 @@ export function MedsView({
                   >
                     Deactivate
                   </button>
-                ) : null}
+                ) : (
+                  <button
+                    data-testid={`activate-medication-${medication.id}`}
+                    className="utility-button"
+                    disabled={isMedicationActionInProgress}
+                    onClick={() => void handleActivateMedication(medication.id)}
+                  >
+                    Activate
+                  </button>
+                )}
                 <button
                   data-testid={`delete-medication-${medication.id}`}
                   className="utility-button danger-button"

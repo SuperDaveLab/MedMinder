@@ -5,6 +5,7 @@ import type { DoseEvent, Medication, MedMinderState } from '../domain/types'
 import type { UpsertMedicationInput, UpsertPatientInput } from '../storage/repository'
 import { getCurrentTime } from '../ui/clock'
 import {
+  activateMedication,
   addDoseEvent,
   createDoseCorrectionEvent,
   createMedication,
@@ -48,6 +49,7 @@ export interface UseAppDataResult {
   handleDeletePatient: (patientId: string) => Promise<void>
   handleCreateMedication: (input: UpsertMedicationInput) => Promise<void>
   handleUpdateMedication: (medicationId: string, input: UpsertMedicationInput) => Promise<void>
+  handleActivateMedication: (medicationId: string) => Promise<void>
   handleDeactivateMedication: (medicationId: string) => Promise<void>
   handleDeleteMedication: (medicationId: string) => Promise<void>
   handleLogDoseNow: (medicationId: string) => Promise<void>
@@ -425,6 +427,34 @@ export function useAppData(authState: AuthSessionState | null): UseAppDataResult
     await refreshSelectedPatientView(medication.patientId)
   }
 
+  const handleActivateMedication = async (medicationId: string) => {
+    if (!appState) {
+      throw new Error('App state is not loaded yet.')
+    }
+
+    const medication = appState.medications.find((item) => item.id === medicationId)
+
+    if (!medication) {
+      throw new Error('Medication not found for activation.')
+    }
+
+    if (isCloudMode) {
+      await commitCloudState(
+        {
+          ...appState,
+          medications: appState.medications.map((item) =>
+            item.id === medicationId ? { ...item, active: true } : item,
+          ),
+        },
+        medication.patientId,
+      )
+      return
+    }
+
+    await activateMedication(medicationId)
+    await refreshSelectedPatientView(medication.patientId)
+  }
+
   const handleDeleteMedication = async (medicationId: string) => {
     if (!appState) {
       throw new Error('App state is not loaded yet.')
@@ -562,6 +592,7 @@ export function useAppData(authState: AuthSessionState | null): UseAppDataResult
     handleDeletePatient,
     handleCreateMedication,
     handleUpdateMedication,
+    handleActivateMedication,
     handleDeactivateMedication,
     handleDeleteMedication,
     handleLogDoseNow,

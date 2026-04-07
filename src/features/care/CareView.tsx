@@ -15,6 +15,7 @@ interface CareViewProps {
     replacementTimestampGiven: string,
     notes?: string,
   ) => Promise<void>
+  onToggleMedicationReminder: (medication: Medication, enabled: boolean) => Promise<void>
   actionsDisabled: boolean
 }
 
@@ -27,6 +28,7 @@ export function CareView({
   onAddMedication,
   onGiveDose,
   onCorrectDose,
+  onToggleMedicationReminder,
   actionsDisabled,
 }: CareViewProps) {
   const medicationById = new Map(allMedications.map((medication) => [medication.id, medication.name]))
@@ -56,6 +58,7 @@ export function CareView({
           onAddMedication={onAddMedication}
           onGiveDose={onGiveDose}
           onCorrectDose={onCorrectDose}
+          onToggleMedicationReminder={onToggleMedicationReminder}
           actionsDisabled={actionsDisabled}
         />
         <section className="history-section care-history-section" data-testid="care-recent-history">

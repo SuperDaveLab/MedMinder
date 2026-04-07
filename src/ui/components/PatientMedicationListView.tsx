@@ -21,6 +21,7 @@ interface PatientMedicationListViewProps {
     replacementTimestampGiven: string,
     notes?: string,
   ) => Promise<void>
+  onToggleMedicationReminder: (medication: Medication, enabled: boolean) => Promise<void>
 }
 
 interface StatusDescriptor {
@@ -86,6 +87,7 @@ export function PatientMedicationListView({
   onAddMedication,
   onGiveDose,
   onCorrectDose,
+  onToggleMedicationReminder,
 }: PatientMedicationListViewProps) {
   const medicationStatuses = useMemo(
     () =>
@@ -134,6 +136,7 @@ export function PatientMedicationListView({
               actionsDisabled={Boolean(actionsDisabled)}
               onLogDose={onGiveDose}
               onCorrectDose={onCorrectDose}
+              onToggleReminderEnabled={onToggleMedicationReminder}
             />
           )
         })}

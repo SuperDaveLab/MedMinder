@@ -282,7 +282,8 @@ describe('App administration flow', () => {
     await user.click(screen.getByTestId('deactivate-medication-med-interval-1'))
 
     await waitFor(() => {
-      expect(within(medicationItem).getByText('Inactive')).toBeTruthy()
+      expect(within(medicationItem).getByTestId('activate-medication-med-interval-1')).toBeTruthy()
+      expect(within(medicationItem).getByText('Notifications off')).toBeTruthy()
     })
 
     await user.click(screen.getByTestId('delete-medication-med-interval-1'))

@@ -7,6 +7,8 @@ import { HistoryView } from './features/history/HistoryView'
 import { MedsView } from './features/meds/MedsView'
 import { PatientsView } from './features/patients/PatientsView'
 import { MoreView } from './features/more/MoreView'
+import type { Medication } from './domain/types'
+import type { UpsertMedicationInput } from './storage/repository'
 import { formatRelativeTime } from './ui/time'
 import './App.css'
 
@@ -36,6 +38,7 @@ function App() {
     handleDeletePatient,
     handleCreateMedication,
     handleUpdateMedication,
+    handleActivateMedication,
     handleDeactivateMedication,
     handleDeleteMedication,
     handleLogDoseNow,
@@ -143,6 +146,34 @@ function App() {
   const medicationsForAdministration = appState.medications.filter(
     (medication) => medication.patientId === patient.id,
   )
+
+  const buildMedicationUpsertInput = (
+    medication: Medication,
+    reminderEnabled: boolean,
+  ): UpsertMedicationInput => ({
+    patientId: medication.patientId,
+    name: medication.name,
+    strengthText: medication.strengthText,
+    instructions: medication.instructions,
+    defaultDoseText: medication.defaultDoseText,
+    active: medication.active,
+    schedule: medication.schedule,
+    reminderSettings: {
+      ...medication.reminderSettings,
+      enabled: reminderEnabled,
+      earlyReminderMinutes: medication.reminderSettings?.earlyReminderMinutes ?? 0,
+    },
+  })
+
+  const handleToggleMedicationReminder = async (
+    medication: Medication,
+    reminderEnabled: boolean,
+  ) => {
+    await handleUpdateMedication(
+      medication.id,
+      buildMedicationUpsertInput(medication, reminderEnabled),
+    )
+  }
 
   return (
     <div className="layout-root">
@@ -274,6 +305,7 @@ function App() {
             }}
             onGiveDose={handleLogDoseNow}
             onCorrectDose={handleCorrectDose}
+            onToggleMedicationReminder={handleToggleMedicationReminder}
             actionsDisabled={isDoseActionInProgress}
           />
         ) : null}
@@ -285,6 +317,7 @@ function App() {
         {activeView === 'meds' ? (
           <MedsView
             openMedicationFormRequestId={openMedicationFormRequestId}
+            onOpenMedicationFormHandled={() => setOpenMedicationFormRequestId(0)}
             selectedPatientId={selectedPatientId}
             patientDisplayName={patient.displayName}
             patient={patient}
@@ -293,8 +326,10 @@ function App() {
             now={now}
             onCreateMedication={handleCreateMedication}
             onUpdateMedication={handleUpdateMedication}
+            onActivateMedication={handleActivateMedication}
             onDeactivateMedication={handleDeactivateMedication}
             onDeleteMedication={handleDeleteMedication}
+            onToggleMedicationReminder={handleToggleMedicationReminder}
             onUiError={setUiError}
           />
         ) : null}

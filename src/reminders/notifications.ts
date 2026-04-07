@@ -72,7 +72,11 @@ export function buildReminderNotificationCandidates(
   const candidates: ReminderNotificationCandidate[] = []
 
   for (const medication of medications) {
-    if (!medication.active || medication.reminderSettings?.enabled === false) {
+    const remindersEnabled =
+      medication.reminderSettings?.enabled ??
+      (medication.schedule.type === 'prn' ? false : true)
+
+    if (!medication.active || !remindersEnabled) {
       continue
     }
 
@@ -87,8 +91,24 @@ export function buildReminderNotificationCandidates(
 
     const nextEligibleAtIso = schedule.nextEligibleAt.toISOString()
     const nextEligibleAtDisplay = formatLocalReminderDateTime(nextEligibleAtIso)
+    const isPrn = medication.schedule.type === 'prn'
 
     if (now.getTime() >= schedule.nextEligibleAt.getTime()) {
+      if (isPrn) {
+        const dedupeKey = `${medication.id}:due-now:${nextEligibleAtIso}`
+        candidates.push({
+          medicationId: medication.id,
+          patientId: medication.patientId,
+          medicationName: medication.name,
+          kind: 'due-now',
+          nextEligibleAtIso,
+          dedupeKey,
+          title: `${medication.name}: due now`,
+          body: `Next eligible at ${nextEligibleAtDisplay}.`,
+        })
+        continue
+      }
+
       const overdueMinutes = Math.floor(
         (now.getTime() - schedule.nextEligibleAt.getTime()) / 60_000,
       )
@@ -123,6 +143,10 @@ export function buildReminderNotificationCandidates(
         title: `${medication.name}: due now`,
         body: `Next eligible at ${nextEligibleAtDisplay}.`,
       })
+      continue
+    }
+
+    if (isPrn) {
       continue
     }
 

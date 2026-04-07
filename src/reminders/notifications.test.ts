@@ -82,6 +82,82 @@ describe('reminder notifications', () => {
     expect(candidates).toEqual([])
   })
 
+  it('treats PRN medications as notifications-off by default when reminder settings are missing', () => {
+    const prnMedication: Medication = {
+      ...baseMedication,
+      id: 'med-prn-default-off',
+      name: 'Ibuprofen PRN',
+      schedule: {
+        type: 'prn',
+        minimumIntervalMinutes: 6 * 60,
+      },
+      reminderSettings: undefined,
+    }
+
+    const candidates = buildReminderNotificationCandidates(
+      [prnMedication],
+      [
+        {
+          ...baseDoseEvents[0],
+          id: 'dose-prn-default-off',
+          medicationId: 'med-prn-default-off',
+        },
+      ],
+      new Date('2026-03-28T12:10:00.000Z'),
+    )
+
+    expect(candidates).toEqual([])
+  })
+
+  it('for PRN sends only a due-now candidate for each eligibility window (no due-soon or overdue)', () => {
+    const prnMedication: Medication = {
+      ...baseMedication,
+      id: 'med-prn-enabled',
+      name: 'Ibuprofen PRN',
+      schedule: {
+        type: 'prn',
+        minimumIntervalMinutes: 6 * 60,
+      },
+      reminderSettings: {
+        enabled: true,
+        earlyReminderMinutes: 10,
+      },
+    }
+
+    const prnDoseEvents: DoseEvent[] = [
+      {
+        id: 'dose-prn-1',
+        medicationId: 'med-prn-enabled',
+        timestampGiven: '2026-03-28T06:00:00.000Z',
+        corrected: false,
+      },
+    ]
+
+    const dueSoonCandidates = buildReminderNotificationCandidates(
+      [prnMedication],
+      prnDoseEvents,
+      new Date('2026-03-28T11:55:00.000Z'),
+    )
+    expect(dueSoonCandidates).toEqual([])
+
+    const dueNowCandidates = buildReminderNotificationCandidates(
+      [prnMedication],
+      prnDoseEvents,
+      new Date('2026-03-28T12:01:00.000Z'),
+    )
+    expect(dueNowCandidates).toHaveLength(1)
+    expect(dueNowCandidates[0].kind).toBe('due-now')
+
+    const pastWindowCandidates = buildReminderNotificationCandidates(
+      [prnMedication],
+      prnDoseEvents,
+      new Date('2026-03-28T12:45:00.000Z'),
+    )
+    expect(pastWindowCandidates).toHaveLength(1)
+    expect(pastWindowCandidates[0].kind).toBe('due-now')
+    expect(pastWindowCandidates[0].dedupeKey).toBe(dueNowCandidates[0].dedupeKey)
+  })
+
   it('creates overdue follow-up candidates in 30-minute buckets', () => {
     const overdue = buildReminderNotificationCandidates(
       [baseMedication],

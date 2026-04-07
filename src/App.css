@@ -288,6 +288,12 @@ h2 {
   gap: 0.8rem;
 }
 
+.med-card-actions {
+  display: grid;
+  justify-items: end;
+  gap: 0.35rem;
+}
+
 .med-card h3 {
   margin: 0;
 }
@@ -322,6 +328,113 @@ h2 {
   margin-top: 0.4rem;
   background: #0f172a;
   color: #fff;
+}
+
+.card-dose-button {
+  margin-top: 0;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+.med-card-reminder-toggle,
+.meds-reminder-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.admin-section .meds-reminder-toggle {
+  display: inline-flex;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+.med-card-reminder-toggle {
+  margin-top: 0.25rem;
+}
+
+.med-card-reminder-toggle input,
+.meds-reminder-toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.toggle-switch-track {
+  width: 2rem;
+  height: 1.15rem;
+  border-radius: 999px;
+  border: 1px solid #c7d2e4;
+  background: #e5e7eb;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.08rem;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.toggle-switch-thumb {
+  width: 0.95rem;
+  height: 0.95rem;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.25);
+  transition: transform 0.18s ease;
+}
+
+.med-card-reminder-toggle input:checked + .toggle-switch-track,
+.meds-reminder-toggle input:checked + .toggle-switch-track {
+  background: #0ea5e9;
+  border-color: #0284c7;
+}
+
+.med-card-reminder-toggle input:checked + .toggle-switch-track .toggle-switch-thumb,
+.meds-reminder-toggle input:checked + .toggle-switch-track .toggle-switch-thumb {
+  transform: translateX(0.82rem);
+}
+
+.med-card-reminder-toggle input:focus-visible + .toggle-switch-track,
+.meds-reminder-toggle input:focus-visible + .toggle-switch-track {
+  outline: 2px solid #0284c7;
+  outline-offset: 2px;
+}
+
+.med-card-reminder-toggle input:disabled + .toggle-switch-track,
+.meds-reminder-toggle input:disabled + .toggle-switch-track {
+  opacity: 0.6;
+}
+
+.meds-reminder-toggle {
+  margin-top: 0.35rem;
+}
+
+.meds-item-main {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.meds-item-main > div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.meds-item-main strong {
+  display: block;
+}
+
+.meds-reminder-toggle-inline {
+  margin-top: 0.25rem;
+  align-self: center;
+}
+
+.meds-list-panel .admin-item-actions {
+  flex-wrap: nowrap;
+  justify-content: flex-end;
 }
 
 .med-history-block {
@@ -757,6 +870,8 @@ h2 {
   display: flex;
   gap: 0.4rem;
   flex-wrap: wrap;
+  align-items: center;
+  align-content: center;
 }
 
 .danger-button {
@@ -793,6 +908,14 @@ h2 {
   .admin-item {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .meds-list-panel .admin-item-actions {
+    flex-wrap: wrap;
+  }
+
+  .admin-item-actions .utility-button {
+    min-height: 36px;
   }
 }
 
