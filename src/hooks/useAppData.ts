@@ -208,24 +208,35 @@ export function useAppData(authState: AuthSessionState | null): UseAppDataResult
   }, [refreshNow])
 
   useEffect(() => {
+    const handleWindowReentry = () => {
+      const preferredPatientId = consumePreferredPatientIdFromUrl()
+
+      if (preferredPatientId) {
+        void refreshSelectedPatientView(preferredPatientId)
+        return
+      }
+
+      refreshNow()
+    }
+
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        refreshNow()
+        handleWindowReentry()
       }
     }
 
-    window.addEventListener('focus', refreshNow)
-    window.addEventListener('pageshow', refreshNow)
-    window.addEventListener('online', refreshNow)
+    window.addEventListener('focus', handleWindowReentry)
+    window.addEventListener('pageshow', handleWindowReentry)
+    window.addEventListener('online', handleWindowReentry)
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
     return () => {
-      window.removeEventListener('focus', refreshNow)
-      window.removeEventListener('pageshow', refreshNow)
-      window.removeEventListener('online', refreshNow)
+      window.removeEventListener('focus', handleWindowReentry)
+      window.removeEventListener('pageshow', handleWindowReentry)
+      window.removeEventListener('online', handleWindowReentry)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [refreshNow])
+  }, [refreshNow, refreshSelectedPatientView])
 
   const handlePatientChange = async (patientId: string) => {
     try {
