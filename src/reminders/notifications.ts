@@ -206,7 +206,7 @@ export function groupReminderNotificationsByPatient(
   // Convert to grouped notifications
   const grouped_notifications: GroupedReminderNotification[] = []
 
-  for (const [_groupKey, group] of grouped) {
+  for (const [, group] of grouped) {
     const patientId = group[0].patientId
     const kind = group[0].kind
     const medicationNames = group.map((c) => c.medicationName)
