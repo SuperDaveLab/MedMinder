@@ -49,24 +49,6 @@ function toAuthAccount(row: DbUserRow): AuthAccount {
   }
 }
 
-function toAuthSession(row: {
-  session_id: string
-  account_id: string
-  user_id: string
-  provider: string
-  issued_at: Date
-  expires_at: Date
-}): AuthSession {
-  return {
-    sessionId: row.session_id,
-    accountId: row.account_id,
-    userId: row.user_id,
-    provider: row.provider === 'password' ? 'password' : 'password',
-    issuedAt: row.issued_at.toISOString(),
-    expiresAt: row.expires_at.toISOString(),
-  }
-}
-
 function toTokenSet(accessToken: string, refreshToken: string, accessTokenExpiresAt: Date): AuthTokenSet {
   return {
     accessToken,

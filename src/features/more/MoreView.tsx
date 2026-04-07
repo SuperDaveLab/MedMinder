@@ -58,7 +58,7 @@ function downloadBlob(blob: Blob, fileName: string): void {
 export function MoreView({
   noPatientsMode = false,
   patients,
-  selectedPatientId: _selectedPatientId,
+  selectedPatientId,
   patient,
   medicationsForPatient,
   doseEvents,
@@ -102,6 +102,8 @@ export function MoreView({
   const [authEmailInput, setAuthEmailInput] = useState('')
   const [authPasswordInput, setAuthPasswordInput] = useState('')
   const [authPhoneInput, setAuthPhoneInput] = useState('')
+
+  void selectedPatientId
 
   const summaryRows = patient
     ? buildPatientMedicationSummaryRows(

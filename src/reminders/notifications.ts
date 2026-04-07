@@ -11,6 +11,7 @@ const OVERDUE_REMINDER_INTERVAL_MINUTES = 30
 
 export interface ReminderNotificationCandidate {
   medicationId: string
+  patientId: string
   medicationName: string
   kind: 'due-soon' | 'due-now' | 'overdue'
   nextEligibleAtIso: string
@@ -100,6 +101,7 @@ export function buildReminderNotificationCandidates(
 
         candidates.push({
           medicationId: medication.id,
+          patientId: medication.patientId,
           medicationName: medication.name,
           kind: 'overdue',
           nextEligibleAtIso,
@@ -113,6 +115,7 @@ export function buildReminderNotificationCandidates(
       const dedupeKey = `${medication.id}:due-now:${nextEligibleAtIso}`
       candidates.push({
         medicationId: medication.id,
+        patientId: medication.patientId,
         medicationName: medication.name,
         kind: 'due-now',
         nextEligibleAtIso,
@@ -131,6 +134,7 @@ export function buildReminderNotificationCandidates(
       const dedupeKey = `${medication.id}:due-soon:${nextEligibleAtIso}`
       candidates.push({
         medicationId: medication.id,
+        patientId: medication.patientId,
         medicationName: medication.name,
         kind: 'due-soon',
         nextEligibleAtIso,

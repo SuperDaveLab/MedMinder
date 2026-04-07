@@ -70,6 +70,9 @@ async function checkAccountNotifications(accountId: string, now: Date): Promise<
   const sentLog = await getNotificationLog(accountId)
   const candidates = buildReminderNotificationCandidates(state.medications, state.doseEvents, now)
   const unsent = filterUnsentReminderCandidates(candidates, sentLog)
+  const patientNameById = Object.fromEntries(
+    state.patients.map((patient) => [patient.id, patient.displayName]),
+  )
 
   for (const candidate of unsent) {
     try {
@@ -81,7 +84,11 @@ async function checkAccountNotifications(accountId: string, now: Date): Promise<
       }
 
       if (channels.email) {
-        const emailDelivered = await sendNotificationEmail({ to: channels.email, candidate })
+        const emailDelivered = await sendNotificationEmail({
+          to: channels.email,
+          candidate,
+          patientName: patientNameById[candidate.patientId],
+        })
         if (emailDelivered) {
           delivered = true
         }

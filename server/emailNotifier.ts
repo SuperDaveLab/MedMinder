@@ -1,19 +1,80 @@
 import type { ReminderNotificationCandidate } from '../src/reminders/notifications'
+import nodemailer from 'nodemailer'
 import { serverConfig } from './config'
 
 export interface NotificationEmailPayload {
   to: string
   candidate: ReminderNotificationCandidate
+  patientName?: string
 }
 
-function buildPlainTextBody(candidate: ReminderNotificationCandidate): string {
+function formatCandidateKind(kind: ReminderNotificationCandidate['kind']): string {
+  if (kind === 'due-now') {
+    return 'Due now'
+  }
+
+  if (kind === 'due-soon') {
+    return 'Due soon'
+  }
+
+  return 'Overdue'
+}
+
+function buildEmailSubject(payload: NotificationEmailPayload): string {
+  if (payload.patientName) {
+    return `Med-Minder: ${payload.patientName} - ${payload.candidate.medicationName}`
+  }
+
+  return `Med-Minder: ${payload.candidate.medicationName}`
+}
+
+function buildPlainTextBody(payload: NotificationEmailPayload): string {
+  const { candidate, patientName } = payload
+
   return [
-    candidate.title,
+    'Med-Minder reminder',
     '',
+    `Patient: ${patientName ?? 'Unspecified'}`,
+    `Medication: ${candidate.medicationName}`,
+    `Status: ${formatCandidateKind(candidate.kind)}`,
+    `Next eligible: ${candidate.nextEligibleAtIso}`,
+    '',
+    candidate.title,
     candidate.body,
     '',
     '-- Med-Minder',
   ].join('\n')
+}
+
+let cachedTransporter: nodemailer.Transporter | null = null
+
+function hasSmtpConfiguration(): boolean {
+  return Boolean(
+    serverConfig.smtp.host
+    && serverConfig.smtp.user
+    && serverConfig.smtp.password
+    && serverConfig.smtp.from,
+  )
+}
+
+function getSmtpTransporter(): nodemailer.Transporter | null {
+  if (!hasSmtpConfiguration()) {
+    return null
+  }
+
+  if (!cachedTransporter) {
+    cachedTransporter = nodemailer.createTransport({
+      host: serverConfig.smtp.host,
+      port: serverConfig.smtp.port,
+      secure: serverConfig.smtp.port === 465,
+      auth: {
+        user: serverConfig.smtp.user,
+        pass: serverConfig.smtp.password,
+      },
+    })
+  }
+
+  return cachedTransporter
 }
 
 /**
@@ -32,7 +93,9 @@ function buildPlainTextBody(candidate: ReminderNotificationCandidate): string {
 export async function sendNotificationEmail(
   payload: NotificationEmailPayload,
 ): Promise<boolean> {
-  if (!serverConfig.smtp.host) {
+  const transporter = getSmtpTransporter()
+
+  if (!transporter) {
     // SMTP not configured — log only so the scheduler still runs in dev.
     console.log(
       `[notification-stub] ${payload.to} | ${payload.candidate.title} | ${payload.candidate.body}`,
@@ -40,27 +103,16 @@ export async function sendNotificationEmail(
     return false
   }
 
-  // TODO: replace with real SMTP send once nodemailer (or similar) is installed.
-  // Example with nodemailer:
-  //
-  //   const transporter = nodemailer.createTransport({
-  //     host: serverConfig.smtp.host,
-  //     port: serverConfig.smtp.port,
-  //     auth: { user: serverConfig.smtp.user, pass: serverConfig.smtp.password },
-  //   })
-  //
-  //   await transporter.sendMail({
-  //     from: serverConfig.smtp.from,
-  //     to: payload.to,
-  //     subject: payload.candidate.title,
-  //     text: buildPlainTextBody(payload.candidate),
-  //   })
-
-  console.log(
-    `[notification-stub] SMTP configured but sending not yet implemented. ` +
-    `Would send to ${payload.to}: "${payload.candidate.title}"`,
-  )
-
-  void buildPlainTextBody // keep linter happy until the TODO above is filled in
-  return false
+  try {
+    await transporter.sendMail({
+      from: serverConfig.smtp.from,
+      to: payload.to,
+      subject: buildEmailSubject(payload),
+      text: buildPlainTextBody(payload),
+    })
+    return true
+  } catch (error) {
+    console.error(`[email] Failed to send email to ${payload.to}:`, error)
+    return false
+  }
 }
