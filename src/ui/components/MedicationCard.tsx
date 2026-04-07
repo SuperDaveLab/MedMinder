@@ -16,6 +16,7 @@ interface MedicationCardProps {
   now: Date
   medicationDoseEvents: DoseEvent[]
   actionsDisabled: boolean
+  patientNotificationsEnabled: boolean
   onLogDose: (medicationId: string) => void
   onCorrectDose: (
     originalDoseEventId: string,
@@ -72,6 +73,7 @@ export function MedicationCard({
   now,
   medicationDoseEvents,
   actionsDisabled,
+  patientNotificationsEnabled,
   onLogDose,
   onCorrectDose,
   onToggleReminderEnabled,
@@ -199,19 +201,21 @@ export function MedicationCard({
       <div className="med-card-top">
         <div>
           <h3>{medication.name}</h3>
-          <label className="med-card-reminder-toggle">
-            <input
-              type="checkbox"
-              checked={reminderEnabled}
-              disabled={actionsDisabled || isReminderToggleInProgress}
-              onChange={(event) => void handleReminderToggle(event.target.checked)}
-              data-testid={`care-reminder-toggle-${medication.id}`}
-            />
-            <span className="toggle-switch-track" aria-hidden="true">
-              <span className="toggle-switch-thumb" />
-            </span>
-            <span>{reminderEnabled ? 'Notifications on' : 'Notifications off'}</span>
-          </label>
+          {patientNotificationsEnabled ? (
+            <label className="med-card-reminder-toggle">
+              <input
+                type="checkbox"
+                checked={reminderEnabled}
+                disabled={actionsDisabled || isReminderToggleInProgress}
+                onChange={(event) => void handleReminderToggle(event.target.checked)}
+                data-testid={`care-reminder-toggle-${medication.id}`}
+              />
+              <span className="toggle-switch-track" aria-hidden="true">
+                <span className="toggle-switch-thumb" />
+              </span>
+              <span>{reminderEnabled ? 'Notifications on' : 'Notifications off'}</span>
+            </label>
+          ) : null}
           <p className="dose-label">Default dose: {medication.defaultDoseText}</p>
           <p className="schedule-label">{renderScheduleLabel(medication)}</p>
         </div>

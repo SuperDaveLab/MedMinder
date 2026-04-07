@@ -169,6 +169,7 @@ export function PatientMedicationListView({
               now={now}
               medicationDoseEvents={medicationDoseEvents}
               actionsDisabled={Boolean(actionsDisabled)}
+              patientNotificationsEnabled={patient.notificationsEnabled !== false}
               onLogDose={onGiveDose}
               onCorrectDose={onCorrectDose}
               onToggleReminderEnabled={onToggleMedicationReminder}
