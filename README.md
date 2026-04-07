@@ -80,6 +80,7 @@ Current reminder behavior (implemented):
 - PRN defaults notifications to off when reminder settings are unset.
 - PRN emits a single `due-now` notification per eligibility window (no `due-soon` or recurring overdue buckets).
 - Overdue notifications use a 30-minute default interval and support per-medication override in domain data.
+- For policy "Push first, then email fallback", fallback email is sent only when push delivers to zero subscriptions for the account. If any device receives push, fallback email is skipped.
 
 ## ☁️ Planned Premium Reminder Relay
 

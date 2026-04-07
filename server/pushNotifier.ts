@@ -42,6 +42,7 @@ function toPushMessage(candidate: ReminderNotificationCandidate): WebPushMessage
     body: candidate.body,
     tag: candidate.dedupeKey,
     url: `/?view=care&patientId=${encodeURIComponent(candidate.patientId)}`,
+    patientId: candidate.patientId,
     requireInteraction: candidate.kind !== 'due-soon',
   }
 }

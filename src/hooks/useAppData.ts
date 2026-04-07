@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchCloudState, replaceCloudState } from '../cloud/syncOrchestrator'
 import type { AuthSessionState } from '../domain/auth'
 import type { DoseEvent, Medication, MedMinderState } from '../domain/types'
@@ -37,7 +37,7 @@ function trimOptional(value?: string): string | undefined {
   return trimmed ? trimmed : undefined
 }
 
-function consumePreferredPatientIdFromUrl(): string | null {
+function readAndClearPreferredPatientIdFromUrl(): string | null {
   const url = new URL(window.location.href)
   const patientId = url.searchParams.get('patientId')?.trim()
 
@@ -79,11 +79,24 @@ export interface UseAppDataResult {
 export function useAppData(authState: AuthSessionState | null): UseAppDataResult {
   const [appState, setAppState] = useState<MedMinderState | null>(null)
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null)
+  const [pendingPreferredPatientId, setPendingPreferredPatientId] = useState<string | null>(
+    () => readAndClearPreferredPatientIdFromUrl(),
+  )
+  const selectedPatientIdRef = useRef<string | null>(selectedPatientId)
+  const pendingPreferredPatientIdRef = useRef<string | null>(pendingPreferredPatientId)
   const [now, setNow] = useState(getCurrentTime())
   const [uiError, setUiError] = useState<string | null>(null)
   const [isDoseActionInProgress, setIsDoseActionInProgress] = useState(false)
 
   const isCloudMode = Boolean(authState)
+
+  useEffect(() => {
+    selectedPatientIdRef.current = selectedPatientId
+  }, [selectedPatientId])
+
+  useEffect(() => {
+    pendingPreferredPatientIdRef.current = pendingPreferredPatientId
+  }, [pendingPreferredPatientId])
 
   const refreshNow = useCallback(() => {
     setNow(getCurrentTime())
@@ -100,14 +113,23 @@ export function useAppData(authState: AuthSessionState | null): UseAppDataResult
     }
 
     const persistedSelectedPatientId = await getLastSelectedPatientId()
-    const resolvedPatientId = preferredPatientId ?? selectedPatientId ?? persistedSelectedPatientId
+    const resolvedPatientId =
+      preferredPatientId
+      ?? pendingPreferredPatientIdRef.current
+      ?? selectedPatientIdRef.current
+      ?? persistedSelectedPatientId
     const selectedPatient =
       nextState.patients.find((patient) => patient.id === resolvedPatientId) ?? nextState.patients[0]
+
+    const matchedPreferredPatientId = preferredPatientId ?? pendingPreferredPatientIdRef.current
+    if (matchedPreferredPatientId && selectedPatient.id === matchedPreferredPatientId) {
+      setPendingPreferredPatientId(null)
+    }
 
     await saveLastSelectedPatientId(selectedPatient.id)
     setSelectedPatientId(selectedPatient.id)
     setAppState(nextState)
-  }, [selectedPatientId])
+  }, [])
 
   const loadCloudWorkspaceState = useCallback(async (preferredPatientId?: string | null) => {
     if (!authState) {
@@ -115,7 +137,7 @@ export function useAppData(authState: AuthSessionState | null): UseAppDataResult
     }
 
     const cloudState = await fetchCloudState(authState)
-    await resolveAndSetState(cloudState, preferredPatientId ?? consumePreferredPatientIdFromUrl())
+    await resolveAndSetState(cloudState, preferredPatientId)
   }, [authState, resolveAndSetState])
 
   const loadLocalWorkspaceState = useCallback(async (preferredPatientId?: string | null) => {
@@ -132,8 +154,8 @@ export function useAppData(authState: AuthSessionState | null): UseAppDataResult
     const persistedSelectedPatientId = await getLastSelectedPatientId()
     const resolvedPatientId =
       preferredPatientId
-      ?? consumePreferredPatientIdFromUrl()
-      ?? selectedPatientId
+      ?? pendingPreferredPatientIdRef.current
+      ?? selectedPatientIdRef.current
       ?? persistedSelectedPatientId
       ?? patients[0].id
     const selectedPatient = patients.find((patient) => patient.id === resolvedPatientId) ?? patients[0]
@@ -142,7 +164,7 @@ export function useAppData(authState: AuthSessionState | null): UseAppDataResult
     await saveLastSelectedPatientId(selectedPatient.id)
     setSelectedPatientId(selectedPatient.id)
     setAppState({ patients, medications, doseEvents })
-  }, [selectedPatientId])
+  }, [])
 
   const refreshSelectedPatientView = useCallback(async (preferredPatientId?: string | null) => {
     if (isCloudMode) {
@@ -179,7 +201,7 @@ export function useAppData(authState: AuthSessionState | null): UseAppDataResult
 
           const cloudState = await fetchCloudState(authState)
           if (!cancelled) {
-            await resolveAndSetState(cloudState, consumePreferredPatientIdFromUrl())
+            await resolveAndSetState(cloudState)
           }
           return
         }
@@ -209,9 +231,10 @@ export function useAppData(authState: AuthSessionState | null): UseAppDataResult
 
   useEffect(() => {
     const handleWindowReentry = () => {
-      const preferredPatientId = consumePreferredPatientIdFromUrl()
+      const preferredPatientId = readAndClearPreferredPatientIdFromUrl()
 
       if (preferredPatientId) {
+        setPendingPreferredPatientId(preferredPatientId)
         void refreshSelectedPatientView(preferredPatientId)
         return
       }

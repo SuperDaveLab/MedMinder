@@ -24,5 +24,6 @@ export interface WebPushMessagePayload {
   body: string
   tag: string
   url: string
+  patientId?: string
   requireInteraction: boolean
 }

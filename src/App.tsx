@@ -149,6 +149,29 @@ function App() {
     }
   }, [activeView, refreshSelectedPatientView])
 
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) {
+      return
+    }
+
+    const onServiceWorkerMessage = (event: MessageEvent<unknown>) => {
+      const payload = event.data as { type?: string; patientId?: string } | null
+
+      if (payload?.type !== 'medminder-select-patient' || !payload.patientId) {
+        return
+      }
+
+      setView('care')
+      void handlePatientChange(payload.patientId)
+    }
+
+    navigator.serviceWorker.addEventListener('message', onServiceWorkerMessage)
+
+    return () => {
+      navigator.serviceWorker.removeEventListener('message', onServiceWorkerMessage)
+    }
+  }, [handlePatientChange, setView])
+
   if (!appState) {
     return (
       <main className="app-shell">

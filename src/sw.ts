@@ -11,6 +11,7 @@ interface PushMessagePayload {
   body: string
   tag: string
   url?: string
+  patientId?: string
   requireInteraction?: boolean
 }
 
@@ -46,6 +47,7 @@ self.addEventListener('push', (event) => {
       badge: '/med-minder-icon.svg',
       data: {
         url: payload.url ?? '/?view=care',
+        patientId: payload.patientId,
       },
     }),
   )
@@ -54,7 +56,9 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
 
-  const targetUrl = String((event.notification.data as { url?: string } | undefined)?.url ?? '/?view=care')
+  const notificationData = event.notification.data as { url?: string; patientId?: string } | undefined
+  const targetUrl = String(notificationData?.url ?? '/?view=care')
+  const targetPatientId = notificationData?.patientId
 
   event.waitUntil((async () => {
     const windowClients = await self.clients.matchAll({
@@ -66,7 +70,13 @@ self.addEventListener('notificationclick', (event) => {
       const windowClient = client as WindowClient
       if (windowClient.url.includes(self.location.origin)) {
         await windowClient.focus()
-        windowClient.navigate(targetUrl)
+        if (targetPatientId) {
+          windowClient.postMessage({
+            type: 'medminder-select-patient',
+            patientId: targetPatientId,
+          })
+        }
+        await windowClient.navigate(targetUrl)
         return
       }
     }

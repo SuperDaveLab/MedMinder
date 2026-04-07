@@ -14,7 +14,7 @@ export function getNotificationDeliveryPolicyLabel(
   policy: NotificationDeliveryPolicy,
 ): string {
   if (policy === 'push_then_email_fallback') {
-    return 'Push first, email if push does not deliver'
+    return 'Push first; email only if no push subscription delivers'
   }
 
   if (policy === 'push_only') {

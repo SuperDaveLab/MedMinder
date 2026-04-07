@@ -244,7 +244,7 @@ export function MoreView({
             </select>
           </label>
           <p className="subhead">
-            Default recommended: Push first, then email if push does not deliver.
+            Default recommended: Push first, then email only if push delivers to zero subscriptions.
           </p>
           <label>
             SMS phone (E.164, e.g. +15551234567)

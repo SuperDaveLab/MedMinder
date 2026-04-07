@@ -66,6 +66,7 @@ interface UseAppShellParams {
 
 const ALARM_REPEAT_MS = 20_000
 const ALARM_SNOOZE_MINUTES = 5
+const PUSH_SUBSCRIPTION_SYNC_INTERVAL_MS = 5 * 60_000
 
 export function useAppShell({ appState, now, authState }: UseAppShellParams) {
   const [notificationPermission, setNotificationPermission] = useState(getReminderPermissionState())
@@ -326,9 +327,51 @@ export function useAppShell({ appState, now, authState }: UseAppShellParams) {
       return
     }
 
-    void syncPushSubscription(authState, notificationPermission).catch((error) => {
-      console.error('[push] Failed to sync subscription:', error)
-    })
+    let cancelled = false
+    let inFlight = false
+
+    const runPushSync = async () => {
+      if (cancelled || inFlight) {
+        return
+      }
+
+      inFlight = true
+      try {
+        await syncPushSubscription(authState, notificationPermission)
+      } catch (error) {
+        console.error('[push] Failed to sync subscription:', error)
+      } finally {
+        inFlight = false
+      }
+    }
+
+    const handleActivationSync = () => {
+      if (document.visibilityState !== 'visible') {
+        return
+      }
+
+      void runPushSync()
+    }
+
+    void runPushSync()
+
+    const timer = window.setInterval(() => {
+      void runPushSync()
+    }, PUSH_SUBSCRIPTION_SYNC_INTERVAL_MS)
+
+    window.addEventListener('focus', handleActivationSync)
+    window.addEventListener('pageshow', handleActivationSync)
+    window.addEventListener('online', handleActivationSync)
+    document.addEventListener('visibilitychange', handleActivationSync)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+      window.removeEventListener('focus', handleActivationSync)
+      window.removeEventListener('pageshow', handleActivationSync)
+      window.removeEventListener('online', handleActivationSync)
+      document.removeEventListener('visibilitychange', handleActivationSync)
+    }
   }, [authState, notificationPermission])
 
   useEffect(() => {
