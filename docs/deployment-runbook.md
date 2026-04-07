@@ -36,7 +36,7 @@ Deploy the latest main branch build safely, with a quick rollback path.
 
 For the current production host profile, use:
 
-- `npm run deploy:live`
+- `DEPLOY_HOST=root@your-host DEPLOY_PUBLIC_BASE_URL=https://your-domain npm run deploy:live`
 
 Behavior:
 
@@ -51,6 +51,7 @@ Common options:
 - `npm run deploy:live -- --skip-checks`
 - `npm run deploy:live -- --release-id 20260406-210000`
 - `DEPLOY_HOST=root@other-host npm run deploy:live`
+- `DEPLOY_HOST=root@other-host DEPLOY_PUBLIC_BASE_URL=https://other-host npm run deploy:live`
 
 ## Canonical Apache Deploy Flow (Current Server)
 

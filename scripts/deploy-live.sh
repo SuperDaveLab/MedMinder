@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-HOST="${DEPLOY_HOST:-root@medminder.davekoons.com}"
+HOST="${DEPLOY_HOST:-}"
 WEB_ROOT="${DEPLOY_WEB_ROOT:-/var/www/medminder}"
 WEB_BACKUP_ROOT="${DEPLOY_WEB_BACKUP_ROOT:-/var/www/medminder-backups}"
 API_ROOT="${DEPLOY_API_ROOT:-/opt/med-minder}"
 API_SERVICE="${DEPLOY_API_SERVICE:-medminder-api}"
+PUBLIC_BASE_URL="${DEPLOY_PUBLIC_BASE_URL:-}"
 RELEASE_ID="${RELEASE_ID:-$(date +%Y%m%d-%H%M%S)}"
 RUN_CHECKS=1
 
@@ -15,7 +16,9 @@ Usage: ./scripts/deploy-live.sh [options]
 
 Options:
   --skip-checks        Skip npm ci/test/lint locally (still builds).
-  --host <ssh-host>    SSH target (default: root@medminder.davekoons.com)
+  --host <ssh-host>    SSH target (required if DEPLOY_HOST is not set)
+  --public-base-url <url>
+                       Public app base URL for external smoke checks.
   --release-id <id>    Override release ID used for backup naming.
   -h, --help           Show this help text.
 
@@ -25,6 +28,7 @@ Environment overrides:
   DEPLOY_WEB_BACKUP_ROOT
   DEPLOY_API_ROOT
   DEPLOY_API_SERVICE
+  DEPLOY_PUBLIC_BASE_URL
   RELEASE_ID
 EOF
 }
@@ -37,6 +41,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --host)
       HOST="$2"
+      shift 2
+      ;;
+    --public-base-url)
+      PUBLIC_BASE_URL="$2"
       shift 2
       ;;
     --release-id)
@@ -55,6 +63,11 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+if [[ -z "$HOST" ]]; then
+  echo "Missing deployment host. Set DEPLOY_HOST or pass --host <ssh-host>." >&2
+  exit 1
+fi
+
 for cmd in ssh rsync npm curl; do
   if ! command -v "$cmd" >/dev/null 2>&1; then
     echo "Missing required command: $cmd" >&2
@@ -66,6 +79,9 @@ echo "[deploy] release id: $RELEASE_ID"
 echo "[deploy] host: $HOST"
 echo "[deploy] web root: $WEB_ROOT"
 echo "[deploy] api root: $API_ROOT"
+if [[ -n "$PUBLIC_BASE_URL" ]]; then
+  echo "[deploy] public base url: $PUBLIC_BASE_URL"
+fi
 
 if [[ $RUN_CHECKS -eq 1 ]]; then
   echo "[deploy] running local verification: npm ci, npm test, npm run lint"
@@ -105,8 +121,12 @@ ssh -o BatchMode=yes "$HOST" "set -e; apache2ctl configtest; systemctl reload ap
 
 echo "[deploy] smoke checks"
 ssh -o BatchMode=yes "$HOST" "set -e; curl -fsS http://127.0.0.1:8787/health"
-curl -fsS "https://medminder.davekoons.com/api/notifications/push/public-key" >/dev/null
-curl -fsSI "https://medminder.davekoons.com" >/dev/null
+if [[ -n "$PUBLIC_BASE_URL" ]]; then
+  curl -fsS "$PUBLIC_BASE_URL/api/notifications/push/public-key" >/dev/null
+  curl -fsSI "$PUBLIC_BASE_URL" >/dev/null
+else
+  echo "[deploy] skipping external smoke checks (set DEPLOY_PUBLIC_BASE_URL to enable)"
+fi
 
 echo "[deploy] success"
 echo "[deploy] backup: $WEB_BACKUP_ROOT/$RELEASE_ID"
