@@ -4,14 +4,14 @@
   <p>A beautiful, local-first progressive web app for tracking medication schedules.</p>
 </div>
 
-Med-Minder is a highly responsive, offline-first medication timing tracker built for caregivers. It eliminates the cognitive load of tracking complex medication schedules (intervals, fixed times, PRN, and tapers) by answering a few simple questions at a glance:
+Med-Minder is a highly responsive, local-first medication timing tracker built for caregivers. It eliminates the cognitive load of tracking complex medication schedules (intervals, fixed times, PRN, and tapers) by answering a few simple questions at a glance:
 
 - **When is this medication next eligible?**
 - **Is it eligible now?**
 - **What doses were already given?**
 - **When should I be reminded?**
 
-Built to be installed directly to your phone's home screen as a PWA, it behaves exactly like a native app with zero cloud bloat.
+Built to be installed directly to your phone's home screen as a PWA, it behaves like a native app and supports an optional cloud account mode for multi-device sync and reminder relay.
 
 ## 📲 How to Use MedMinder
 
@@ -38,10 +38,12 @@ The link above leads to the fully functional live production build. To get start
 - **Schedule-Aware Status Engine**: Automatically calculates if a medication is "Eligible now", "Due soon", "Too early", or "Overdue" natively within the browser format.
 - **Complex Schedules Supported**: Fully supports `interval` (e.g. every 6 hours), `fixed_times` (e.g. 08:00 and 20:00), `prn` (as needed), and complex `taper` schedules!
 - **Patient-first Workflow**: Dedicated Patients management, patient-scoped Meds view, and fast add/edit medication workflows optimized for mobile care rounds.
-- **Local-first & Privacy-focused**: Your data never leaves your device. Everything is securely stored in IndexedDB (`med-minder-db`).
+- **Local-first by Default**: By default, data is stored locally in IndexedDB (`med-minder-db`).
 - **Complete History & Auditing**: See exactly what was given when, and log corrections that properly supersede accidental entries.
 - **Smart Notifications**: Per-medication notification toggles, optional early notice (10/15 min), PRN default-off behavior, and overdue reminders.
 - **Noise Reduction for Caregivers**: Notifications are grouped per patient so multiple due medications can be delivered as a single alert.
+- **Optional Cloud Account Mode**: Sign in to sync data across devices and use server-backed reminder delivery channels.
+- **Configurable Delivery Policy**: Choose `Push only`, `Email only`, `Push first, email fallback`, or `Push and email`.
 - **In-App Alarm Mode**: For interval and fixed-time meds, enable alarm mode to trigger repeating in-app sound/vibration with acknowledge/snooze actions when due now.
 - **Data Portability**: Full JSON backup export and import logic allows you to safely copy data across devices.
 
@@ -58,17 +60,18 @@ Because this is a browser/PWA app, true OS-native background alarm scheduling is
 
 ## 🔔 Reminder Limits
 
-MedMinder can be a very capable installed PWA, but it is still subject to web platform limits:
+MedMinder can be a very capable installed PWA, but pure browser-local reminders are still subject to web platform limits:
 
 - The app cannot schedule exact OS-level alarms the way a fully native mobile app can.
 - Local browser notifications are best-effort and may be delayed or missed if the browser suspends the app, the device is aggressively power-managed, or notification permissions are disabled.
 - In-app sound and vibration alarms are strongest while the app is open, installed, and allowed to stay active in the foreground.
-- Offline/local-first reminder behavior is intentionally self-contained, which means it does not have a cloud scheduler backing it up.
+- In local-only mode, reminder behavior is self-contained and does not have server-backed scheduling redundancy.
 
 For best current reliability:
 
 - Install the app to the home screen.
 - Enable browser notifications.
+- In account mode, choose **Push and email** if you want redundant delivery even when push appears successful on another device.
 - Use the in-app alarm option for interval and fixed-time medications.
 - Use Prevent sleep during active care windows when appropriate.
 
@@ -82,25 +85,24 @@ Current reminder behavior (implemented):
 - Overdue notifications use a 30-minute default interval and support per-medication override in domain data.
 - For policy "Push first, then email fallback", fallback email is sent only when push delivers to zero subscriptions for the account. If any device receives push, fallback email is skipped.
 
-## ☁️ Planned Premium Reminder Relay
+## ☁️ Cloud Account Mode and Reminder Relay
 
-To improve reliability beyond what a plain PWA can guarantee, MedMinder is expected to support an optional premium reminder relay service.
+MedMinder now supports an optional cloud account mode.
 
-Planned behavior:
+Current behavior in account mode:
 
-- Send one **Due now** reminder per medication when reminders are enabled.
-- Deliver that reminder through at least two channels:
-   - Web push to the installed MedMinder app
-   - Email
-- Support optional SMS later.
+- Syncs patient, medication, and dose history across signed-in devices.
+- Uses server-side reminder processing for push/email/SMS delivery channels.
+- Supports delivery policy selection in-app:
+   - `push_then_email_fallback`
+   - `push_only`
+   - `email_only`
+   - `push_and_email`
 
-Important product tradeoff:
+Reliability note:
 
-- The core app can remain local-first.
-- The premium reminder relay cannot remain purely local-first, because the backend must know about reminder-enabled medications and schedule changes in order to deliver backup notifications.
-- If a user opts into the premium service, reminder-relevant patient and medication updates will need to sync to the backend whenever they change.
-
-This is the practical ceiling for a web-based app: a PWA plus a server-backed reminder relay can be substantially more robust than local-only browser reminders, but it still is not the same as native device alarm APIs.
+- `push_then_email_fallback` sends email only when push delivers to zero subscriptions for the account.
+- If you want redundant reminders across channel variability, choose `push_and_email`.
 
 ## 🗺️ Roadmap
 
@@ -170,12 +172,9 @@ The Vite dev server proxies `/api/*` to `http://localhost:8787` by default.
 ## 🔒 Data and Privacy
 
 Because MedMinder is a caregiver timing tool, privacy and reliability are paramount:
-- **No Backend**: There are no servers processing your data.
-- **Offline Capable**: As a registered PWA, MedMinder functions without an internet connection.
-- **Manual Sync**: Data is tied to the current browser profile unless you use the built-in backup and restore tooling to move it.
-
-Current note:
-- The optional premium reminder relay described above is planned work, not current app behavior. If added, it will be opt-in and will require sending reminder-related data to a backend service.
+- **Local-first default**: Without signing in, data remains on-device and works offline.
+- **Optional backend**: In account mode, data and reminder-delivery metadata are processed by the server to support sync and relay channels.
+- **Manual portability**: Backup/export tools remain available for explicit data movement.
 
 ### Disclaimer
 *This app is a caregiver timing tool. It does not provide diagnosis, dosage recommendations, or treatment advice.*
