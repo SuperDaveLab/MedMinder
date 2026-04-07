@@ -78,6 +78,26 @@ function describeStatus(status: ReturnType<typeof computeMedicationStatus>): Sta
   return { label: 'eligible_now', text: 'Eligible now' }
 }
 
+function getStatusSortPriority(statusLabel: MedicationStatusLabel): number {
+  if (statusLabel === 'overdue' || statusLabel === 'missed') {
+    return 0
+  }
+
+  if (
+    statusLabel === 'eligible_now'
+    || statusLabel === 'available_prn'
+    || statusLabel === 'never_taken'
+  ) {
+    return 1
+  }
+
+  if (statusLabel === 'due_soon') {
+    return 2
+  }
+
+  return 3
+}
+
 export function PatientMedicationListView({
   patient,
   medications,
@@ -91,10 +111,30 @@ export function PatientMedicationListView({
 }: PatientMedicationListViewProps) {
   const medicationStatuses = useMemo(
     () =>
-      medications.map((medication) => ({
+      medications
+        .map((medication) => ({
         medication,
         status: computeMedicationStatus({ medication, doseEvents, now }),
-      })),
+      }))
+        .sort((left, right) => {
+          const leftPriority = getStatusSortPriority(left.status.statusLabel)
+          const rightPriority = getStatusSortPriority(right.status.statusLabel)
+
+          if (leftPriority !== rightPriority) {
+            return leftPriority - rightPriority
+          }
+
+          const leftNextEligibleAt = Date.parse(left.status.nextEligibleAt ?? '')
+          const rightNextEligibleAt = Date.parse(right.status.nextEligibleAt ?? '')
+          const leftTimestamp = Number.isNaN(leftNextEligibleAt) ? Number.POSITIVE_INFINITY : leftNextEligibleAt
+          const rightTimestamp = Number.isNaN(rightNextEligibleAt) ? Number.POSITIVE_INFINITY : rightNextEligibleAt
+
+          if (leftTimestamp !== rightTimestamp) {
+            return leftTimestamp - rightTimestamp
+          }
+
+          return left.medication.name.localeCompare(right.medication.name)
+        }),
     [medications, doseEvents, now],
   )
 
