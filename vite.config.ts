@@ -2,6 +2,18 @@ import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
+function formatBuildStamp(date: Date): string {
+  const year = String(date.getUTCFullYear())
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(date.getUTCDate()).padStart(2, '0')
+  const hours = String(date.getUTCHours()).padStart(2, '0')
+  const minutes = String(date.getUTCMinutes()).padStart(2, '0')
+  const seconds = String(date.getUTCSeconds()).padStart(2, '0')
+  return `${year}${month}${day}-${hours}${minutes}${seconds}Z`
+}
+
+const appBuild = process.env.APP_BUILD ?? formatBuildStamp(new Date())
+
 // https://vite.dev/config/
 export default defineConfig({
   base: '/',
@@ -15,6 +27,7 @@ export default defineConfig({
   },
   define: {
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version ?? '0.1.0'),
+    __APP_BUILD__: JSON.stringify(appBuild),
   },
   plugins: [
     react(),

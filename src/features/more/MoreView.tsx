@@ -487,6 +487,15 @@ export function MoreView({
         </section>
 
         {accountSection}
+
+        <section className="admin-section no-print app-info-section" data-testid="app-info-section">
+          <h2>App info</h2>
+          <p className="subhead">Version {__APP_VERSION__} | Build {__APP_BUILD__}</p>
+          <div className="app-info-grid">
+            <p><strong>Install mode:</strong> {isInstalled ? 'Installed PWA' : 'Browser tab'}</p>
+            <p><strong>Notification permission:</strong> {String(notificationPermission)}</p>
+          </div>
+        </section>
       </section>
 
     </>
