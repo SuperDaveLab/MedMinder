@@ -334,63 +334,95 @@ export function MoreView({
   return (
     <>
       <section className="workflow-section" data-testid="more-view">
-        {accountSection}
-
         <section className="admin-section no-print app-settings-section">
           <h2>App Settings</h2>
-          <div className="app-actions">
-            <button
-              className="utility-button"
-              onClick={() => void requestNotificationPermission()}
-              disabled={notificationPermission !== 'default'}
-            >
-              {notificationPermission === 'granted'
-                ? 'Notifications enabled'
-                : notificationPermission === 'unsupported'
-                  ? 'Notifications unsupported'
-                  : notificationPermission === 'denied'
-                    ? 'Notifications denied'
-                    : 'Enable due alerts'}
-            </button>
-            <button
-              className="utility-button"
-              onClick={() => void onInstallApp()}
-              disabled={!installPromptAvailable || isInstalled}
-              data-testid="install-app-button"
-            >
-              {isInstalled ? 'App Installed' : installPromptAvailable ? 'Install App' : 'Install Unavailable'}
-            </button>
-            <button
-              className="utility-button"
-              onClick={() => void onToggleWakeLock()}
-              disabled={!wakeLockSupported}
-              data-testid="wake-lock-button"
-            >
-              {isWakeLockActive ? 'Sleep lock: ON' : 'Prevent sleep'}
-            </button>
-            <button
-              className="utility-button"
-              onClick={onTestAlarm}
-              data-testid="test-alarm-button"
-            >
-              Test alarm
-            </button>
+          <div className="settings-grid">
+            <section className="settings-item">
+              <div>
+                <h3>Due alerts</h3>
+                <p>
+                  {notificationPermission === 'granted'
+                    ? 'Enabled on this device.'
+                    : notificationPermission === 'unsupported'
+                      ? 'This browser does not support notifications.'
+                      : notificationPermission === 'denied'
+                        ? 'Blocked in browser settings.'
+                        : 'Enable reminders for due and overdue doses.'}
+                </p>
+              </div>
+              <button
+                className="utility-button settings-action-button"
+                onClick={() => void requestNotificationPermission()}
+                disabled={notificationPermission !== 'default'}
+              >
+                {notificationPermission === 'granted'
+                  ? 'Notifications enabled'
+                  : notificationPermission === 'unsupported'
+                    ? 'Notifications unsupported'
+                    : notificationPermission === 'denied'
+                      ? 'Notifications denied'
+                      : 'Enable due alerts'}
+              </button>
+            </section>
+
+            <section className="settings-item">
+              <div>
+                <h3>Install app</h3>
+                <p>
+                  {isInstalled
+                    ? 'Installed and ready for home-screen use.'
+                    : installPromptAvailable
+                      ? 'Install is available for quick launch.'
+                      : 'Install prompt is unavailable on this browser.'}
+                </p>
+              </div>
+              <button
+                className="utility-button settings-action-button"
+                onClick={() => void onInstallApp()}
+                disabled={!installPromptAvailable || isInstalled}
+                data-testid="install-app-button"
+              >
+                {isInstalled ? 'App installed' : installPromptAvailable ? 'Install app' : 'Install unavailable'}
+              </button>
+            </section>
+
+            <section className="settings-item">
+              <div>
+                <h3>Prevent sleep</h3>
+                <p>
+                  {isWakeLockActive
+                    ? 'Screen wake lock is on.'
+                    : wakeLockSupported
+                      ? 'Keep the screen awake during active care windows.'
+                      : 'Wake lock is unsupported on this device.'}
+                </p>
+              </div>
+              <button
+                className="utility-button settings-action-button"
+                onClick={() => void onToggleWakeLock()}
+                disabled={!wakeLockSupported}
+                data-testid="wake-lock-button"
+              >
+                {isWakeLockActive ? 'Sleep lock: on' : 'Prevent sleep'}
+              </button>
+            </section>
+
+            <section className="settings-item">
+              <div>
+                <h3>Alarm check</h3>
+                <p>Play a quick test alarm to verify audio and alert behavior.</p>
+              </div>
+              <button
+                className="utility-button settings-action-button"
+                onClick={onTestAlarm}
+                data-testid="test-alarm-button"
+              >
+                Test alarm
+              </button>
+            </section>
           </div>
-          <p className="subhead">
-            {isInstalled
-              ? 'Already installed.'
-              : installPromptAvailable
-                ? 'Install available.'
-                : 'Install not available.'}
-          </p>
-          <p className="subhead">
-            {isWakeLockActive
-              ? 'Screen wake lock on.'
-              : wakeLockSupported
-                ? 'Wake lock available.'
-                : 'Wake lock unsupported.'}
-          </p>
-          <p className="subhead">
+
+          <p className="subhead app-settings-guidance">
             Best results: install the app, enable due alerts, and use Prevent sleep during active care windows.
           </p>
         </section>
@@ -441,6 +473,8 @@ export function MoreView({
             data-testid="backup-file-input"
           />
         </section>
+
+        {accountSection}
       </section>
 
     </>

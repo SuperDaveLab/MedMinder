@@ -82,7 +82,7 @@ describe('App PWA polish behavior', () => {
 
     const installButton = await screen.findByTestId('install-app-button')
     expect(installButton).toBeTruthy()
-    expect(screen.getByText('Install available.')).toBeTruthy()
+    expect(screen.getByText('Install is available for quick launch.')).toBeTruthy()
 
     await user.click(installButton)
 
@@ -93,7 +93,7 @@ describe('App PWA polish behavior', () => {
     window.dispatchEvent(new Event('appinstalled'))
 
     await waitFor(() => {
-      expect(screen.getByText('Already installed.')).toBeTruthy()
+      expect(screen.getByText('Installed and ready for home-screen use.')).toBeTruthy()
       expect(screen.getByTestId('install-app-button').getAttribute('disabled')).not.toBeNull()
     })
   })
@@ -120,7 +120,7 @@ describe('App PWA polish behavior', () => {
 
     await waitFor(() => {
       expect(requestSpy).toHaveBeenCalledWith('screen')
-      expect(screen.getByText('Screen wake lock on.')).toBeTruthy()
+      expect(screen.getByText('Screen wake lock is on.')).toBeTruthy()
     })
   })
 

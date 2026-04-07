@@ -1078,6 +1078,55 @@ h2 {
   align-items: flex-start;
 }
 
+.settings-grid {
+  margin-top: 0.6rem;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.settings-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.65rem;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.7rem;
+  background: #fbfdff;
+}
+
+.settings-item h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+
+.settings-item p {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.settings-action-button {
+  min-width: 11.5rem;
+  text-align: center;
+}
+
+.app-settings-guidance {
+  margin-top: 0.75rem;
+}
+
+@media (max-width: 560px) {
+  .settings-item {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-action-button {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
 /* Tablet/Desktop overrides */
 @media (min-width: 740px) {
   .layout-root {
