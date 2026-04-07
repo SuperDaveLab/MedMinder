@@ -843,7 +843,7 @@ export function MedsView({
               <div className="admin-item-actions">
                 <button
                   data-testid={`edit-medication-${medication.id}`}
-                  className="utility-button"
+                  className="utility-button meds-action-button"
                   disabled={isMedicationActionInProgress}
                   onClick={() => startEditMedication(medication)}
                 >
@@ -852,7 +852,7 @@ export function MedsView({
                 {medication.active ? (
                   <button
                     data-testid={`deactivate-medication-${medication.id}`}
-                    className="utility-button"
+                    className="utility-button meds-action-button"
                     disabled={isMedicationActionInProgress}
                     onClick={() => void handleDeactivateMedication(medication.id)}
                   >
@@ -861,7 +861,7 @@ export function MedsView({
                 ) : (
                   <button
                     data-testid={`activate-medication-${medication.id}`}
-                    className="utility-button"
+                    className="utility-button meds-action-button"
                     disabled={isMedicationActionInProgress}
                     onClick={() => void handleActivateMedication(medication.id)}
                   >
@@ -870,7 +870,7 @@ export function MedsView({
                 )}
                 <button
                   data-testid={`delete-medication-${medication.id}`}
-                  className="utility-button danger-button"
+                  className="utility-button danger-button meds-action-button"
                   disabled={isMedicationActionInProgress}
                   onClick={() => void handleDeleteMedication(medication.id)}
                 >

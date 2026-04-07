@@ -954,7 +954,20 @@ h2 {
   }
 
   .meds-list-panel .admin-item-actions {
-    flex-wrap: wrap;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.35rem;
+  }
+
+  .meds-list-panel .meds-action-button {
+    width: 100%;
+    min-width: 0;
+    padding: 0.42rem 0.25rem;
+    min-height: 36px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .admin-item-actions .utility-button {
