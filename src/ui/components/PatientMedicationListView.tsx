@@ -78,26 +78,6 @@ function describeStatus(status: ReturnType<typeof computeMedicationStatus>): Sta
   return { label: 'eligible_now', text: 'Eligible now' }
 }
 
-function getStatusSortPriority(statusLabel: MedicationStatusLabel): number {
-  if (statusLabel === 'overdue' || statusLabel === 'missed') {
-    return 0
-  }
-
-  if (
-    statusLabel === 'eligible_now'
-    || statusLabel === 'available_prn'
-    || statusLabel === 'never_taken'
-  ) {
-    return 1
-  }
-
-  if (statusLabel === 'due_soon') {
-    return 2
-  }
-
-  return 3
-}
-
 export function PatientMedicationListView({
   patient,
   medications,
@@ -117,13 +97,14 @@ export function PatientMedicationListView({
         status: computeMedicationStatus({ medication, doseEvents, now }),
       }))
         .sort((left, right) => {
-          const leftPriority = getStatusSortPriority(left.status.statusLabel)
-          const rightPriority = getStatusSortPriority(right.status.statusLabel)
-
-          if (leftPriority !== rightPriority) {
-            return leftPriority - rightPriority
+          // Scheduled medications come before PRN medications
+          const leftIsPrn = left.medication.schedule.type === 'prn' ? 1 : 0
+          const rightIsPrn = right.medication.schedule.type === 'prn' ? 1 : 0
+          if (leftIsPrn !== rightIsPrn) {
+            return leftIsPrn - rightIsPrn
           }
 
+          // Within each group: most urgent first (earliest nextEligibleAt at top)
           const leftNextEligibleAt = Date.parse(left.status.nextEligibleAt ?? '')
           const rightNextEligibleAt = Date.parse(right.status.nextEligibleAt ?? '')
           const leftTimestamp = Number.isNaN(leftNextEligibleAt) ? Number.POSITIVE_INFINITY : leftNextEligibleAt
