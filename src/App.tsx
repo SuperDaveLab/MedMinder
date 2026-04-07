@@ -282,7 +282,10 @@ function App() {
           <MedsView
             selectedPatientId={selectedPatientId}
             patientDisplayName={patient.displayName}
+            patient={patient}
             medicationsForAdministration={medicationsForAdministration}
+            doseEvents={appState.doseEvents}
+            now={now}
             onCreateMedication={handleCreateMedication}
             onUpdateMedication={handleUpdateMedication}
             onDeactivateMedication={handleDeactivateMedication}
@@ -304,10 +307,6 @@ function App() {
 
         {activeView === 'more' ? (
           <MoreView
-            patient={patient}
-            medicationsForPatient={medicationsForPatient}
-            doseEvents={appState.doseEvents}
-            now={now}
             onDataChanged={refreshSelectedPatientView}
             notificationPermission={notificationPermission}
             requestNotificationPermission={requestNotificationPermission}

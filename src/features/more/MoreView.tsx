@@ -5,23 +5,13 @@ import {
   notificationDeliveryPolicies,
   type NotificationDeliveryPolicy,
 } from '../../domain/notificationPolicy'
-import type { DoseEvent, Medication, Patient } from '../../domain/types'
 import {
   exportFullBackup,
   importFullBackup,
 } from '../../storage/repository'
 import { validateBackup } from '../../storage/backup'
-import {
-  buildPatientMedicationSummaryRows,
-  buildPatientSummaryText,
-} from '../../export/patientSummary'
-import { formatAbsoluteDateTime } from '../../ui/time'
 
 interface MoreViewProps {
-  patient: Patient | null
-  medicationsForPatient: Medication[]
-  doseEvents: DoseEvent[]
-  now: Date
   onDataChanged: (preferredPatientId?: string | null) => Promise<void>
   notificationPermission: NotificationPermission | 'unsupported'
   requestNotificationPermission: () => Promise<void>
@@ -56,10 +46,6 @@ function downloadBlob(blob: Blob, fileName: string): void {
 }
 
 export function MoreView({
-  patient,
-  medicationsForPatient,
-  doseEvents,
-  now,
   onDataChanged,
   notificationPermission,
   requestNotificationPermission,
@@ -91,61 +77,6 @@ export function MoreView({
   const [authPhoneInput, setAuthPhoneInput] = useState('')
   const [authNotificationPolicyInput, setAuthNotificationPolicyInput] = useState<NotificationDeliveryPolicy>('push_then_email_fallback')
 
-  const summaryRows = patient
-    ? buildPatientMedicationSummaryRows(
-        medicationsForPatient,
-        doseEvents,
-        now,
-      )
-    : []
-
-  const handlePrintSummary = () => {
-    window.print()
-  }
-
-  const handleExportSummary = () => {
-    if (!patient) {
-      return
-    }
-
-    const summaryText = buildPatientSummaryText(patient, now, summaryRows)
-    const fileName = `${patient.displayName.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase()}-medication-summary-${now.toISOString().slice(0, 10)}.txt`
-    const blob = new Blob([summaryText], { type: 'text/plain;charset=utf-8' })
-    downloadBlob(blob, fileName)
-  }
-
-  const handleShareSummary = async () => {
-    if (!patient) {
-      return
-    }
-
-    const summaryText = buildPatientSummaryText(patient, now, summaryRows)
-    const fileName = `${patient.displayName.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase()}-medication-summary-${now.toISOString().slice(0, 10)}.txt`
-
-    if (typeof navigator.share !== 'function') {
-      handleExportSummary()
-      return
-    }
-
-    try {
-      const summaryFile = new File([summaryText], fileName, { type: 'text/plain;charset=utf-8' })
-      if (navigator.canShare?.({ files: [summaryFile] })) {
-        await navigator.share({
-          title: `${patient.displayName} medication summary`,
-          files: [summaryFile],
-        })
-      } else {
-        await navigator.share({
-          title: `${patient.displayName} medication summary`,
-          text: summaryText,
-        })
-      }
-    } catch (error) {
-      if (!(error instanceof DOMException && error.name === 'AbortError')) {
-        handleExportSummary()
-      }
-    }
-  }
 
   const handleExportBackup = async () => {
     if (isBackupActionInProgress) return
@@ -512,40 +443,6 @@ export function MoreView({
         </section>
       </section>
 
-      <section className="workflow-section" data-testid="summary-section">
-        <section className="summary-section print-summary">
-          <div className="app-actions no-print">
-            <button className="utility-button" onClick={handlePrintSummary}>
-              Print summary
-            </button>
-            <button className="utility-button" onClick={handleExportSummary}>
-              Export summary (.txt)
-            </button>
-            <button className="utility-button" onClick={() => void handleShareSummary()} data-testid="share-summary-button">
-              Share summary
-            </button>
-          </div>
-          <h2>Patient medication summary</h2>
-          <p className="summary-meta">Includes active medications only.</p>
-          <p className="summary-meta">Patient: {patient?.displayName ?? ''}</p>
-          <p className="summary-meta">Generated: {formatAbsoluteDateTime(now)}</p>
-          <ul className="summary-list">
-            {summaryRows.map((row) => (
-              <li key={row.medicationId} className="summary-item">
-                <h3>{row.name}</h3>
-                <p>Strength: {row.strengthText ?? 'N/A'}</p>
-                <p>Default dose: {row.defaultDoseText ?? 'N/A'}</p>
-                <p>Schedule type: {row.scheduleType}</p>
-                <p>Schedule details: {row.scheduleDetails}</p>
-                <p>Last given: {row.lastGiven}</p>
-                <p>Next eligible: {row.nextEligible}</p>
-                <p>Current status: {row.currentStatus}</p>
-                <p>Reminder: {row.reminderSetting}</p>
-              </li>
-            ))}
-          </ul>
-        </section>
-      </section>
     </>
   )
 }

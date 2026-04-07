@@ -138,7 +138,7 @@ describe('App PWA polish behavior', () => {
     render(<App />)
     await screen.findByRole('option', { name: 'Alex Rivera' })
 
-    await user.click(screen.getByTestId('tab-more'))
+    await user.click(screen.getByTestId('tab-meds'))
     await user.click(screen.getByTestId('share-summary-button'))
 
     await waitFor(() => {

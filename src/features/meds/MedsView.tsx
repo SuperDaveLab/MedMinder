@@ -9,17 +9,27 @@ import type {
   MedicationSchedule,
   MedicationScheduleType,
   TimeOfDayHHmm,
+  Patient,
+  DoseEvent,
 } from '../../domain/types'
 import type { UpsertMedicationInput } from '../../storage/repository'
 import {
   durationMinutesToValue,
   durationValueToMinutes,
 } from '../../ui/time'
+import {
+  buildPatientMedicationSummaryRows,
+  buildPatientSummaryText,
+} from '../../export/patientSummary'
+import { formatAbsoluteDateTime } from '../../ui/time'
 
 interface MedsViewProps {
   selectedPatientId: string | null
   patientDisplayName: string | null
+  patient: Patient | null
   medicationsForAdministration: Medication[]
+  doseEvents: DoseEvent[]
+  now: Date
   onCreateMedication: (input: UpsertMedicationInput) => Promise<void>
   onUpdateMedication: (medicationId: string, input: UpsertMedicationInput) => Promise<void>
   onDeactivateMedication: (medicationId: string) => Promise<void>
@@ -73,10 +83,22 @@ function createDefaultFixedTimes(): TimeOfDayHHmm[] {
   return ['08:00', '20:00']
 }
 
+function downloadBlob(blob: Blob, fileName: string): void {
+  const objectUrl = URL.createObjectURL(blob)
+  const downloadLink = document.createElement('a')
+  downloadLink.href = objectUrl
+  downloadLink.download = fileName
+  downloadLink.click()
+  URL.revokeObjectURL(objectUrl)
+}
+
 export function MedsView({
   selectedPatientId,
   patientDisplayName,
+  patient,
   medicationsForAdministration,
+  doseEvents,
+  now,
   onCreateMedication,
   onUpdateMedication,
   onDeactivateMedication,
@@ -393,6 +415,62 @@ export function MedsView({
     }
   }
 
+  const summaryRows = patient
+    ? buildPatientMedicationSummaryRows(
+        medicationsForAdministration,
+        doseEvents,
+        now,
+      )
+    : []
+
+  const handlePrintSummary = () => {
+    window.print()
+  }
+
+  const handleExportSummary = () => {
+    if (!patient) {
+      return
+    }
+
+    const summaryText = buildPatientSummaryText(patient, now, summaryRows)
+    const fileName = `${patient.displayName.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase()}-medication-summary-${now.toISOString().slice(0, 10)}.txt`
+    const blob = new Blob([summaryText], { type: 'text/plain;charset=utf-8' })
+    downloadBlob(blob, fileName)
+  }
+
+  const handleShareSummary = async () => {
+    if (!patient) {
+      return
+    }
+
+    const summaryText = buildPatientSummaryText(patient, now, summaryRows)
+    const fileName = `${patient.displayName.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase()}-medication-summary-${now.toISOString().slice(0, 10)}.txt`
+
+    if (typeof navigator.share !== 'function') {
+      handleExportSummary()
+      return
+    }
+
+    try {
+      const summaryFile = new File([summaryText], fileName, { type: 'text/plain;charset=utf-8' })
+      if (navigator.canShare?.({ files: [summaryFile] })) {
+        await navigator.share({
+          title: `${patient.displayName} medication summary`,
+          files: [summaryFile],
+        })
+      } else {
+        await navigator.share({
+          title: `${patient.displayName} medication summary`,
+          text: summaryText,
+        })
+      }
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === 'AbortError')) {
+        handleExportSummary()
+      }
+    }
+  }
+
   const handleDeactivateMedication = async (medicationId: string) => {
     if (isMedicationActionInProgress) {
       return
@@ -701,6 +779,39 @@ export function MedsView({
           ))}
         </ul>
         </section>
+      </section>
+
+      <section className="summary-section print-summary" data-testid="medication-summary-section">
+        <div className="app-actions no-print">
+          <button className="utility-button" onClick={handlePrintSummary}>
+            Print summary
+          </button>
+          <button className="utility-button" onClick={handleExportSummary}>
+            Export summary (.txt)
+          </button>
+          <button className="utility-button" onClick={() => void handleShareSummary()} data-testid="share-summary-button">
+            Share summary
+          </button>
+        </div>
+        <h3>Patient medication summary</h3>
+        <p className="summary-meta">Includes active medications only.</p>
+        <p className="summary-meta">Patient: {patient?.displayName ?? ''}</p>
+        <p className="summary-meta">Generated: {formatAbsoluteDateTime(now)}</p>
+        <ul className="summary-list">
+          {summaryRows.map((row) => (
+            <li key={row.medicationId} className="summary-item">
+              <h4>{row.name}</h4>
+              <p>Strength: {row.strengthText ?? 'N/A'}</p>
+              <p>Default dose: {row.defaultDoseText ?? 'N/A'}</p>
+              <p>Schedule type: {row.scheduleType}</p>
+              <p>Schedule details: {row.scheduleDetails}</p>
+              <p>Last given: {row.lastGiven}</p>
+              <p>Next eligible: {row.nextEligible}</p>
+              <p>Current status: {row.currentStatus}</p>
+              <p>Reminder: {row.reminderSetting}</p>
+            </li>
+          ))}
+        </ul>
       </section>
     </section>
   )
