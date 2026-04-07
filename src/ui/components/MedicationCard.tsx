@@ -219,8 +219,25 @@ export function MedicationCard({
                 className="med-history-item"
                 data-testid={`dose-entry-${doseEvent.id}`}
               >
-                <strong>{formatAbsoluteDateTime(new Date(doseEvent.timestampGiven))}</strong>
-                <span>{formatRelativeTime(new Date(doseEvent.timestampGiven), now)}</span>
+                <div className="med-history-primary-row">
+                  <div className="med-history-time">
+                    <strong>{formatAbsoluteDateTime(new Date(doseEvent.timestampGiven))}</strong>
+                    <span>{formatRelativeTime(new Date(doseEvent.timestampGiven), now)}</span>
+                  </div>
+                  {!doseEvent.corrected && !supersededDoseEventIds.has(doseEvent.id) ? (
+                    <button
+                      type="button"
+                      className="correct-button inline-edit-trigger"
+                      disabled={actionsDisabled || isSavingCorrection}
+                      onClick={() => startCorrection(doseEvent)}
+                      data-testid={`correct-dose-${doseEvent.id}`}
+                      aria-label="Edit dose entry"
+                    >
+                      <span className="inline-edit-icon" aria-hidden="true">✎</span>
+                      <span className="inline-edit-label">Edit</span>
+                    </button>
+                  ) : null}
+                </div>
                 <div className="entry-tags">
                   {doseEvent.corrected ? (
                     <span className="entry-tag" data-testid={`entry-tag-corrected-${doseEvent.id}`}>
@@ -258,19 +275,6 @@ export function MedicationCard({
                     )}
                   </span>
                 ) : null}
-                {!doseEvent.corrected && !supersededDoseEventIds.has(doseEvent.id) ? (
-                  <div className="correction-actions">
-                    <button
-                      type="button"
-                      className="correct-button"
-                      disabled={actionsDisabled || isSavingCorrection}
-                      onClick={() => startCorrection(doseEvent)}
-                      data-testid={`correct-dose-${doseEvent.id}`}
-                    >
-                      Correct
-                    </button>
-                  </div>
-                ) : null}
                 {editingDoseEventId === doseEvent.id ? (
                   <div className="correction-form" data-testid={`correction-form-${doseEvent.id}`}>
                     <label>
@@ -300,19 +304,21 @@ export function MedicationCard({
                     <div className="correction-form-actions">
                       <button
                         type="button"
-                        className="correct-save-button"
+                        className="correct-save-button icon-action-button"
                         disabled={actionsDisabled || isSavingCorrection}
                         onClick={() => void saveCorrection(doseEvent.id)}
+                        aria-label="Save correction"
                       >
-                        {isSavingCorrection ? 'Saving...' : 'Save correction'}
+                        {isSavingCorrection ? 'Saving...' : <span aria-hidden="true">✓</span>}
                       </button>
                       <button
                         type="button"
-                        className="correct-cancel-button"
+                        className="correct-cancel-button icon-action-button"
                         disabled={actionsDisabled || isSavingCorrection}
                         onClick={cancelCorrection}
+                        aria-label="Cancel correction"
                       >
-                        Cancel
+                        <span aria-hidden="true">X</span>
                       </button>
                     </div>
                   </div>

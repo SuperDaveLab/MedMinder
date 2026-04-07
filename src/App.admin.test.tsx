@@ -174,9 +174,10 @@ describe('App administration flow', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('meds-view')).toBeTruthy()
+      expect(screen.getByTestId('medication-form-panel')).toBeTruthy()
     })
 
-    await user.click(screen.getByTestId('start-add-medication-button'))
+    expect(document.activeElement).toBe(screen.getByTestId('medication-name-input'))
 
     expect((screen.getByTestId('interval-unit-select') as HTMLSelectElement).value).toBe('hours')
     expect((screen.getByTestId('interval-value-input') as HTMLInputElement).step).toBe('0.25')

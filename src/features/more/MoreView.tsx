@@ -339,7 +339,10 @@ export function MoreView({
           <div className="settings-grid">
             <section className="settings-item">
               <div>
-                <h3>Due alerts</h3>
+                <h3 className="settings-title">
+                  <span className="settings-icon" aria-hidden="true">🔔</span>
+                  <span>Due alerts</span>
+                </h3>
                 <p>
                   {notificationPermission === 'granted'
                     ? 'Enabled on this device.'
@@ -367,7 +370,10 @@ export function MoreView({
 
             <section className="settings-item">
               <div>
-                <h3>Install app</h3>
+                <h3 className="settings-title">
+                  <span className="settings-icon" aria-hidden="true">📲</span>
+                  <span>Install app</span>
+                </h3>
                 <p>
                   {isInstalled
                     ? 'Installed and ready for home-screen use.'
@@ -388,7 +394,10 @@ export function MoreView({
 
             <section className="settings-item">
               <div>
-                <h3>Prevent sleep</h3>
+                <h3 className="settings-title">
+                  <span className="settings-icon" aria-hidden="true">🌙</span>
+                  <span>Prevent sleep</span>
+                </h3>
                 <p>
                   {isWakeLockActive
                     ? 'Screen wake lock is on.'
@@ -409,7 +418,10 @@ export function MoreView({
 
             <section className="settings-item">
               <div>
-                <h3>Alarm check</h3>
+                <h3 className="settings-title">
+                  <span className="settings-icon" aria-hidden="true">🔊</span>
+                  <span>Alarm check</span>
+                </h3>
                 <p>Play a quick test alarm to verify audio and alert behavior.</p>
               </div>
               <button

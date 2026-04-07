@@ -47,6 +47,7 @@ function App() {
   const [newPatientDisplayName, setNewPatientDisplayName] = useState('')
   const [newPatientError, setNewPatientError] = useState<string | null>(null)
   const [isAddPatientInProgress, setIsAddPatientInProgress] = useState(false)
+  const [openMedicationFormRequestId, setOpenMedicationFormRequestId] = useState(0)
 
   const {
     activeView,
@@ -267,7 +268,10 @@ function App() {
             allMedications={appState.medications}
             doseEvents={appState.doseEvents}
             now={now}
-            onAddMedication={() => setView('meds')}
+            onAddMedication={() => {
+              setOpenMedicationFormRequestId((current) => current + 1)
+              setView('meds')
+            }}
             onGiveDose={handleLogDoseNow}
             onCorrectDose={handleCorrectDose}
             actionsDisabled={isDoseActionInProgress}
@@ -280,6 +284,7 @@ function App() {
 
         {activeView === 'meds' ? (
           <MedsView
+            openMedicationFormRequestId={openMedicationFormRequestId}
             selectedPatientId={selectedPatientId}
             patientDisplayName={patient.displayName}
             patient={patient}

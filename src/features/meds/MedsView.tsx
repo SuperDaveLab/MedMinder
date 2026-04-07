@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   getMedicationScheduleTypeLabel,
   medicationScheduleTypeOptions,
@@ -24,6 +24,7 @@ import {
 import { formatAbsoluteDateTime } from '../../ui/time'
 
 interface MedsViewProps {
+  openMedicationFormRequestId?: number
   selectedPatientId: string | null
   patientDisplayName: string | null
   patient: Patient | null
@@ -93,6 +94,7 @@ function downloadBlob(blob: Blob, fileName: string): void {
 }
 
 export function MedsView({
+  openMedicationFormRequestId,
   selectedPatientId,
   patientDisplayName,
   patient,
@@ -105,6 +107,7 @@ export function MedsView({
   onDeleteMedication,
   onUiError,
 }: MedsViewProps) {
+  const medicationNameInputRef = useRef<HTMLInputElement>(null)
   const [editingMedicationId, setEditingMedicationId] = useState<string | null>(null)
   const [medicationNameInput, setMedicationNameInput] = useState('')
   const [medicationStrengthInput, setMedicationStrengthInput] = useState('')
@@ -335,6 +338,22 @@ export function MedsView({
     startCreateMedication()
   }
 
+  useEffect(() => {
+    if (!openMedicationFormRequestId) {
+      return
+    }
+
+    startCreateMedication()
+  }, [openMedicationFormRequestId])
+
+  useEffect(() => {
+    if (!isMedicationFormOpen) {
+      return
+    }
+
+    medicationNameInputRef.current?.focus()
+  }, [isMedicationFormOpen, openMedicationFormRequestId])
+
   const handleSaveMedication = async () => {
     if (isMedicationActionInProgress) {
       return
@@ -538,6 +557,7 @@ export function MedsView({
           <input
             data-testid="medication-name-input"
             type="text"
+            ref={medicationNameInputRef}
             value={medicationNameInput}
             onChange={(event) => setMedicationNameInput(event.target.value)}
           />
