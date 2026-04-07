@@ -37,6 +37,12 @@ function trimOptional(value?: string): string | undefined {
   return trimmed ? trimmed : undefined
 }
 
+function getPreferredPatientIdFromUrl(): string | null {
+  const url = new URL(window.location.href)
+  const patientId = url.searchParams.get('patientId')?.trim()
+  return patientId && patientId.length > 0 ? patientId : null
+}
+
 export interface UseAppDataResult {
   appState: MedMinderState | null
   selectedPatientId: string | null
@@ -102,7 +108,7 @@ export function useAppData(authState: AuthSessionState | null): UseAppDataResult
     }
 
     const cloudState = await fetchCloudState(authState)
-    await resolveAndSetState(cloudState, preferredPatientId)
+    await resolveAndSetState(cloudState, preferredPatientId ?? getPreferredPatientIdFromUrl())
   }, [authState, resolveAndSetState])
 
   const loadLocalWorkspaceState = useCallback(async (preferredPatientId?: string | null) => {
@@ -117,7 +123,12 @@ export function useAppData(authState: AuthSessionState | null): UseAppDataResult
     }
 
     const persistedSelectedPatientId = await getLastSelectedPatientId()
-    const resolvedPatientId = preferredPatientId ?? selectedPatientId ?? persistedSelectedPatientId ?? patients[0].id
+    const resolvedPatientId =
+      preferredPatientId
+      ?? getPreferredPatientIdFromUrl()
+      ?? selectedPatientId
+      ?? persistedSelectedPatientId
+      ?? patients[0].id
     const selectedPatient = patients.find((patient) => patient.id === resolvedPatientId) ?? patients[0]
     const { medications, doseEvents } = await loadPatientMedicationView(selectedPatient.id)
 
@@ -161,7 +172,7 @@ export function useAppData(authState: AuthSessionState | null): UseAppDataResult
 
           const cloudState = await fetchCloudState(authState)
           if (!cancelled) {
-            await resolveAndSetState(cloudState)
+            await resolveAndSetState(cloudState, getPreferredPatientIdFromUrl())
           }
           return
         }
