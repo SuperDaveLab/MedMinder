@@ -22,6 +22,8 @@ function App() {
     signIn,
     signOut,
     changePassword,
+    requestPasswordReset,
+    resetPassword,
     updateAccountSettings,
     clearAuthError,
   } = useAuth()
@@ -116,6 +118,16 @@ function App() {
   const handleTogglePatientNotifications = async (patientId: string, enabled: boolean) => {
     await handleSetPatientNotificationsEnabled(patientId, enabled)
   }
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search)
+
+    if (!searchParams.get('resetToken')) {
+      return
+    }
+
+    setView('more')
+  }, [setView])
 
   useEffect(() => {
     if (activeView !== 'care') {
@@ -438,6 +450,8 @@ function App() {
             onSignIn={signIn}
             onSignOut={signOut}
             onChangePassword={changePassword}
+            onRequestPasswordReset={requestPasswordReset}
+            onResetPassword={resetPassword}
             onUpdateAccountSettings={updateAccountSettings}
             onClearAuthError={clearAuthError}
           />

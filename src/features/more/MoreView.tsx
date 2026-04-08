@@ -33,6 +33,13 @@ interface MoreViewProps {
     currentPassword: string
     newPassword: string
   }) => Promise<void>
+  onRequestPasswordReset: (input: {
+    email: string
+  }) => Promise<void>
+  onResetPassword: (input: {
+    token: string
+    newPassword: string
+  }) => Promise<void>
   onUpdateAccountSettings: (input: {
     phoneE164: string | null
     notificationDeliveryPolicy: NotificationDeliveryPolicy
@@ -68,6 +75,8 @@ export function MoreView({
   onSignIn,
   onSignOut,
   onChangePassword,
+  onRequestPasswordReset,
+  onResetPassword,
   onUpdateAccountSettings,
   onClearAuthError,
 }: MoreViewProps) {
@@ -79,12 +88,19 @@ export function MoreView({
   const backupFileInputRef = useRef<HTMLInputElement>(null)
   const [authEmailInput, setAuthEmailInput] = useState('')
   const [authPasswordInput, setAuthPasswordInput] = useState('')
+  const [forgotPasswordEmailInput, setForgotPasswordEmailInput] = useState('')
   const [currentPasswordInput, setCurrentPasswordInput] = useState('')
   const [newPasswordInput, setNewPasswordInput] = useState('')
   const [confirmNewPasswordInput, setConfirmNewPasswordInput] = useState('')
   const [authPhoneInput, setAuthPhoneInput] = useState('')
   const [authNotificationPolicyInput, setAuthNotificationPolicyInput] = useState<NotificationDeliveryPolicy>('push_then_email_fallback')
+  const [isForgotPasswordMode, setIsForgotPasswordMode] = useState(false)
+  const [resetToken, setResetToken] = useState(() => new URLSearchParams(window.location.search).get('resetToken') ?? '')
   const [passwordStatusMessage, setPasswordStatusMessage] = useState<{
+    kind: 'error' | 'success'
+    text: string
+  } | null>(null)
+  const [recoveryStatusMessage, setRecoveryStatusMessage] = useState<{
     kind: 'error' | 'success'
     text: string
   } | null>(null)
@@ -220,6 +236,29 @@ export function MoreView({
     })
   }
 
+  const handleRequestPasswordReset = async () => {
+    onClearAuthError()
+    setRecoveryStatusMessage(null)
+
+    const email = forgotPasswordEmailInput.trim() || authEmailInput.trim()
+
+    if (!email) {
+      setRecoveryStatusMessage({ kind: 'error', text: 'Email is required.' })
+      return
+    }
+
+    try {
+      await onRequestPasswordReset({ email })
+      setForgotPasswordEmailInput(email)
+      setRecoveryStatusMessage({
+        kind: 'success',
+        text: 'If that email exists, a password reset link has been sent.',
+      })
+    } catch {
+      // Shared auth error handles server failures.
+    }
+  }
+
   const handleSaveAccountSettings = async () => {
     const trimmed = authPhoneInput.trim()
     await onUpdateAccountSettings({
@@ -262,6 +301,48 @@ export function MoreView({
     }
   }
 
+  const handleResetPassword = async () => {
+    onClearAuthError()
+    setRecoveryStatusMessage(null)
+
+    if (!resetToken) {
+      setRecoveryStatusMessage({ kind: 'error', text: 'Password reset token is missing.' })
+      return
+    }
+
+    if (!newPasswordInput || !confirmNewPasswordInput) {
+      setRecoveryStatusMessage({ kind: 'error', text: 'New password and confirmation are required.' })
+      return
+    }
+
+    if (newPasswordInput !== confirmNewPasswordInput) {
+      setRecoveryStatusMessage({ kind: 'error', text: 'New password and confirmation must match.' })
+      return
+    }
+
+    try {
+      await onResetPassword({
+        token: resetToken,
+        newPassword: newPasswordInput,
+      })
+
+      setAuthPasswordInput('')
+      setNewPasswordInput('')
+      setConfirmNewPasswordInput('')
+      setResetToken('')
+      setIsForgotPasswordMode(false)
+      setRecoveryStatusMessage({ kind: 'success', text: 'Password reset. Sign in with your new password.' })
+
+      const searchParams = new URLSearchParams(window.location.search)
+      searchParams.delete('resetToken')
+      const nextSearch = searchParams.toString()
+      const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ''}${window.location.hash}`
+      window.history.replaceState({}, '', nextUrl)
+    } catch {
+      // Shared auth error handles server failures.
+    }
+  }
+
   useEffect(() => {
     setAuthPhoneInput(authState?.account.phoneE164 ?? '')
     setAuthNotificationPolicyInput(authState?.account.notificationDeliveryPolicy ?? 'push_then_email_fallback')
@@ -275,6 +356,23 @@ export function MoreView({
       setPasswordStatusMessage(null)
     }
   }, [authState])
+
+  useEffect(() => {
+    if (authState) {
+      setRecoveryStatusMessage(null)
+      setIsForgotPasswordMode(false)
+      return
+    }
+
+    setForgotPasswordEmailInput(authEmailInput.trim())
+  }, [authEmailInput, authState])
+
+  useEffect(() => {
+    if (resetToken) {
+      setIsForgotPasswordMode(false)
+      setRecoveryStatusMessage(null)
+    }
+  }, [resetToken])
 
   const accountSection = (
     <section className="admin-section no-print" data-testid="account-section">
@@ -421,12 +519,113 @@ export function MoreView({
               autoComplete="current-password"
             />
           </label>
-          {authError ? <p className="form-error">{authError}</p> : null}
+          {recoveryStatusMessage && !resetToken && !isForgotPasswordMode ? (
+            <p className={recoveryStatusMessage.kind === 'error' ? 'form-error' : 'form-success'}>
+              {recoveryStatusMessage.text}
+            </p>
+          ) : null}
+          {resetToken ? (
+            <div className="account-password-panel">
+              <h3>Reset password</h3>
+              <p className="subhead">Choose a new password for this account.</p>
+              <label>
+                New password
+                <input
+                  data-testid="reset-password-input"
+                  type="password"
+                  value={newPasswordInput}
+                  onChange={(event) => {
+                    onClearAuthError()
+                    setRecoveryStatusMessage(null)
+                    setNewPasswordInput(event.target.value)
+                  }}
+                  autoComplete="new-password"
+                />
+              </label>
+              <label>
+                Confirm new password
+                <input
+                  data-testid="reset-password-confirm-input"
+                  type="password"
+                  value={confirmNewPasswordInput}
+                  onChange={(event) => {
+                    onClearAuthError()
+                    setRecoveryStatusMessage(null)
+                    setConfirmNewPasswordInput(event.target.value)
+                  }}
+                  autoComplete="new-password"
+                />
+              </label>
+              {recoveryStatusMessage ? (
+                <p className={recoveryStatusMessage.kind === 'error' ? 'form-error' : 'form-success'}>
+                  {recoveryStatusMessage.text}
+                </p>
+              ) : null}
+              {authError ? <p className="form-error">{authError}</p> : null}
+              <button
+                className="utility-button"
+                data-testid="reset-password-button"
+                disabled={isAuthActionInProgress}
+                onClick={() => void handleResetPassword()}
+              >
+                {isAuthActionInProgress ? 'Working...' : 'Reset password'}
+              </button>
+            </div>
+          ) : null}
+          {!resetToken && isForgotPasswordMode ? (
+            <div className="account-password-panel">
+              <h3>Forgot password</h3>
+              <p className="subhead">Enter your account email and we will send a reset link.</p>
+              <label>
+                Recovery email
+                <input
+                  data-testid="forgot-password-email-input"
+                  type="email"
+                  value={forgotPasswordEmailInput}
+                  onChange={(event) => {
+                    onClearAuthError()
+                    setRecoveryStatusMessage(null)
+                    setForgotPasswordEmailInput(event.target.value)
+                  }}
+                  autoComplete="email"
+                />
+              </label>
+              {recoveryStatusMessage ? (
+                <p className={recoveryStatusMessage.kind === 'error' ? 'form-error' : 'form-success'}>
+                  {recoveryStatusMessage.text}
+                </p>
+              ) : null}
+              {authError ? <p className="form-error">{authError}</p> : null}
+              <div className="form-actions">
+                <button
+                  className="utility-button"
+                  data-testid="request-password-reset-button"
+                  disabled={isAuthActionInProgress}
+                  onClick={() => void handleRequestPasswordReset()}
+                >
+                  {isAuthActionInProgress ? 'Working...' : 'Send reset link'}
+                </button>
+                <button
+                  className="utility-button"
+                  data-testid="cancel-forgot-password-button"
+                  disabled={isAuthActionInProgress}
+                  onClick={() => {
+                    onClearAuthError()
+                    setRecoveryStatusMessage(null)
+                    setIsForgotPasswordMode(false)
+                  }}
+                >
+                  Back to sign in
+                </button>
+              </div>
+            </div>
+          ) : null}
+          {authError && !isForgotPasswordMode && !resetToken ? <p className="form-error">{authError}</p> : null}
           <div className="form-actions">
             <button
               className="utility-button"
               data-testid="create-account-button"
-              disabled={isAuthActionInProgress}
+              disabled={isAuthActionInProgress || Boolean(resetToken)}
               onClick={() => void handleCreateAccount()}
             >
               {isAuthActionInProgress ? 'Working...' : 'Create account'}
@@ -434,11 +633,26 @@ export function MoreView({
             <button
               className="utility-button"
               data-testid="sign-in-button"
-              disabled={isAuthActionInProgress}
+              disabled={isAuthActionInProgress || Boolean(resetToken)}
               onClick={() => void handleSignIn()}
             >
               {isAuthActionInProgress ? 'Working...' : 'Sign in'}
             </button>
+            {!resetToken ? (
+              <button
+                className="utility-button"
+                data-testid="forgot-password-button"
+                disabled={isAuthActionInProgress}
+                onClick={() => {
+                  onClearAuthError()
+                  setRecoveryStatusMessage(null)
+                  setForgotPasswordEmailInput(authEmailInput.trim())
+                  setIsForgotPasswordMode((previous) => !previous)
+                }}
+              >
+                {isForgotPasswordMode ? 'Hide reset form' : 'Forgot password'}
+              </button>
+            ) : null}
           </div>
         </>
       ) : null}

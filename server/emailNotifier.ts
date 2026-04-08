@@ -8,6 +8,12 @@ export interface NotificationEmailPayload {
   patientName?: string
 }
 
+export interface TransactionalEmailPayload {
+  to: string
+  subject: string
+  text: string
+}
+
 function formatCandidateKind(kind: ReminderNotificationCandidate['kind']): string {
   if (kind === 'due-now') {
     return 'Due now'
@@ -93,12 +99,22 @@ function getSmtpTransporter(): nodemailer.Transporter | null {
 export async function sendNotificationEmail(
   payload: NotificationEmailPayload,
 ): Promise<boolean> {
+  return sendTransactionalEmail({
+    to: payload.to,
+    subject: buildEmailSubject(payload),
+    text: buildPlainTextBody(payload),
+  })
+}
+
+export async function sendTransactionalEmail(
+  payload: TransactionalEmailPayload,
+): Promise<boolean> {
   const transporter = getSmtpTransporter()
 
   if (!transporter) {
     // SMTP not configured — log only so the scheduler still runs in dev.
     console.log(
-      `[notification-stub] ${payload.to} | ${payload.candidate.title} | ${payload.candidate.body}`,
+      `[email-stub] ${payload.to} | ${payload.subject} | ${payload.text}`,
     )
     return false
   }
@@ -107,8 +123,8 @@ export async function sendNotificationEmail(
     await transporter.sendMail({
       from: serverConfig.smtp.from,
       to: payload.to,
-      subject: buildEmailSubject(payload),
-      text: buildPlainTextBody(payload),
+      subject: payload.subject,
+      text: payload.text,
     })
     return true
   } catch (error) {

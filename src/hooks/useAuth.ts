@@ -21,6 +21,15 @@ interface ChangePasswordInput {
   newPassword: string
 }
 
+interface RequestPasswordResetInput {
+  email: string
+}
+
+interface ResetPasswordInput {
+  token: string
+  newPassword: string
+}
+
 export interface UseAuthResult {
   authState: AuthSessionState | null
   isAuthLoading: boolean
@@ -30,6 +39,8 @@ export interface UseAuthResult {
   signIn: (credentials: AuthCredentials) => Promise<void>
   signOut: () => Promise<void>
   changePassword: (input: ChangePasswordInput) => Promise<void>
+  requestPasswordReset: (input: RequestPasswordResetInput) => Promise<void>
+  resetPassword: (input: ResetPasswordInput) => Promise<void>
   updateAccountSettings: (input: {
     phoneE164: string | null
     notificationDeliveryPolicy: NotificationDeliveryPolicy
@@ -239,6 +250,40 @@ export function useAuth(): UseAuthResult {
     }
   }, [authClient, authState])
 
+  const requestPasswordReset = useCallback(async (input: RequestPasswordResetInput) => {
+    setAuthError(null)
+    setIsAuthActionInProgress(true)
+
+    try {
+      await authClient.requestPasswordReset({ email: input.email.trim() })
+    } catch (error) {
+      const resolvedError = error instanceof Error
+        ? error
+        : new Error('Unable to request password reset right now.')
+      setAuthError(resolvedError.message)
+      throw resolvedError
+    } finally {
+      setIsAuthActionInProgress(false)
+    }
+  }, [authClient])
+
+  const resetPassword = useCallback(async (input: ResetPasswordInput) => {
+    setAuthError(null)
+    setIsAuthActionInProgress(true)
+
+    try {
+      await authClient.resetPassword(input)
+    } catch (error) {
+      const resolvedError = error instanceof Error
+        ? error
+        : new Error('Unable to reset password right now.')
+      setAuthError(resolvedError.message)
+      throw resolvedError
+    } finally {
+      setIsAuthActionInProgress(false)
+    }
+  }, [authClient])
+
   const clearAuthError = useCallback(() => {
     setAuthError(null)
   }, [])
@@ -252,6 +297,8 @@ export function useAuth(): UseAuthResult {
     signIn,
     signOut,
     changePassword,
+    requestPasswordReset,
+    resetPassword,
     updateAccountSettings,
     clearAuthError,
   }

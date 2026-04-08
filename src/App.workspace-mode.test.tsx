@@ -86,10 +86,15 @@ function installFetchMock(initialCloudState: MedMinderState, email = 'caregiver@
     registerCalls: 0,
     loginCalls: 0,
     logoutCalls: 0,
+    forgotPasswordCalls: [] as string[],
     changePasswordCalls: [] as Array<{
       currentPassword: string
       newPassword: string
       sessionId: string | null
+    }>,
+    resetPasswordCalls: [] as Array<{
+      token: string
+      newPassword: string
     }>,
     getCloudState: () => cloneState(cloudState),
   }
@@ -135,6 +140,26 @@ function installFetchMock(initialCloudState: MedMinderState, email = 'caregiver@
           return jsonResponse({ message: 'Current password is incorrect.' }, 403)
         }
 
+        return jsonResponse({ success: true })
+      }
+
+      if (url.endsWith('/api/auth/forgot-password')) {
+        const body = JSON.parse(String(init?.body ?? '{}')) as {
+          email: string
+        }
+        controller.forgotPasswordCalls.push(body.email)
+        return jsonResponse({ success: true })
+      }
+
+      if (url.endsWith('/api/auth/reset-password')) {
+        const body = JSON.parse(String(init?.body ?? '{}')) as {
+          token: string
+          newPassword: string
+        }
+        controller.resetPasswordCalls.push({
+          token: body.token,
+          newPassword: body.newPassword,
+        })
         return jsonResponse({ success: true })
       }
 
@@ -542,5 +567,55 @@ describe('App workspace mode flow', () => {
         sessionId: 'session-1',
       },
     ])
+  })
+
+  it('signed-out user can request a password reset email', async () => {
+    const controller = installFetchMock(initialSampleState)
+    const user = userEvent.setup()
+
+    render(<App />)
+    await screen.findByRole('option', { name: 'Alex Rivera' })
+
+    await user.click(screen.getByTestId('tab-more'))
+    await user.type(screen.getByTestId('auth-email-input'), 'caregiver@example.com')
+    await user.click(screen.getByTestId('forgot-password-button'))
+    await user.click(screen.getByTestId('request-password-reset-button'))
+
+    await waitFor(() => {
+      expect(screen.getByText('If that email exists, a password reset link has been sent.')).toBeTruthy()
+    })
+
+    expect(controller.forgotPasswordCalls).toEqual(['caregiver@example.com'])
+  })
+
+  it('reset-token link opens More view and submits password reset', async () => {
+    const previousUrl = window.location.href
+    window.history.replaceState({}, '', '/?resetToken=test-reset-token')
+
+    try {
+      const controller = installFetchMock(initialSampleState)
+      const user = userEvent.setup()
+
+      render(<App />)
+      await screen.findByTestId('more-view')
+
+      await user.type(screen.getByTestId('reset-password-input'), 'new-password-123')
+      await user.type(screen.getByTestId('reset-password-confirm-input'), 'new-password-123')
+      await user.click(screen.getByTestId('reset-password-button'))
+
+      await waitFor(() => {
+        expect(screen.getByText('Password reset. Sign in with your new password.')).toBeTruthy()
+      })
+
+      expect(controller.resetPasswordCalls).toEqual([
+        {
+          token: 'test-reset-token',
+          newPassword: 'new-password-123',
+        },
+      ])
+      expect(new URLSearchParams(window.location.search).get('resetToken')).toBeNull()
+    } finally {
+      window.history.replaceState({}, '', previousUrl)
+    }
   })
 })

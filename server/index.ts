@@ -9,6 +9,8 @@ import {
   changePassword,
   createAccount,
   getAccountById,
+  requestPasswordReset,
+  resetPassword,
   signInWithPassword,
   signOutBySessionId,
   updateAccountPhoneE164,
@@ -27,7 +29,14 @@ import type {
   DeletePushSubscriptionRequest,
   RegisterPushSubscriptionRequest,
 } from '../src/domain/pushNotifications'
-import type { ChangePasswordRequest, UpdateAccountProfileRequest } from '../src/domain/auth'
+import type {
+  ChangePasswordRequest,
+  ForgotPasswordRequest,
+  ForgotPasswordResponse,
+  ResetPasswordRequest,
+  ResetPasswordResponse,
+  UpdateAccountProfileRequest,
+} from '../src/domain/auth'
 import { notificationDeliveryPolicies } from '../src/domain/notificationPolicy'
 
 const app = express()
@@ -79,10 +88,47 @@ async function requireSession(request: Request): Promise<AuthenticatedAccountCon
   }
 }
 
+function resolvePublicAppUrl(request: Request): string {
+  return serverConfig.publicAppUrl.trim() || String(request.header('origin') ?? '').trim()
+}
+
 app.get('/health', (_request: Request, response: Response) => {
   response.status(200).json({ ok: true })
 })
 
+app.post('/api/auth/forgot-password', async (request: Request, response: Response) => {
+  try {
+    const payload = request.body as ForgotPasswordRequest
+    await requestPasswordReset(String(payload?.email ?? ''), resolvePublicAppUrl(request))
+    response.status(200).json({ success: true } satisfies ForgotPasswordResponse)
+  } catch (error) {
+    if (error instanceof AuthServiceError) {
+      response.status(error.statusCode).json({ message: error.message })
+      return
+    }
+
+    response.status(500).json({
+      message: error instanceof Error ? error.message : 'Unable to request password reset.',
+    })
+  }
+})
+
+app.post('/api/auth/reset-password', async (request: Request, response: Response) => {
+  try {
+    const payload = request.body as ResetPasswordRequest
+    await resetPassword(String(payload?.token ?? ''), String(payload?.newPassword ?? ''))
+    response.status(200).json({ success: true } satisfies ResetPasswordResponse)
+  } catch (error) {
+    if (error instanceof AuthServiceError) {
+      response.status(error.statusCode).json({ message: error.message })
+      return
+    }
+
+    response.status(400).json({
+      message: error instanceof Error ? error.message : 'Unable to reset password.',
+    })
+  }
+})
 app.get('/api/notifications/push/public-key', (_request: Request, response: Response) => {
   response.status(200).json({ vapidPublicKey: getPushPublicKey() })
 })

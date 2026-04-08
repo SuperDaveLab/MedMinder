@@ -68,6 +68,28 @@ export async function initializeAuthSchema(): Promise<void> {
   `)
 
   await dbPool.query(`
+    CREATE TABLE IF NOT EXISTS password_reset_tokens (
+      token_id VARCHAR(36) PRIMARY KEY,
+      account_id VARCHAR(36) NOT NULL,
+      user_id VARCHAR(36) NOT NULL,
+      token_hash VARCHAR(64) NOT NULL UNIQUE,
+      expires_at DATETIME(3) NOT NULL,
+      used_at DATETIME(3) NULL,
+      created_at DATETIME(3) NOT NULL,
+      CONSTRAINT fk_password_reset_tokens_account
+        FOREIGN KEY (account_id)
+        REFERENCES accounts(account_id)
+        ON DELETE CASCADE,
+      CONSTRAINT fk_password_reset_tokens_user
+        FOREIGN KEY (user_id)
+        REFERENCES users(user_id)
+        ON DELETE CASCADE,
+      INDEX idx_password_reset_tokens_user_id (user_id),
+      INDEX idx_password_reset_tokens_expires_at (expires_at)
+    )
+  `)
+
+  await dbPool.query(`
     CREATE TABLE IF NOT EXISTS cloud_patients (
       account_id VARCHAR(36) NOT NULL,
       patient_id VARCHAR(36) NOT NULL,

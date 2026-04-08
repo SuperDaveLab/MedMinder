@@ -80,6 +80,23 @@ export interface ChangePasswordResponse {
   success: true
 }
 
+export interface ForgotPasswordRequest {
+  email: string
+}
+
+export interface ForgotPasswordResponse {
+  success: true
+}
+
+export interface ResetPasswordRequest {
+  token: string
+  newPassword: string
+}
+
+export interface ResetPasswordResponse {
+  success: true
+}
+
 export interface UpdateAccountProfileRequest {
   phoneE164?: string | null
   notificationDeliveryPolicy?: NotificationDeliveryPolicy

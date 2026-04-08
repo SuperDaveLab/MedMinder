@@ -70,6 +70,8 @@ AUTH_DB_PASSWORD=REPLACE_ME_STRONG_PASSWORD
 AUTH_DB_NAME=medminder_auth
 AUTH_ACCESS_TOKEN_TTL_MINUTES=30
 AUTH_SESSION_TTL_DAYS=30
+AUTH_PUBLIC_APP_URL=https://app.example.com/
+AUTH_PASSWORD_RESET_TTL_MINUTES=60
 NOTIFICATION_SCHEDULER_INTERVAL_MS=300000
 
 # Web Push (required for backend push delivery)
@@ -92,6 +94,8 @@ EOF
 
 sudo chmod 600 /etc/medminder/api.env
 ```
+
+`AUTH_PUBLIC_APP_URL` must point at the public Med-Minder app URL that users open in their browser. Password reset emails use this value to generate the reset link.
 
 ## 5. Initialize/Upgrade Tables
 

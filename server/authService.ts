@@ -16,6 +16,7 @@ import {
   notificationDeliveryPolicies,
 } from '../src/domain/notificationPolicy'
 import { dbPool } from './db'
+import { sendTransactionalEmail } from './emailNotifier'
 import { serverConfig } from './config'
 
 interface AuthUserRecord {
@@ -29,6 +30,18 @@ interface AuthUserRecord {
 }
 
 interface DbUserRow extends RowDataPacket, AuthUserRecord {}
+
+interface PasswordResetTokenRow extends RowDataPacket {
+  token_id: string
+  account_id: string
+  user_id: string
+  email: string
+  password_hash: string
+  token_hash: string
+  expires_at: Date
+  used_at: Date | null
+  created_at: Date
+}
 
 export class AuthServiceError extends Error {
   statusCode: number
@@ -56,6 +69,28 @@ function generateToken(): string {
 
 function hashToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex')
+}
+
+function buildPasswordResetLink(baseUrl: string, token: string): string {
+  const url = new URL(baseUrl)
+  url.searchParams.set('view', 'more')
+  url.searchParams.set('resetToken', token)
+  return url.toString()
+}
+
+function buildPasswordResetEmailBody(resetLink: string): string {
+  return [
+    'Med-Minder password reset',
+    '',
+    'Use the link below to reset your password:',
+    resetLink,
+    '',
+    `This link expires in ${String(serverConfig.passwordResetTokenTtlMinutes)} minutes and can only be used once.`,
+    '',
+    'If you did not request this, you can ignore this email.',
+    '',
+    '-- Med-Minder',
+  ].join('\n')
 }
 
 function buildSessionTimestamps(now: Date): { issuedAt: Date; expiresAt: Date; accessTokenExpiresAt: Date } {
@@ -304,6 +339,134 @@ export async function changePassword(
        AND session_id <> ?
        AND revoked_at IS NULL`,
     [revokedAt, accountId, userId, currentSessionId],
+  )
+}
+
+export async function requestPasswordReset(
+  email: string,
+  appBaseUrl: string,
+): Promise<void> {
+  const normalizedEmail = normalizeEmail(email)
+
+  if (!normalizedEmail) {
+    throw new AuthServiceError(400, 'Email is required.')
+  }
+
+  const [[userRow]] = await dbPool.query<DbUserRow[]>(
+    `SELECT user_id, account_id, email, phone_e164, notification_delivery_policy, password_hash, created_at
+     FROM users
+     WHERE email = ?
+     LIMIT 1`,
+    [normalizedEmail],
+  )
+
+  if (!userRow) {
+    return
+  }
+
+  const trimmedBaseUrl = appBaseUrl.trim()
+
+  if (!trimmedBaseUrl) {
+    throw new AuthServiceError(500, 'Password reset is not configured correctly.')
+  }
+
+  const token = generateToken()
+  const tokenHash = hashToken(token)
+  const tokenId = crypto.randomUUID()
+  const createdAt = new Date()
+  const expiresAt = new Date(
+    createdAt.getTime() + serverConfig.passwordResetTokenTtlMinutes * 60 * 1000,
+  )
+
+  await dbPool.query(
+    `UPDATE password_reset_tokens
+     SET used_at = ?
+     WHERE user_id = ? AND used_at IS NULL`,
+    [createdAt, userRow.user_id],
+  )
+
+  await dbPool.query(
+    `INSERT INTO password_reset_tokens (
+      token_id,
+      account_id,
+      user_id,
+      token_hash,
+      expires_at,
+      used_at,
+      created_at
+    ) VALUES (?, ?, ?, ?, ?, NULL, ?)`,
+    [tokenId, userRow.account_id, userRow.user_id, tokenHash, expiresAt, createdAt],
+  )
+
+  const resetLink = buildPasswordResetLink(trimmedBaseUrl, token)
+
+  await sendTransactionalEmail({
+    to: userRow.email,
+    subject: 'Med-Minder password reset',
+    text: buildPasswordResetEmailBody(resetLink),
+  })
+}
+
+export async function resetPassword(token: string, newPassword: string): Promise<void> {
+  if (!token || token.trim().length === 0) {
+    throw new AuthServiceError(400, 'Password reset token is required.')
+  }
+
+  assertValidNewPassword(newPassword)
+
+  const tokenHash = hashToken(token)
+  const [[tokenRow]] = await dbPool.query<PasswordResetTokenRow[]>(
+    `SELECT
+       prt.token_id,
+       prt.account_id,
+       prt.user_id,
+       prt.token_hash,
+       prt.expires_at,
+       prt.used_at,
+       prt.created_at,
+       u.email,
+       u.password_hash
+     FROM password_reset_tokens prt
+     JOIN users u ON u.user_id = prt.user_id
+     WHERE prt.token_hash = ?
+     LIMIT 1`,
+    [tokenHash],
+  )
+
+  if (!tokenRow || tokenRow.used_at || tokenRow.expires_at.getTime() <= Date.now()) {
+    throw new AuthServiceError(400, 'Password reset link is invalid or expired.')
+  }
+
+  const passwordIsUnchanged = await bcrypt.compare(newPassword, tokenRow.password_hash)
+
+  if (passwordIsUnchanged) {
+    throw new AuthServiceError(400, 'New password must be different from current password.')
+  }
+
+  const nextPasswordHash = await bcrypt.hash(newPassword, 12)
+  const completedAt = new Date()
+
+  await dbPool.query(
+    `UPDATE users
+     SET password_hash = ?
+     WHERE account_id = ? AND user_id = ?`,
+    [nextPasswordHash, tokenRow.account_id, tokenRow.user_id],
+  )
+
+  await dbPool.query(
+    `UPDATE password_reset_tokens
+     SET used_at = ?
+     WHERE user_id = ? AND used_at IS NULL`,
+    [completedAt, tokenRow.user_id],
+  )
+
+  await dbPool.query(
+    `UPDATE sessions
+     SET revoked_at = ?
+     WHERE account_id = ?
+       AND user_id = ?
+       AND revoked_at IS NULL`,
+    [completedAt, tokenRow.account_id, tokenRow.user_id],
   )
 }
 

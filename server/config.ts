@@ -14,6 +14,7 @@ function parseNumber(value: string | undefined, fallback: number): number {
 
 export const serverConfig = {
   port: parseNumber(process.env.AUTH_API_PORT, 8787),
+  publicAppUrl: process.env.AUTH_PUBLIC_APP_URL ?? process.env.PUBLIC_APP_URL ?? '',
   db: {
     host: process.env.AUTH_DB_HOST ?? '127.0.0.1',
     port: parseNumber(process.env.AUTH_DB_PORT, 3306),
@@ -23,6 +24,7 @@ export const serverConfig = {
   },
   accessTokenTtlMinutes: parseNumber(process.env.AUTH_ACCESS_TOKEN_TTL_MINUTES, 30),
   sessionTtlDays: parseNumber(process.env.AUTH_SESSION_TTL_DAYS, 30),
+  passwordResetTokenTtlMinutes: parseNumber(process.env.AUTH_PASSWORD_RESET_TTL_MINUTES, 60),
   // SMTP settings for email notification delivery.
   // Required env vars: SMTP_HOST, SMTP_PORT (default 587), SMTP_USER,
   // SMTP_PASSWORD, SMTP_FROM (e.g. "Med-Minder <noreply@example.com>").
