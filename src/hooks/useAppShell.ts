@@ -384,11 +384,22 @@ export function useAppShell({ appState, now, authState }: UseAppShellParams) {
       return
     }
 
+    const validPatientIds = new Set(
+      appState.patients.map((patient) => patient.id),
+    )
+    const disabledPatientIds = new Set(
+      appState.patients
+        .filter((patient) => patient.notificationsEnabled === false)
+        .map((patient) => patient.id),
+    )
+
     const nowTimestamp = now.getTime()
     const candidates = buildInAppAlarmCandidates(
       appState.medications,
       appState.doseEvents,
       now,
+      disabledPatientIds,
+      validPatientIds,
     )
 
     for (const [key, snoozedUntil] of snoozedAlarmKeysRef.current.entries()) {

@@ -94,4 +94,76 @@ describe('in-app alarms', () => {
 
     expect(candidates).toEqual([])
   })
+
+  it('skips alarms for patients with notifications disabled', () => {
+    const enabledPatientMedication = buildMedication({
+      id: 'med-enabled',
+      patientId: 'patient-1',
+    })
+
+    const disabledPatientMedication = buildMedication({
+      id: 'med-disabled-patient',
+      patientId: 'patient-2',
+    })
+
+    const candidates = buildInAppAlarmCandidates(
+      [enabledPatientMedication, disabledPatientMedication],
+      [
+        {
+          id: 'dose-enabled',
+          medicationId: 'med-enabled',
+          timestampGiven: '2026-03-28T06:00:00.000Z',
+          corrected: false,
+        },
+        {
+          id: 'dose-disabled-patient',
+          medicationId: 'med-disabled-patient',
+          timestampGiven: '2026-03-28T06:00:00.000Z',
+          corrected: false,
+        },
+      ],
+      new Date('2026-03-28T14:01:00.000Z'),
+      new Set(['patient-2']),
+      new Set(['patient-1', 'patient-2']),
+    )
+
+    expect(candidates).toHaveLength(1)
+    expect(candidates[0].medicationId).toBe('med-enabled')
+  })
+
+  it('skips alarms for medications whose patient no longer exists', () => {
+    const validMedication = buildMedication({
+      id: 'med-valid',
+      patientId: 'patient-1',
+    })
+
+    const orphanedMedication = buildMedication({
+      id: 'med-orphaned',
+      patientId: 'missing-patient',
+    })
+
+    const candidates = buildInAppAlarmCandidates(
+      [validMedication, orphanedMedication],
+      [
+        {
+          id: 'dose-valid',
+          medicationId: 'med-valid',
+          timestampGiven: '2026-03-28T06:00:00.000Z',
+          corrected: false,
+        },
+        {
+          id: 'dose-orphaned',
+          medicationId: 'med-orphaned',
+          timestampGiven: '2026-03-28T06:00:00.000Z',
+          corrected: false,
+        },
+      ],
+      new Date('2026-03-28T14:01:00.000Z'),
+      undefined,
+      new Set(['patient-1']),
+    )
+
+    expect(candidates).toHaveLength(1)
+    expect(candidates[0].medicationId).toBe('med-valid')
+  })
 })
