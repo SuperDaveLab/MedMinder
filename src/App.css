@@ -1369,14 +1369,14 @@ button {
 
 .patient-switcher-row {
   display: flex;
-  align-items: center;
-  gap: 0.4rem;
+  align-items: end;
+  gap: 0.35rem;
   flex-wrap: nowrap;
 }
 
 .patient-context-block {
   display: grid;
-  gap: 0.18rem;
+  gap: 0.14rem;
   min-width: 0;
   flex: 1 1 220px;
 }
@@ -1393,10 +1393,10 @@ button {
 
 .patient-context-label {
   margin: 0;
-  padding-left: 0.2rem;
-  font-size: 0.7rem;
+  padding-left: 0.32rem;
+  font-size: 0.66rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--muted);
 }
@@ -1405,12 +1405,18 @@ button {
   color: var(--brand);
 }
 
+.patient-context-block.is-primary .patient-selector-compact {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(243, 250, 248, 0.96) 100%);
+  border-color: #bfe3dc;
+  box-shadow: inset 0 0 0 1px rgba(209, 250, 229, 0.7);
+}
+
 .patient-selector-compact {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.42rem;
   background: var(--bg);
-  padding: 0.35rem 0.6rem;
+  padding: 0.3rem 0.56rem;
   border-radius: 999px;
   border: 1px solid var(--line);
   flex: 1 1 220px;
@@ -1421,7 +1427,7 @@ button {
   border: none;
   background: transparent;
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   color: var(--ink);
   outline: none;
   cursor: pointer;
@@ -1430,7 +1436,22 @@ button {
 }
 
 .patient-avatar {
-  font-size: 1.1rem;
+  font-size: 0.98rem;
+}
+
+.patient-add-trigger {
+  min-height: 0;
+  padding: 0.48rem 0.68rem;
+  border-color: #c8d7e5;
+  background: #f8fbff;
+  color: #38516b;
+  white-space: nowrap;
+}
+
+.patient-add-trigger:hover:not(:disabled) {
+  border-color: #93c5fd;
+  background: #eef6ff;
+  color: #1e3a8a;
 }
 
 .patient-add-trigger {
@@ -1725,11 +1746,19 @@ button {
   }
 
   .patient-switcher-row {
-    gap: 0.6rem;
+    gap: 0.5rem;
   }
 
   .patient-context-label {
     font-size: 0.72rem;
+  }
+
+  .patient-selector-compact {
+    padding: 0.33rem 0.62rem;
+  }
+
+  .patient-selector-compact select {
+    font-size: 0.93rem;
   }
 
   .workspace-context-title {

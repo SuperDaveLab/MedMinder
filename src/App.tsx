@@ -281,7 +281,7 @@ function App() {
                   </label>
                 </div>
                 <button
-                  className="utility-button"
+                  className="utility-button patient-add-trigger"
                   type="button"
                   data-testid="open-add-patient-button"
                   aria-expanded={isAddPatientFormOpen}
