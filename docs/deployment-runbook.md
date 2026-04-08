@@ -13,12 +13,15 @@ Deploy the latest main branch build safely, with a quick rollback path.
 - A web root served by Apache/nginx (or equivalent)
 - Node.js and npm installed locally
 
-## Current Production Profile (as of 2026-04-05)
-- Host: `medminder.davekoons.com`
-- SSH user: `root`
-- Web server: `apache2`
-- Apache vhost `DocumentRoot`: `/var/www/medminder`
-- Backup location: `/var/www/medminder-backups/<RELEASE_ID>`
+## Deployment Profile Template
+- Host (SSH): keep runtime-configured via `DEPLOY_HOST`
+- Public URL: keep runtime-configured via `DEPLOY_PUBLIC_BASE_URL`
+- SSH user: `root` or your deploy user
+- Web server: `apache2` or `nginx`
+- Apache/nginx document root example: `/var/www/medminder`
+- Backup location example: `/var/www/medminder-backups/<RELEASE_ID>`
+
+Do not commit personal hostnames, domains, or server addresses into this runbook. Pass them at deploy time with environment variables.
 
 ## Standard Release Steps
 1. Ensure local branch is up to date (`git pull --ff-only`).
@@ -53,7 +56,7 @@ Common options:
 - `DEPLOY_HOST=root@other-host npm run deploy:live`
 - `DEPLOY_HOST=root@other-host DEPLOY_PUBLIC_BASE_URL=https://other-host npm run deploy:live`
 
-## Canonical Apache Deploy Flow (Current Server)
+## Canonical Apache Deploy Flow
 
 Set release ID locally:
 
@@ -66,22 +69,22 @@ Set release ID locally:
 - `npm run build`
 
 2) Create server backup
-- `ssh -o BatchMode=yes root@medminder.davekoons.com "set -e; mkdir -p /var/www/medminder-backups/${RELEASE_ID}; rsync -a --delete /var/www/medminder/ /var/www/medminder-backups/${RELEASE_ID}/"`
+- `ssh -o BatchMode=yes ${DEPLOY_HOST} "set -e; mkdir -p /var/www/medminder-backups/${RELEASE_ID}; rsync -a --delete /var/www/medminder/ /var/www/medminder-backups/${RELEASE_ID}/"`
 
 3) Upload new build
-- `rsync -avz --delete dist/ root@medminder.davekoons.com:/var/www/medminder/`
+- `rsync -avz --delete dist/ ${DEPLOY_HOST}:/var/www/medminder/`
 
 4) Validate + reload Apache
-- `ssh -o BatchMode=yes root@medminder.davekoons.com "set -e; apache2ctl configtest; systemctl reload apache2; systemctl is-active apache2"`
+- `ssh -o BatchMode=yes ${DEPLOY_HOST} "set -e; apache2ctl configtest; systemctl reload apache2; systemctl is-active apache2"`
 
 5) Post-deploy smoke checks
-- `curl -I https://medminder.davekoons.com`
-- `curl -s https://medminder.davekoons.com/manifest.webmanifest | head -c 200`
+- `curl -I ${DEPLOY_PUBLIC_BASE_URL}`
+- `curl -s ${DEPLOY_PUBLIC_BASE_URL}/manifest.webmanifest | head -c 200`
 
-## Rollback (Current Server)
+## Rollback
 If validation fails, restore from the backup created for that release:
 
-- `ssh -o BatchMode=yes root@medminder.davekoons.com "set -e; rsync -a --delete /var/www/medminder-backups/<RELEASE_ID>/ /var/www/medminder/; apache2ctl configtest; systemctl reload apache2"`
+- `ssh -o BatchMode=yes ${DEPLOY_HOST} "set -e; rsync -a --delete /var/www/medminder-backups/<RELEASE_ID>/ /var/www/medminder/; apache2ctl configtest; systemctl reload apache2"`
 
 ## Generic Template (Other Hosts)
 Use this only when not deploying to the current production host.

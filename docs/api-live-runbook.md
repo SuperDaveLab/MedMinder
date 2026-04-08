@@ -13,7 +13,8 @@ This runbook sets up the Node/Express auth + cloud API on a live Linux host.
 
 - Repo path on server: `/opt/med-minder`
 - API port: `8787`
-- Host: `medminder.davekoons.com`
+- Host (SSH): keep runtime-configured and out of committed docs
+- Public app URL: keep runtime-configured and out of committed docs
 - Apache serves the PWA and will reverse-proxy `/api`
 
 Adjust paths/ports as needed.
@@ -162,7 +163,7 @@ Enable modules once:
 sudo a2enmod proxy proxy_http headers
 ```
 
-Inside your TLS vhost for `medminder.davekoons.com`, add:
+Inside your TLS vhost for your public Med-Minder domain, add:
 
 ```apache
 ProxyPreserveHost On
@@ -181,7 +182,7 @@ sudo systemctl reload apache2
 
 ```bash
 curl -sS http://127.0.0.1:8787/health
-curl -sS https://medminder.davekoons.com/api/notifications/push/public-key
+curl -sS https://your-public-domain.example/api/notifications/push/public-key
 ```
 
 Expected:
