@@ -243,6 +243,7 @@ describe('App persistence flow', () => {
 
   it('triggers due-now reminder once and avoids duplicates using local dedupe log', async () => {
     mockClock.now = '2026-03-28T14:01:00.000Z'
+    const user = userEvent.setup()
 
     const NotificationMock = Notification as unknown as {
       instances: Array<{ title: string; options?: NotificationOptions }>
@@ -256,6 +257,7 @@ describe('App persistence flow', () => {
     render(<App />)
 
     await screen.findByRole('heading', { name: 'Alex Rivera' })
+    await user.click(screen.getByRole('button', { name: 'Enable notifications for this patient' }))
 
     await waitFor(() => {
       expect(NotificationMock.instances.some((entry) => entry.title.includes('Amoxicillin: due now'))).toBe(true)
