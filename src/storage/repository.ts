@@ -157,6 +157,7 @@ export async function deleteDoseEventCascade(doseEventId: string): Promise<void>
 export interface CreateDoseCorrectionInput {
   originalDoseEventId: string
   replacementTimestampGiven: string
+  doseText?: string
   notes?: string
 }
 
@@ -177,7 +178,7 @@ export async function createDoseCorrectionEvent(
     id: crypto.randomUUID(),
     medicationId: originalDoseEvent.medicationId,
     timestampGiven: input.replacementTimestampGiven,
-    doseText: originalDoseEvent.doseText,
+    doseText: input.doseText !== undefined ? input.doseText : originalDoseEvent.doseText,
     givenBy: originalDoseEvent.givenBy,
     notes: input.notes?.trim() ? input.notes.trim() : undefined,
     corrected: true,

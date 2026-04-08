@@ -21,6 +21,7 @@ interface MedicationCardProps {
   onCorrectDose: (
     originalDoseEventId: string,
     replacementTimestampGiven: string,
+    doseText?: string,
     notes?: string,
   ) => Promise<void>
   onDeleteDose: (doseEventId: string) => Promise<void>
@@ -82,16 +83,12 @@ export function MedicationCard({
 }: MedicationCardProps) {
   const [editingDoseEventId, setEditingDoseEventId] = useState<string | null>(null)
   const [replacementTimestampInput, setReplacementTimestampInput] = useState('')
+  const [correctionDoseText, setCorrectionDoseText] = useState('')
   const [correctionNotes, setCorrectionNotes] = useState('')
   const [isSavingCorrection, setIsSavingCorrection] = useState(false)
   const [correctionError, setCorrectionError] = useState<string | null>(null)
   const [isReminderToggleInProgress, setIsReminderToggleInProgress] = useState(false)
   const [reminderToggleError, setReminderToggleError] = useState<string | null>(null)
-
-  const recentDoseEvents = useMemo(
-    () => medicationDoseEvents.slice(0, 5),
-    [medicationDoseEvents],
-  )
 
   const supersededDoseEventIds = useMemo(
     () =>
@@ -113,6 +110,14 @@ export function MedicationCard({
     [medicationDoseEvents],
   )
 
+  const recentDoseEvents = useMemo(
+    () =>
+      medicationDoseEvents
+        .filter((doseEvent) => !supersededDoseEventIds.has(doseEvent.id))
+        .slice(0, 5),
+    [medicationDoseEvents, supersededDoseEventIds],
+  )
+
   const latestDisplayedDoseEvent = recentDoseEvents[0]
   const reminderEnabled = Boolean(medication.reminderSettings?.enabled)
 
@@ -127,6 +132,7 @@ export function MedicationCard({
   const startCorrection = (doseEvent: DoseEvent) => {
     setEditingDoseEventId(doseEvent.id)
     setReplacementTimestampInput(toDateTimeLocalValue(doseEvent.timestampGiven))
+    setCorrectionDoseText(doseEvent.doseText ?? medication.defaultDoseText)
     setCorrectionNotes('')
     setCorrectionError(null)
   }
@@ -134,6 +140,7 @@ export function MedicationCard({
   const cancelCorrection = () => {
     setEditingDoseEventId(null)
     setReplacementTimestampInput('')
+    setCorrectionDoseText('')
     setCorrectionNotes('')
     setCorrectionError(null)
   }
@@ -167,6 +174,7 @@ export function MedicationCard({
       await onCorrectDose(
         doseEventId,
         replacementDate.toISOString(),
+        correctionDoseText.trim() || undefined,
         correctionNotes.trim() || undefined,
       )
       cancelCorrection()
@@ -287,7 +295,7 @@ export function MedicationCard({
                     <strong>{formatAbsoluteDateTime(new Date(doseEvent.timestampGiven))}</strong>
                     <span>{formatRelativeTime(new Date(doseEvent.timestampGiven), now)}</span>
                   </div>
-                  {!doseEvent.corrected && !supersededDoseEventIds.has(doseEvent.id) ? (
+                  {!supersededDoseEventIds.has(doseEvent.id) ? (
                     <div className="dose-entry-actions">
                       <button
                         type="button"
@@ -315,11 +323,6 @@ export function MedicationCard({
                   ) : null}
                 </div>
                 <div className="entry-tags">
-                  {doseEvent.corrected ? (
-                    <span className="entry-tag" data-testid={`entry-tag-corrected-${doseEvent.id}`}>
-                      Corrected
-                    </span>
-                  ) : null}
                   {!doseEvent.corrected && supersededDoseEventIds.has(doseEvent.id) ? (
                     <span className="entry-tag entry-tag-muted" data-testid={`entry-tag-superseded-${doseEvent.id}`}>
                       Superseded
@@ -330,18 +333,23 @@ export function MedicationCard({
                 {doseEvent.givenBy ? <span>Given by: {doseEvent.givenBy}</span> : null}
                 {doseEvent.notes ? <span>Notes: {doseEvent.notes}</span> : null}
                 {doseEvent.corrected ? (
-                  <span>
-                    Supersedes:{' '}
-                    {doseEvent.supersedesDoseEventId && correctionBySupersededId.has(doseEvent.supersedesDoseEventId)
-                      ? formatAbsoluteDateTime(
-                          new Date(
-                            medicationDoseEvents.find(
-                              (entry) => entry.id === doseEvent.supersedesDoseEventId,
-                            )?.timestampGiven ?? doseEvent.timestampGiven,
-                          ),
-                        )
-                      : doseEvent.supersedesDoseEventId}
-                  </span>
+                  <div className="correction-meta-row">
+                    <span className="entry-tag" data-testid={`entry-tag-corrected-${doseEvent.id}`}>
+                      Corrected
+                    </span>
+                    <span className="correction-supersedes-label">
+                      Supersedes:{' '}
+                      {doseEvent.supersedesDoseEventId && correctionBySupersededId.has(doseEvent.supersedesDoseEventId)
+                        ? formatAbsoluteDateTime(
+                            new Date(
+                              medicationDoseEvents.find(
+                                (entry) => entry.id === doseEvent.supersedesDoseEventId,
+                              )?.timestampGiven ?? doseEvent.timestampGiven,
+                            ),
+                          )
+                        : doseEvent.supersedesDoseEventId}
+                    </span>
+                  </div>
                 ) : null}
                 {!doseEvent.corrected && correctionBySupersededId.has(doseEvent.id) ? (
                   <span>
@@ -366,6 +374,16 @@ export function MedicationCard({
                     <p className="correction-helper">
                       Uses your device local time ({Intl.DateTimeFormat().resolvedOptions().timeZone}).
                     </p>
+                    <label>
+                      Dose amount
+                      <input
+                        type="text"
+                        aria-label="Dose amount"
+                        value={correctionDoseText}
+                        onChange={(event) => setCorrectionDoseText(event.target.value)}
+                        placeholder="e.g. 25mg or 50mg"
+                      />
+                    </label>
                     <label>
                       Notes (optional)
                       <input

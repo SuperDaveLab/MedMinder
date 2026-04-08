@@ -24,11 +24,12 @@ import {
   updatePatient,
 } from '../storage/repository'
 
-function createDoseEntry(medicationId: string): DoseEvent {
+function createDoseEntry(medicationId: string, doseText?: string): DoseEvent {
   return {
     id: crypto.randomUUID(),
     medicationId,
     timestampGiven: getCurrentTime().toISOString(),
+    doseText,
     corrected: false,
   }
 }
@@ -72,6 +73,7 @@ export interface UseAppDataResult {
   handleCorrectDose: (
     originalDoseEventId: string,
     replacementTimestampGiven: string,
+    doseText?: string,
     notes?: string,
   ) => Promise<void>
   handleDeleteDose: (doseEventId: string) => Promise<void>
@@ -575,7 +577,7 @@ export function useAppData(authState: AuthSessionState | null): UseAppDataResult
         return
       }
 
-      const doseEntry = createDoseEntry(medication.id)
+      const doseEntry = createDoseEntry(medication.id, medication.defaultDoseText)
 
       if (isCloudMode) {
         await commitCloudState(
@@ -601,6 +603,7 @@ export function useAppData(authState: AuthSessionState | null): UseAppDataResult
   const handleCorrectDose = async (
     originalDoseEventId: string,
     replacementTimestampGiven: string,
+    doseText?: string,
     notes?: string,
   ) => {
     if (!selectedPatientId || isDoseActionInProgress || !appState) {
@@ -624,7 +627,7 @@ export function useAppData(authState: AuthSessionState | null): UseAppDataResult
           id: crypto.randomUUID(),
           medicationId: originalDoseEvent.medicationId,
           timestampGiven: replacementTimestampGiven,
-          doseText: originalDoseEvent.doseText,
+          doseText: trimOptional(doseText) ?? originalDoseEvent.doseText,
           givenBy: originalDoseEvent.givenBy,
           notes: trimOptional(notes),
           corrected: true,
@@ -642,6 +645,7 @@ export function useAppData(authState: AuthSessionState | null): UseAppDataResult
         await createDoseCorrectionEvent({
           originalDoseEventId,
           replacementTimestampGiven,
+          doseText: trimOptional(doseText),
           notes,
         })
 

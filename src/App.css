@@ -543,6 +543,24 @@ button {
   color: #334155;
 }
 
+.correction-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.correction-supersedes-label {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.entry-tag-dose {
+  background: #fef9ec;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
 .med-history-primary-row {
   display: flex;
   justify-content: space-between;

@@ -19,6 +19,7 @@ interface PatientMedicationListViewProps {
   onCorrectDose: (
     originalDoseEventId: string,
     replacementTimestampGiven: string,
+    doseText?: string,
     notes?: string,
   ) => Promise<void>
   onDeleteDose: (doseEventId: string) => Promise<void>

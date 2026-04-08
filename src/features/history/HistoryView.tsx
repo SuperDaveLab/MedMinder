@@ -86,6 +86,7 @@ export function HistoryView({ patient, medications, doseEvents, now }: HistoryVi
                         {!entry.corrected && correctionBySupersededId.has(entry.id)
                           ? <span className="entry-tag entry-tag-muted">Superseded</span>
                           : null}
+                        {entry.doseText ? <span className="entry-tag entry-tag-dose">{entry.doseText}</span> : null}
                       </div>
                     </div>
                     <span>

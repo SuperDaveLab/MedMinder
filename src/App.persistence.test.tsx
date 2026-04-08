@@ -149,9 +149,10 @@ describe('App persistence flow', () => {
     })
 
     await waitFor(() => {
+      // The correction entry is visible in the Care card with its tag
       expect(screen.getByTestId('entry-tag-corrected-00000000-0000-4000-8000-000000000001')).toBeTruthy()
-      expect(screen.getByTestId('entry-tag-superseded-dose-seed-1')).toBeTruthy()
-      expect(screen.getByText(/Superseded by correction at/)).toBeTruthy()
+      // The superseded original is hidden from the Care card (only shown in History)
+      expect(screen.queryByTestId('entry-tag-superseded-dose-seed-1')).toBeNull()
     })
 
     await waitFor(() => {
