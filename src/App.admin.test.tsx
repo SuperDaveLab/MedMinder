@@ -27,6 +27,7 @@ async function clearDatabase(): Promise<void> {
 describe('App administration flow', () => {
   beforeEach(async () => {
     await clearDatabase()
+    window.history.replaceState({}, '', '/')
 
     vi.spyOn(window, 'confirm').mockReturnValue(true)
 
@@ -61,7 +62,7 @@ describe('App administration flow', () => {
     await user.click(screen.getByTestId('save-patient-button'))
 
     await waitFor(() => {
-      expect(screen.getByRole('option', { name: 'Jamie Carter' })).toBeTruthy()
+      expect(screen.getByText('Jamie Carter')).toBeTruthy()
     })
   })
 
@@ -213,7 +214,7 @@ describe('App administration flow', () => {
     await user.click(screen.getByTestId('save-patient-button'))
 
     await waitFor(() => {
-      expect(screen.getByRole('option', { name: 'Alex Rivera Updated' })).toBeTruthy()
+      expect(screen.getByText('Alex Rivera Updated')).toBeTruthy()
     })
   })
 
@@ -227,7 +228,7 @@ describe('App administration flow', () => {
     await user.click(screen.getByTestId('delete-patient-patient-1'))
 
     await waitFor(() => {
-      expect(screen.getByRole('option', { name: 'Alex Rivera' })).toBeTruthy()
+      expect(screen.getByText('Alex Rivera')).toBeTruthy()
     })
   })
 
@@ -357,7 +358,7 @@ describe('App administration flow', () => {
     await user.click(screen.getByTestId('save-patient-button'))
 
     await waitFor(() => {
-      expect(screen.getByRole('option', { name: 'Temporary Patient' })).toBeTruthy()
+      expect(screen.getByText('Temporary Patient')).toBeTruthy()
     })
 
     await user.click(screen.getByTestId('tab-more'))
@@ -372,6 +373,8 @@ describe('App administration flow', () => {
     await waitFor(() => {
       expect(screen.getByText('Backup restored successfully.')).toBeTruthy()
     })
+
+    await user.click(screen.getByTestId('tab-care'))
 
     await waitFor(() => {
       expect(screen.queryByRole('option', { name: 'Temporary Patient' })).toBeNull()

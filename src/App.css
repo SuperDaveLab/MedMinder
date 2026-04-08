@@ -1333,11 +1333,64 @@ button {
   min-width: min(100%, 320px);
 }
 
+.workspace-context-header {
+  display: grid;
+  gap: 0.1rem;
+  padding: 0.2rem 0;
+}
+
+.workspace-context-eyebrow {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brand);
+}
+
+.workspace-context-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
 .patient-switcher-row {
   display: flex;
   align-items: center;
   gap: 0.4rem;
   flex-wrap: nowrap;
+}
+
+.patient-context-block {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 0;
+  flex: 1 1 220px;
+}
+
+.patient-context-block.is-passive .patient-selector-compact {
+  background: #ffffff;
+  border-style: dashed;
+  opacity: 0.82;
+}
+
+.patient-context-block.is-passive {
+  gap: 0;
+}
+
+.patient-context-label {
+  margin: 0;
+  padding-left: 0.2rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.patient-context-block.is-primary .patient-context-label {
+  color: var(--brand);
 }
 
 .patient-selector-compact {
@@ -1476,15 +1529,49 @@ button {
 .bottom-nav {
   order: 3;
   position: relative;
-  height: 4.8rem;
+  min-height: 5.8rem;
   background: var(--paper);
   border-top: 1px solid var(--line);
   display: flex;
-  justify-content: space-around;
-  align-items: center;
-  padding: 0.25rem 0.5rem calc(0.25rem + env(safe-area-inset-bottom, 0px));
+  align-items: stretch;
+  gap: 0.55rem;
+  padding: 0.4rem 0.55rem calc(0.35rem + env(safe-area-inset-bottom, 0px));
   box-shadow: 0 -4px 16px -8px rgba(15, 23, 42, 0.15);
   z-index: 20;
+}
+
+.bottom-nav-group {
+  flex: 1 1 0;
+  min-width: 0;
+  display: grid;
+  gap: 0.3rem;
+  align-content: start;
+}
+
+.bottom-nav-group-label {
+  margin: 0;
+  padding-left: 0.2rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.bottom-nav-group-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 0.25rem;
+  padding: 0.15rem;
+  border: 1px solid rgba(216, 225, 232, 0.9);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.bottom-nav-divider {
+  width: 1px;
+  align-self: stretch;
+  background: linear-gradient(180deg, transparent 0%, var(--line) 12%, var(--line) 88%, transparent 100%);
 }
 
 .bottom-nav-item {
@@ -1499,7 +1586,8 @@ button {
   cursor: pointer;
   padding: 0.4rem;
   border-radius: 12px;
-  min-width: 64px;
+  min-width: 0;
+  width: 100%;
 }
 
 .bottom-nav-item.is-active {
@@ -1613,7 +1701,7 @@ button {
   .top-app-bar {
     position: absolute;
     top: 0;
-    left: 80px;
+    left: 116px;
     right: 0;
     padding: 1rem 1.5rem;
     box-shadow: none;
@@ -1626,6 +1714,14 @@ button {
 
   .patient-switcher-row {
     gap: 0.6rem;
+  }
+
+  .patient-context-label {
+    font-size: 0.72rem;
+  }
+
+  .workspace-context-title {
+    font-size: 1.05rem;
   }
 
   .medication-section-header {
@@ -1656,15 +1752,29 @@ button {
   .bottom-nav {
     order: 1;
     position: relative;
-    width: 80px;
+    width: 116px;
     height: 100dvh;
     flex-direction: column;
     justify-content: flex-start;
-    padding-top: 1.5rem;
-    gap: 1.5rem;
+    padding: 1rem 0.55rem 1.4rem;
+    gap: 0.7rem;
     border-top: none;
     border-right: 1px solid var(--line);
     box-shadow: 2px 0 12px -8px rgba(15, 23, 42, 0.15);
+  }
+
+  .bottom-nav-group {
+    gap: 0.45rem;
+  }
+
+  .bottom-nav-group-items {
+    grid-template-columns: 1fr;
+  }
+
+  .bottom-nav-divider {
+    width: auto;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, var(--line) 12%, var(--line) 88%, transparent 100%);
   }
 
   .bottom-nav-item {

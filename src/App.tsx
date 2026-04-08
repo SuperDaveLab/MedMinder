@@ -223,6 +223,7 @@ function App() {
   const medicationsForAdministration = appState.medications.filter(
     (medication) => medication.patientId === patient.id,
   )
+  const isPatientWorkspace = activeView === 'care' || activeView === 'history' || activeView === 'meds'
 
   const buildMedicationUpsertInput = (
     medication: Medication,
@@ -261,75 +262,86 @@ function App() {
     <div className="layout-root">
       <header className="top-app-bar no-print">
         <div className="top-app-bar-main">
-          <div className="patient-switcher-row">
-            <label className="patient-selector-compact">
-              <span className="patient-avatar" aria-hidden="true">👤</span>
-              <select
-                aria-label="Selected patient"
-                value={patient.id}
-                onChange={(event) => void handlePatientChange(event.target.value)}
-              >
-                {appState.patients.map((item) => (
-                  <option key={item.id} value={item.id}>{item.displayName}</option>
-                ))}
-              </select>
-            </label>
-            <button
-              type="button"
-              className="utility-button patient-add-trigger"
-              data-testid="open-add-patient-button"
-              aria-expanded={isAddPatientFormOpen}
-              aria-label="Add patient"
-              onClick={handleOpenAddPatientForm}
-            >
-              {isAddPatientFormOpen ? (
-                <>
-                  <span className="button-label-mobile" aria-hidden="true">×</span>
-                  <span className="button-label-desktop">Close</span>
-                </>
-              ) : (
-                <>
-                  <span className="button-label-mobile" aria-hidden="true">+</span>
-                  <span className="button-label-desktop">Add patient</span>
-                </>
-              )}
-            </button>
-          </div>
-
-          {isAddPatientFormOpen ? (
-            <form className="quick-add-patient-form" onSubmit={(event) => void handleAddPatientSubmit(event)}>
-              <label className="quick-add-patient-field">
-                <span>New patient name</span>
-                <input
-                  data-testid="header-patient-display-name-input"
-                  type="text"
-                  value={newPatientDisplayName}
-                  onChange={(event) => setNewPatientDisplayName(event.target.value)}
-                  placeholder="Add patient name"
-                  autoFocus
-                />
-              </label>
-              {newPatientError ? <p className="form-error quick-add-patient-error">{newPatientError}</p> : null}
-              <div className="quick-add-patient-actions">
+          {isPatientWorkspace ? (
+            <>
+              <div className="patient-switcher-row">
+                <div className="patient-context-block is-primary">
+                  <p className="patient-context-label">Selected patient</p>
+                  <label className="patient-selector-compact">
+                    <span className="patient-avatar" aria-hidden="true">👤</span>
+                    <select
+                      aria-label="Selected patient"
+                      value={patient.id}
+                      onChange={(event) => void handlePatientChange(event.target.value)}
+                    >
+                      {appState.patients.map((item) => (
+                        <option key={item.id} value={item.id}>{item.displayName}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
                 <button
-                  type="submit"
                   className="utility-button"
-                  data-testid="header-save-patient-button"
-                  disabled={isAddPatientInProgress}
-                >
-                  {isAddPatientInProgress ? 'Adding...' : 'Save patient'}
-                </button>
-                <button
                   type="button"
-                  className="utility-button"
-                  disabled={isAddPatientInProgress}
-                  onClick={resetAddPatientForm}
+                  data-testid="open-add-patient-button"
+                  aria-expanded={isAddPatientFormOpen}
+                  aria-label="Add patient"
+                  onClick={handleOpenAddPatientForm}
                 >
-                  Cancel
+                  {isAddPatientFormOpen ? (
+                    <>
+                      <span className="button-label-mobile" aria-hidden="true">×</span>
+                      <span className="button-label-desktop">Close</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="button-label-mobile" aria-hidden="true">+</span>
+                      <span className="button-label-desktop">Add patient</span>
+                    </>
+                  )}
                 </button>
               </div>
-            </form>
-          ) : null}
+              {isAddPatientFormOpen ? (
+                <form className="quick-add-patient-form" onSubmit={(event) => void handleAddPatientSubmit(event)}>
+                  <label className="quick-add-patient-field">
+                    <span>New patient name</span>
+                    <input
+                      data-testid="header-patient-display-name-input"
+                      type="text"
+                      value={newPatientDisplayName}
+                      onChange={(event) => setNewPatientDisplayName(event.target.value)}
+                      placeholder="Add patient name"
+                      autoFocus
+                    />
+                  </label>
+                  {newPatientError ? <p className="form-error quick-add-patient-error">{newPatientError}</p> : null}
+                  <div className="quick-add-patient-actions">
+                    <button
+                      type="submit"
+                      className="utility-button"
+                      data-testid="header-save-patient-button"
+                      disabled={isAddPatientInProgress}
+                    >
+                      {isAddPatientInProgress ? 'Adding...' : 'Save patient'}
+                    </button>
+                    <button
+                      type="button"
+                      className="utility-button"
+                      disabled={isAddPatientInProgress}
+                      onClick={resetAddPatientForm}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              ) : null}
+            </>
+          ) : (
+            <div className="workspace-context-header">
+              <p className="workspace-context-eyebrow">App workspace</p>
+              <p className="workspace-context-title">{activeView === 'patients' ? 'Patients' : 'More'}</p>
+            </div>
+          )}
         </div>
         {uiError ? <p className="header-error">{uiError}</p> : null}
         {activeAlarm ? (
@@ -351,26 +363,37 @@ function App() {
       </header>
 
       <nav className="bottom-nav no-print" aria-label="Primary views">
-        <button className={`bottom-nav-item ${activeView === 'care' ? 'is-active' : ''}`} data-testid="tab-care" onClick={() => setView('care')}>
-          <span className="nav-icon" aria-hidden="true">💊</span>
-          <span className="nav-label">Care</span>
-        </button>
-        <button className={`bottom-nav-item ${activeView === 'history' ? 'is-active' : ''}`} data-testid="tab-history" onClick={() => setView('history')}>
-          <span className="nav-icon" aria-hidden="true">📋</span>
-          <span className="nav-label">History</span>
-        </button>
-        <button className={`bottom-nav-item ${activeView === 'meds' ? 'is-active' : ''}`} data-testid="tab-meds" onClick={() => setView('meds')}>
-          <span className="nav-icon" aria-hidden="true">✏️</span>
-          <span className="nav-label">Meds</span>
-        </button>
-        <button className={`bottom-nav-item ${activeView === 'patients' ? 'is-active' : ''}`} data-testid="tab-patients" onClick={() => setView('patients')}>
-          <span className="nav-icon" aria-hidden="true">👥</span>
-          <span className="nav-label">Patients</span>
-        </button>
-        <button className={`bottom-nav-item ${activeView === 'more' ? 'is-active' : ''}`} data-testid="tab-more" onClick={() => setView('more')}>
-          <span className="nav-icon" aria-hidden="true">⚙️</span>
-          <span className="nav-label">More</span>
-        </button>
+        <div className="bottom-nav-group" aria-label="Patient views">
+          <p className="bottom-nav-group-label">Patient</p>
+          <div className="bottom-nav-group-items">
+            <button className={`bottom-nav-item ${activeView === 'care' ? 'is-active' : ''}`} data-testid="tab-care" onClick={() => setView('care')}>
+              <span className="nav-icon" aria-hidden="true">💊</span>
+              <span className="nav-label">Care</span>
+            </button>
+            <button className={`bottom-nav-item ${activeView === 'history' ? 'is-active' : ''}`} data-testid="tab-history" onClick={() => setView('history')}>
+              <span className="nav-icon" aria-hidden="true">📋</span>
+              <span className="nav-label">History</span>
+            </button>
+            <button className={`bottom-nav-item ${activeView === 'meds' ? 'is-active' : ''}`} data-testid="tab-meds" onClick={() => setView('meds')}>
+              <span className="nav-icon" aria-hidden="true">✏️</span>
+              <span className="nav-label">Meds</span>
+            </button>
+          </div>
+        </div>
+        <div className="bottom-nav-divider" aria-hidden="true" />
+        <div className="bottom-nav-group" aria-label="App views">
+          <p className="bottom-nav-group-label">App</p>
+          <div className="bottom-nav-group-items">
+            <button className={`bottom-nav-item ${activeView === 'patients' ? 'is-active' : ''}`} data-testid="tab-patients" onClick={() => setView('patients')}>
+              <span className="nav-icon" aria-hidden="true">👥</span>
+              <span className="nav-label">Patients</span>
+            </button>
+            <button className={`bottom-nav-item ${activeView === 'more' ? 'is-active' : ''}`} data-testid="tab-more" onClick={() => setView('more')}>
+              <span className="nav-icon" aria-hidden="true">⚙️</span>
+              <span className="nav-label">More</span>
+            </button>
+          </div>
+        </div>
       </nav>
 
       <main className="main-content-scroll">

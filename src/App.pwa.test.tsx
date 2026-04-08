@@ -31,6 +31,7 @@ async function clearDatabase(): Promise<void> {
 describe('App PWA polish behavior', () => {
   beforeEach(async () => {
     await clearDatabase()
+    window.history.replaceState({}, '', '/')
 
     vi.spyOn(window, 'confirm').mockReturnValue(true)
 

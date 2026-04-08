@@ -238,6 +238,7 @@ async function clearDatabase(): Promise<void> {
 describe('App workspace mode flow', () => {
   beforeEach(async () => {
     await clearDatabase()
+    window.history.replaceState({}, '', '/')
 
     vi.spyOn(window, 'confirm').mockReturnValue(true)
 
@@ -287,7 +288,7 @@ describe('App workspace mode flow', () => {
     await user.click(screen.getByTestId('save-patient-button'))
 
     await waitFor(() => {
-      expect(screen.getByRole('option', { name: 'Jamie Carter' })).toBeTruthy()
+      expect(screen.getByText('Jamie Carter')).toBeTruthy()
     })
 
     await user.click(screen.getByTestId('tab-more'))
@@ -297,7 +298,7 @@ describe('App workspace mode flow', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Signed in as caregiver@example.com')).toBeTruthy()
-      expect(screen.getByRole('option', { name: 'Jamie Carter' })).toBeTruthy()
+      expect(screen.getByText('App workspace')).toBeTruthy()
     })
 
     const localState = await getLocalMedMinderState()
@@ -343,6 +344,11 @@ describe('App workspace mode flow', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Signed in as caregiver@example.com')).toBeTruthy()
+    })
+
+    await user.click(screen.getByTestId('tab-care'))
+
+    await waitFor(() => {
       expect(screen.getByRole('option', { name: 'Cloud Riley' })).toBeTruthy()
     })
 
@@ -360,7 +366,7 @@ describe('App workspace mode flow', () => {
     await user.click(screen.getByTestId('save-patient-button'))
 
     await waitFor(() => {
-      expect(screen.getByRole('option', { name: 'Cloud Added' })).toBeTruthy()
+      expect(screen.getByText('Cloud Added')).toBeTruthy()
     })
 
     expect(controller.syncRequests).toHaveLength(1)
@@ -374,6 +380,12 @@ describe('App workspace mode flow', () => {
 
     await user.click(screen.getByTestId('tab-more'))
     await user.click(screen.getByTestId('sign-out-button'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('auth-email-input')).toBeTruthy()
+    })
+
+    await user.click(screen.getByTestId('tab-care'))
 
     await waitFor(() => {
       expect(screen.getByRole('option', { name: 'Alex Rivera' })).toBeTruthy()
@@ -548,7 +560,6 @@ describe('App workspace mode flow', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Signed in as caregiver@example.com')).toBeTruthy()
-      expect(screen.getByRole('option', { name: 'Cloud Riley' })).toBeTruthy()
     })
 
     await user.type(screen.getByTestId('current-password-input'), 'password123')
