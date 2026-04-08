@@ -72,6 +72,7 @@ export function buildReminderNotificationCandidates(
   doseEvents: DoseEvent[],
   now: Date,
   disabledPatientIds?: ReadonlySet<string>,
+  validPatientIds?: ReadonlySet<string>,
 ): ReminderNotificationCandidate[] {
   if (Number.isNaN(now.getTime())) {
     return []
@@ -80,6 +81,10 @@ export function buildReminderNotificationCandidates(
   const candidates: ReminderNotificationCandidate[] = []
 
   for (const medication of medications) {
+    if (validPatientIds && !validPatientIds.has(medication.patientId)) {
+      continue
+    }
+
     if (disabledPatientIds?.has(medication.patientId)) {
       continue
     }

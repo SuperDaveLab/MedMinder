@@ -1,5 +1,6 @@
 import type { DoseEvent, Medication, Patient } from '../domain/types'
 import { parseLocalDateToTimestamp } from '../domain/dateParsing'
+import { sanitizeMedMinderState } from '../domain/stateIntegrity'
 import type { MedMinderBackup } from './backup'
 import { initialSampleState } from '../data/sampleData'
 import { medMinderDb } from './database'
@@ -478,6 +479,7 @@ export async function ensureSeeded(): Promise<void> {
   ])
 
   if (patientCount !== 0 || medicationCount !== 0 || doseEventCount !== 0) {
+    await repairLocalClinicalDataIntegrity()
     return
   }
 
@@ -492,6 +494,41 @@ export async function ensureSeeded(): Promise<void> {
       await medMinderDb.doseEvents.bulkPut(initialSampleState.doseEvents)
     },
   )
+}
+
+export async function repairLocalClinicalDataIntegrity(): Promise<{
+  removedMedicationCount: number
+  removedDoseEventCount: number
+}> {
+  const localState = await getLocalMedMinderState()
+  const sanitized = sanitizeMedMinderState(localState)
+
+  if (
+    sanitized.removedMedicationIds.length === 0
+    && sanitized.removedDoseEventIds.length === 0
+  ) {
+    return {
+      removedMedicationCount: 0,
+      removedDoseEventCount: 0,
+    }
+  }
+
+  await medMinderDb.transaction(
+    'rw',
+    medMinderDb.medications,
+    medMinderDb.doseEvents,
+    async () => {
+      await medMinderDb.medications.clear()
+      await medMinderDb.doseEvents.clear()
+      await medMinderDb.medications.bulkPut(sanitized.state.medications)
+      await medMinderDb.doseEvents.bulkPut(sanitized.state.doseEvents)
+    },
+  )
+
+  return {
+    removedMedicationCount: sanitized.removedMedicationIds.length,
+    removedDoseEventCount: sanitized.removedDoseEventIds.length,
+  }
 }
 
 export async function loadPatientMedicationView(patientId: string): Promise<{

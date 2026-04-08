@@ -459,4 +459,35 @@ describe('reminder notifications', () => {
     expect(filtered).toHaveLength(1)
     expect(filtered[0].patientId).toBe('patient-1')
   })
+
+  it('skips medications whose patient id no longer exists in the current patient set', () => {
+    const now = new Date('2026-03-28T14:01:00.000Z')
+
+    const orphanedMedication: Medication = {
+      ...baseMedication,
+      id: 'med-orphaned',
+      patientId: 'deleted-patient',
+      name: 'Orphaned Medication',
+      reminderSettings: { enabled: true, earlyReminderMinutes: 10 },
+    }
+
+    const orphanedDoseEvent: DoseEvent = {
+      id: 'dose-orphaned',
+      medicationId: 'med-orphaned',
+      timestampGiven: '2026-03-28T06:00:00.000Z',
+      corrected: false,
+    }
+
+    const filtered = buildReminderNotificationCandidates(
+      [baseMedication, orphanedMedication],
+      [...baseDoseEvents, orphanedDoseEvent],
+      now,
+      undefined,
+      new Set(['patient-1']),
+    )
+
+    expect(filtered).toHaveLength(1)
+    expect(filtered[0].patientId).toBe('patient-1')
+    expect(filtered[0].medicationId).toBe('med-1')
+  })
 })

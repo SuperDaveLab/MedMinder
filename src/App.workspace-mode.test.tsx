@@ -260,6 +260,9 @@ describe('App workspace mode flow', () => {
 
     expect(migratedState.patients.map((patient) => patient.displayName)).toContain('Alex Rivera')
     expect(migratedState.patients.map((patient) => patient.displayName)).toContain('Jamie Carter')
+    expect(
+      migratedState.patients.find((patient) => patient.displayName === 'Alex Rivera')?.notificationsEnabled,
+    ).toBe(false)
     expect(migratedState.medications).toHaveLength(initialSampleState.medications.length)
     expect(migratedState.doseEvents).toHaveLength(initialSampleState.doseEvents.length)
   })

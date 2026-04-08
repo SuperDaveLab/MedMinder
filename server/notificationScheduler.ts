@@ -72,12 +72,21 @@ async function checkAccountNotifications(accountId: string, now: Date): Promise<
   ])
 
   const sentLog = await getNotificationLog(accountId)
+  const validPatientIds = new Set(
+    state.patients.map((patient) => patient.id),
+  )
   const disabledPatientIds = new Set(
     state.patients
       .filter((patient) => patient.notificationsEnabled === false)
       .map((patient) => patient.id),
   )
-  const candidates = buildReminderNotificationCandidates(state.medications, state.doseEvents, now, disabledPatientIds)
+  const candidates = buildReminderNotificationCandidates(
+    state.medications,
+    state.doseEvents,
+    now,
+    disabledPatientIds,
+    validPatientIds,
+  )
   const unsent = filterUnsentReminderCandidates(candidates, sentLog)
   const patientNameById = Object.fromEntries(
     state.patients.map((patient) => [patient.id, patient.displayName]),

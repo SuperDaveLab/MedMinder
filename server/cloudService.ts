@@ -4,6 +4,7 @@ import type {
   CloudSyncRequest,
   CloudSyncResponse,
 } from '../src/domain/cloudSync'
+import type { RowDataPacket } from 'mysql2/promise'
 import type { DoseEvent, Medication, Patient } from '../src/domain/types'
 import { dbPool } from './db'
 
@@ -17,6 +18,14 @@ export interface CloudAccountState {
   patients: Patient[]
   medications: Medication[]
   doseEvents: DoseEvent[]
+}
+
+interface MedicationIdRow extends RowDataPacket {
+  medication_id: string
+}
+
+interface PayloadRow extends RowDataPacket {
+  payload_json: string
 }
 
 function nowIso(): string {
@@ -78,6 +87,30 @@ async function applyMutation(accountId: string, mutation: CloudMutation): Promis
 
   if (mutation.kind === 'delete') {
     if (mutation.entityType === 'patient') {
+      const [medicationRows] = await dbPool.query<MedicationIdRow[]>(
+        `
+          SELECT medication_id
+          FROM cloud_medications
+          WHERE account_id = ?
+            AND JSON_UNQUOTE(JSON_EXTRACT(payload_json, '$.patientId')) = ?
+        `,
+        [accountId, mutation.recordId],
+      )
+
+      if (medicationRows.length > 0) {
+        const medicationIds = medicationRows.map((row) => row.medication_id)
+        const placeholders = medicationIds.map(() => '?').join(', ')
+
+        await dbPool.query(
+          `DELETE FROM cloud_dose_events WHERE account_id = ? AND medication_id IN (${placeholders})`,
+          [accountId, ...medicationIds],
+        )
+        await dbPool.query(
+          `DELETE FROM cloud_medications WHERE account_id = ? AND medication_id IN (${placeholders})`,
+          [accountId, ...medicationIds],
+        )
+      }
+
       await dbPool.query(
         'DELETE FROM cloud_patients WHERE account_id = ? AND patient_id = ?',
         [accountId, mutation.recordId],
@@ -86,6 +119,10 @@ async function applyMutation(accountId: string, mutation: CloudMutation): Promis
     }
 
     if (mutation.entityType === 'medication') {
+      await dbPool.query(
+        'DELETE FROM cloud_dose_events WHERE account_id = ? AND medication_id = ?',
+        [accountId, mutation.recordId],
+      )
       await dbPool.query(
         'DELETE FROM cloud_medications WHERE account_id = ? AND medication_id = ?',
         [accountId, mutation.recordId],
@@ -180,17 +217,17 @@ export async function applyCloudSyncRequest(
 }
 
 export async function getCloudAccountState(accountId: string): Promise<CloudAccountState> {
-  const [patientRows] = await dbPool.query<Array<{ payload_json: string }>>(
+  const [patientRows] = await dbPool.query<PayloadRow[]>(
     'SELECT payload_json FROM cloud_patients WHERE account_id = ?',
     [accountId],
   )
 
-  const [medicationRows] = await dbPool.query<Array<{ payload_json: string }>>(
+  const [medicationRows] = await dbPool.query<PayloadRow[]>(
     'SELECT payload_json FROM cloud_medications WHERE account_id = ?',
     [accountId],
   )
 
-  const [doseEventRows] = await dbPool.query<Array<{ payload_json: string }>>(
+  const [doseEventRows] = await dbPool.query<PayloadRow[]>(
     'SELECT payload_json FROM cloud_dose_events WHERE account_id = ?',
     [accountId],
   )

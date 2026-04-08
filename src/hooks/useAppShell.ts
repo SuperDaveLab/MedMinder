@@ -264,6 +264,9 @@ export function useAppShell({ appState, now, authState }: UseAppShellParams) {
     reminderRunInFlightRef.current = true
 
     try {
+      const validPatientIds = new Set(
+        currentState.patients.map((patient) => patient.id),
+      )
       const disabledPatientIds = new Set(
         currentState.patients
           .filter((patient) => patient.notificationsEnabled === false)
@@ -274,6 +277,7 @@ export function useAppShell({ appState, now, authState }: UseAppShellParams) {
         currentState.doseEvents,
         currentNow,
         disabledPatientIds,
+        validPatientIds,
       )
 
       if (candidates.length === 0) {

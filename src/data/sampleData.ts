@@ -5,6 +5,7 @@ export const initialSampleState: MedMinderState = {
     {
       id: 'patient-1',
       displayName: 'Alex Rivera',
+      notificationsEnabled: false,
     },
   ],
   medications: [

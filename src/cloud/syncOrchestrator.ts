@@ -1,5 +1,6 @@
 import type { AuthSessionState } from '../domain/auth'
 import { buildBootstrapSyncRequest } from '../domain/cloudSync'
+import { sanitizeMedMinderState } from '../domain/stateIntegrity'
 import type { MedMinderState } from '../domain/types'
 import { clearLocalClinicalData, getLocalMedMinderState } from '../storage/repository'
 import { createCloudSyncApiClient } from './syncClient'
@@ -17,7 +18,7 @@ function buildDeviceIdentity() {
 }
 
 function buildBootstrapRequest(authState: AuthSessionState, state: MedMinderState) {
-  return buildBootstrapSyncRequest(state, {
+  return buildBootstrapSyncRequest(sanitizeMedMinderState(state).state, {
     accountId: authState.account.accountId,
     now: new Date(),
     device: buildDeviceIdentity(),
@@ -40,7 +41,8 @@ export async function startCloudSession(authState: AuthSessionState): Promise<vo
 
 export async function fetchCloudState(authState: AuthSessionState): Promise<MedMinderState> {
   const client = createCloudSyncApiClient(getApiBaseUrl())
-  return client.getState(authState)
+  const state = await client.getState(authState)
+  return sanitizeMedMinderState(state).state
 }
 
 // Write strategy: cloud writes currently use full-state replacement via a
