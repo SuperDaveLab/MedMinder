@@ -15,6 +15,7 @@ interface CareViewProps {
     replacementTimestampGiven: string,
     notes?: string,
   ) => Promise<void>
+  onDeleteDose: (doseEventId: string) => Promise<void>
   onToggleMedicationReminder: (medication: Medication, enabled: boolean) => Promise<void>
   onTogglePatientNotifications: (patientId: string, enabled: boolean) => Promise<void>
   actionsDisabled: boolean
@@ -29,6 +30,7 @@ export function CareView({
   onAddMedication,
   onGiveDose,
   onCorrectDose,
+  onDeleteDose,
   onToggleMedicationReminder,
   onTogglePatientNotifications,
   actionsDisabled,
@@ -60,6 +62,7 @@ export function CareView({
           onAddMedication={onAddMedication}
           onGiveDose={onGiveDose}
           onCorrectDose={onCorrectDose}
+          onDeleteDose={onDeleteDose}
           onToggleMedicationReminder={onToggleMedicationReminder}
           onTogglePatientNotifications={onTogglePatientNotifications}
           actionsDisabled={actionsDisabled}

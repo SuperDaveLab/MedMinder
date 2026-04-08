@@ -126,6 +126,34 @@ export async function addDoseEvent(doseEvent: DoseEvent): Promise<void> {
   await medMinderDb.doseEvents.add(doseEvent)
 }
 
+export async function deleteDoseEventCascade(doseEventId: string): Promise<void> {
+  await medMinderDb.transaction('rw', medMinderDb.doseEvents, async () => {
+    const doseEvents = await medMinderDb.doseEvents.toArray()
+    const idsToDelete = new Set<string>()
+    const queue: string[] = [doseEventId]
+
+    while (queue.length > 0) {
+      const currentDoseEventId = queue.shift()
+
+      if (!currentDoseEventId || idsToDelete.has(currentDoseEventId)) {
+        continue
+      }
+
+      idsToDelete.add(currentDoseEventId)
+
+      for (const doseEvent of doseEvents) {
+        if (doseEvent.corrected && doseEvent.supersedesDoseEventId === currentDoseEventId) {
+          queue.push(doseEvent.id)
+        }
+      }
+    }
+
+    if (idsToDelete.size > 0) {
+      await medMinderDb.doseEvents.where('id').anyOf([...idsToDelete]).delete()
+    }
+  })
+}
+
 export interface CreateDoseCorrectionInput {
   originalDoseEventId: string
   replacementTimestampGiven: string

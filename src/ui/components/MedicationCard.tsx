@@ -23,6 +23,7 @@ interface MedicationCardProps {
     replacementTimestampGiven: string,
     notes?: string,
   ) => Promise<void>
+  onDeleteDose: (doseEventId: string) => Promise<void>
   onToggleReminderEnabled: (medication: Medication, enabled: boolean) => Promise<void>
 }
 
@@ -76,6 +77,7 @@ export function MedicationCard({
   patientNotificationsEnabled,
   onLogDose,
   onCorrectDose,
+  onDeleteDose,
   onToggleReminderEnabled,
 }: MedicationCardProps) {
   const [editingDoseEventId, setEditingDoseEventId] = useState<string | null>(null)
@@ -175,6 +177,25 @@ export function MedicationCard({
     }
   }
 
+  const deleteDose = async (doseEventId: string) => {
+    const confirmed = window.confirm('Delete this dose entry? This cannot be undone.')
+
+    if (!confirmed) {
+      return
+    }
+
+    setCorrectionError(null)
+
+    try {
+      await onDeleteDose(doseEventId)
+      if (editingDoseEventId === doseEventId) {
+        cancelCorrection()
+      }
+    } catch {
+      setCorrectionError('Unable to delete dose. Please try again.')
+    }
+  }
+
   const handleReminderToggle = async (enabled: boolean) => {
     if (isReminderToggleInProgress || actionsDisabled) {
       return
@@ -267,17 +288,30 @@ export function MedicationCard({
                     <span>{formatRelativeTime(new Date(doseEvent.timestampGiven), now)}</span>
                   </div>
                   {!doseEvent.corrected && !supersededDoseEventIds.has(doseEvent.id) ? (
-                    <button
-                      type="button"
-                      className="correct-button inline-edit-trigger"
-                      disabled={actionsDisabled || isSavingCorrection}
-                      onClick={() => startCorrection(doseEvent)}
-                      data-testid={`correct-dose-${doseEvent.id}`}
-                      aria-label="Edit dose entry"
-                    >
-                      <span className="inline-edit-icon" aria-hidden="true">✎</span>
-                      <span className="inline-edit-label">Edit</span>
-                    </button>
+                    <div className="dose-entry-actions">
+                      <button
+                        type="button"
+                        className="correct-button inline-edit-trigger"
+                        disabled={actionsDisabled || isSavingCorrection}
+                        onClick={() => startCorrection(doseEvent)}
+                        data-testid={`correct-dose-${doseEvent.id}`}
+                        aria-label="Edit dose entry"
+                      >
+                        <span className="inline-edit-icon" aria-hidden="true">✎</span>
+                        <span className="inline-edit-label">Edit</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="correct-button inline-edit-trigger"
+                        disabled={actionsDisabled || isSavingCorrection}
+                        onClick={() => void deleteDose(doseEvent.id)}
+                        data-testid={`delete-dose-${doseEvent.id}`}
+                        aria-label="Delete dose entry"
+                      >
+                        <span className="inline-edit-icon" aria-hidden="true">🗑</span>
+                        <span className="inline-edit-label">Delete</span>
+                      </button>
+                    </div>
                   ) : null}
                 </div>
                 <div className="entry-tags">
@@ -351,7 +385,7 @@ export function MedicationCard({
                         onClick={() => void saveCorrection(doseEvent.id)}
                         aria-label="Save correction"
                       >
-                        {isSavingCorrection ? 'Saving...' : <span aria-hidden="true">✓</span>}
+                        {isSavingCorrection ? 'Saving...' : <span className="icon-action-glyph" aria-hidden="true">✔</span>}
                       </button>
                       <button
                         type="button"
@@ -360,7 +394,7 @@ export function MedicationCard({
                         onClick={cancelCorrection}
                         aria-label="Cancel correction"
                       >
-                        <span aria-hidden="true">X</span>
+                        <span className="icon-action-glyph" aria-hidden="true">X</span>
                       </button>
                     </div>
                   </div>

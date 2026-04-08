@@ -21,6 +21,7 @@ interface PatientMedicationListViewProps {
     replacementTimestampGiven: string,
     notes?: string,
   ) => Promise<void>
+  onDeleteDose: (doseEventId: string) => Promise<void>
   onToggleMedicationReminder: (medication: Medication, enabled: boolean) => Promise<void>
   onTogglePatientNotifications: (patientId: string, enabled: boolean) => Promise<void>
 }
@@ -88,6 +89,7 @@ export function PatientMedicationListView({
   onAddMedication,
   onGiveDose,
   onCorrectDose,
+  onDeleteDose,
   onToggleMedicationReminder,
   onTogglePatientNotifications,
 }: PatientMedicationListViewProps) {
@@ -172,6 +174,7 @@ export function PatientMedicationListView({
               patientNotificationsEnabled={patient.notificationsEnabled !== false}
               onLogDose={onGiveDose}
               onCorrectDose={onCorrectDose}
+              onDeleteDose={onDeleteDose}
               onToggleReminderEnabled={onToggleMedicationReminder}
             />
           )

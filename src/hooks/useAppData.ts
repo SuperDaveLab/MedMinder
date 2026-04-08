@@ -11,6 +11,7 @@ import {
   createMedication,
   createPatient,
   deactivateMedication,
+  deleteDoseEventCascade,
   deleteMedicationCascade,
   deletePatientCascade,
   ensureSeeded,
@@ -73,6 +74,7 @@ export interface UseAppDataResult {
     replacementTimestampGiven: string,
     notes?: string,
   ) => Promise<void>
+  handleDeleteDose: (doseEventId: string) => Promise<void>
   setUiError: (message: string | null) => void
 }
 
@@ -655,6 +657,58 @@ export function useAppData(authState: AuthSessionState | null): UseAppDataResult
     }
   }
 
+  const handleDeleteDose = async (doseEventId: string) => {
+    if (!selectedPatientId || isDoseActionInProgress || !appState) {
+      return
+    }
+
+    try {
+      setUiError(null)
+      setIsDoseActionInProgress(true)
+
+      if (isCloudMode) {
+        const doseEventIdsToDelete = new Set<string>()
+        const queue: string[] = [doseEventId]
+
+        while (queue.length > 0) {
+          const currentDoseEventId = queue.shift()
+
+          if (!currentDoseEventId || doseEventIdsToDelete.has(currentDoseEventId)) {
+            continue
+          }
+
+          doseEventIdsToDelete.add(currentDoseEventId)
+
+          for (const doseEvent of appState.doseEvents) {
+            if (doseEvent.corrected && doseEvent.supersedesDoseEventId === currentDoseEventId) {
+              queue.push(doseEvent.id)
+            }
+          }
+        }
+
+        await commitCloudState(
+          {
+            ...appState,
+            doseEvents: appState.doseEvents.filter(
+              (doseEvent) => !doseEventIdsToDelete.has(doseEvent.id),
+            ),
+          },
+          selectedPatientId,
+        )
+      } else {
+        await deleteDoseEventCascade(doseEventId)
+        await refreshSelectedPatientView(selectedPatientId)
+      }
+
+      refreshNow()
+    } catch {
+      setUiError('Unable to delete dose right now. Please try again.')
+      throw new Error('Dose delete failed')
+    } finally {
+      setIsDoseActionInProgress(false)
+    }
+  }
+
   return {
     appState,
     selectedPatientId,
@@ -674,6 +728,7 @@ export function useAppData(authState: AuthSessionState | null): UseAppDataResult
     handleDeleteMedication,
     handleLogDoseNow,
     handleCorrectDose,
+    handleDeleteDose,
     setUiError,
   }
 }

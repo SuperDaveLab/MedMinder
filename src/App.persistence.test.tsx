@@ -159,6 +159,42 @@ describe('App persistence flow', () => {
     })
   })
 
+  it('deletes a dose entry from care history when clicked by mistake', async () => {
+    const user = userEvent.setup()
+
+    render(<App />)
+
+    await screen.findByRole('heading', { name: 'Alex Rivera' })
+    const medicationCard = await screen.findByTestId('med-card-med-interval-1')
+
+    await user.click(within(medicationCard).getByRole('button', { name: 'Give Dose' }))
+
+    await waitFor(async () => {
+      const { doseEvents } = await loadPatientMedicationView('patient-1')
+      const matchingDoseEvents = doseEvents.filter(
+        (doseEvent) => doseEvent.medicationId === 'med-interval-1',
+      )
+      expect(matchingDoseEvents.length).toBe(2)
+    })
+
+    const loggedDoseEntry = within(medicationCard).getByTestId('dose-entry-00000000-0000-4000-8000-000000000001')
+    await user.click(within(loggedDoseEntry).getByRole('button', { name: 'Delete dose entry' }))
+
+    expect(window.confirm).toHaveBeenCalledWith('Delete this dose entry? This cannot be undone.')
+
+    await waitFor(async () => {
+      const { doseEvents } = await loadPatientMedicationView('patient-1')
+      const matchingDoseEvents = doseEvents.filter(
+        (doseEvent) => doseEvent.medicationId === 'med-interval-1',
+      )
+      expect(matchingDoseEvents.length).toBe(1)
+    })
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('dose-entry-00000000-0000-4000-8000-000000000001')).toBeNull()
+    })
+  })
+
   it('does not save correction when confirmation is canceled', async () => {
     vi.mocked(window.confirm).mockReturnValue(false)
     const user = userEvent.setup()

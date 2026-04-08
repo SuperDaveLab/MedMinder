@@ -44,6 +44,7 @@ function App() {
     handleDeleteMedication,
     handleLogDoseNow,
     handleCorrectDose,
+    handleDeleteDose,
     setUiError,
   } = useAppData(authState)
 
@@ -368,6 +369,7 @@ function App() {
             }}
             onGiveDose={handleLogDoseNow}
             onCorrectDose={handleCorrectDose}
+            onDeleteDose={handleDeleteDose}
             onToggleMedicationReminder={handleToggleMedicationReminder}
             onTogglePatientNotifications={handleTogglePatientNotifications}
             actionsDisabled={isDoseActionInProgress}
