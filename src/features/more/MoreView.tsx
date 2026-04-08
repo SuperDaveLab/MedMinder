@@ -431,7 +431,7 @@ export function MoreView({
                   {isAuthActionInProgress ? 'Working...' : 'Save notification settings'}
                 </button>
                 <button
-                  className="utility-button"
+                  className="utility-button security-action-button"
                   data-testid="sign-out-button"
                   disabled={isAuthActionInProgress}
                   onClick={() => void onSignOut()}

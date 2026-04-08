@@ -999,6 +999,18 @@ button {
   color: var(--brand);
 }
 
+.account-card .security-action-button {
+  border-color: #fca5a5;
+  background: #fff5f5;
+  color: #991b1b;
+}
+
+.account-card .security-action-button:hover:not(:disabled) {
+  border-color: #ef4444;
+  background: #fee2e2;
+  color: #7f1d1d;
+}
+
 .duration-input-row {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(120px, 1fr);
