@@ -1,6 +1,6 @@
 # Med-Minder Product Roadmap (Working Draft)
 
-Last updated: 2026-04-05
+Last updated: 2026-04-08
 
 This roadmap captures candidate enhancements beyond current MVP scope, with prioritization and implementation notes.
 
@@ -10,14 +10,15 @@ Related direction document:
 ## Prioritization Summary
 
 ### Next up (recommended)
-1. Missed dose detection
-2. Per-dose "given by" capture in UI
-3. PWA update notification prompt
+1. Account management and recovery
+2. Missed dose detection
+3. Per-dose "given by" capture in UI
 
 ### Near-term polish
-- Timezone-aware fixed-times settings
+- PWA update notification prompt
 
 ### Medium-term capabilities
+- Session activity and device management
 - Timeline/calendar view
 - Multi-caregiver note workflows
 - Medication inventory tracking
@@ -32,6 +33,35 @@ Related direction document:
 ## Feedback on Proposed Items
 
 ## Near-term (MVP polish)
+
+### 0) Account management and recovery
+Value: Very High
+Effort: Medium-High
+Risk: Medium
+
+Why this is strong:
+- Optional cloud account mode now exists, but account lifecycle functionality is still minimal.
+- Users need basic self-service security and recovery before relying on cloud sync across devices.
+- This reduces support burden and makes account mode feel complete rather than experimental.
+
+Recommended phased rollout:
+- Phase 1: change password while signed in.
+- Phase 2: forgot-password email recovery and reset.
+- Phase 3: session management and sign out other devices.
+- Phase 4: verified email change.
+- Phase 5: account deletion.
+
+Guardrails:
+- Keep local-only mode unaffected; no account should be required for base medication tracking.
+- Treat recovery and security operations as server-authoritative.
+- Revoke stale sessions after password reset/change.
+- Hash recovery tokens and make them single-use with expiry.
+
+Suggested acceptance criteria for the first slice:
+- Signed-in user can change password with current password confirmation.
+- Weak, blank, mismatched, or unchanged passwords are rejected with clear errors.
+- Existing session behavior after password change is explicit and tested.
+- UI and API tests cover success and failure paths.
 
 ### 1) Missed dose detection
 Value: High
@@ -138,6 +168,29 @@ Natural progression from existing plain text summary export.
 ---
 
 ## Recommended Next Feature Brief: Missed Dose Detection
+
+## Recommended Next Feature Brief: Account Management and Recovery
+
+Scope roadmap:
+- Phase 1: Change password while signed in.
+- Phase 2: Forgot-password email recovery.
+- Phase 3: Session/device management.
+- Phase 4: Change email with verification.
+- Phase 5: Account deletion.
+
+Phase 1 implementation brief:
+- Add a signed-in change-password form to the existing Account section in More.
+- Require current password, new password, and confirm password.
+- Add authenticated API endpoint for password change.
+- Verify current password before hashing and storing the replacement password.
+- Revoke other sessions after successful password change.
+- Add validation and regression tests for wrong current password, mismatched confirmation, unchanged password, and success path.
+
+Non-goals for Phase 1:
+- Email-based recovery.
+- Email address change.
+- Device/session list UI.
+- Account deletion.
 
 Scope for first iteration:
 - Schedule support: interval only.

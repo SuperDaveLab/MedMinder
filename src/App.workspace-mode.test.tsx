@@ -86,6 +86,11 @@ function installFetchMock(initialCloudState: MedMinderState, email = 'caregiver@
     registerCalls: 0,
     loginCalls: 0,
     logoutCalls: 0,
+    changePasswordCalls: [] as Array<{
+      currentPassword: string
+      newPassword: string
+      sessionId: string | null
+    }>,
     getCloudState: () => cloneState(cloudState),
   }
 
@@ -109,6 +114,28 @@ function installFetchMock(initialCloudState: MedMinderState, email = 'caregiver@
       if (url.endsWith('/api/auth/logout')) {
         controller.logoutCalls += 1
         return new Response(null, { status: 204 })
+      }
+
+      if (url.endsWith('/api/auth/change-password')) {
+        const body = JSON.parse(String(init?.body ?? '{}')) as {
+          currentPassword: string
+          newPassword: string
+        }
+        const sessionIdHeader = init?.headers && typeof init.headers === 'object'
+          ? String((init.headers as Record<string, string>)['x-medminder-session-id'] ?? '')
+          : ''
+
+        controller.changePasswordCalls.push({
+          currentPassword: body.currentPassword,
+          newPassword: body.newPassword,
+          sessionId: sessionIdHeader || null,
+        })
+
+        if (body.currentPassword !== 'password123') {
+          return jsonResponse({ message: 'Current password is incorrect.' }, 403)
+        }
+
+        return jsonResponse({ success: true })
       }
 
       if (url.endsWith('/api/auth/account')) {
@@ -476,5 +503,44 @@ describe('App workspace mode flow', () => {
 
     const localState = await getLocalMedMinderState()
     expect(localState.doseEvents).toHaveLength(0)
+  })
+
+  it('signed-in user can change password from More view', async () => {
+    const controller = installFetchMock({
+      patients: [{ id: 'cloud-patient-1', displayName: 'Cloud Riley' }],
+      medications: [],
+      doseEvents: [],
+    })
+    const user = userEvent.setup()
+
+    render(<App />)
+    await screen.findByRole('option', { name: 'Alex Rivera' })
+
+    await user.click(screen.getByTestId('tab-more'))
+    await user.type(screen.getByTestId('auth-email-input'), 'caregiver@example.com')
+    await user.type(screen.getByTestId('auth-password-input'), 'password123')
+    await user.click(screen.getByTestId('sign-in-button'))
+
+    await waitFor(() => {
+      expect(screen.getByText('Signed in as caregiver@example.com')).toBeTruthy()
+      expect(screen.getByRole('option', { name: 'Cloud Riley' })).toBeTruthy()
+    })
+
+    await user.type(screen.getByTestId('current-password-input'), 'password123')
+    await user.type(screen.getByTestId('new-password-input'), 'new-password-123')
+    await user.type(screen.getByTestId('confirm-new-password-input'), 'new-password-123')
+    await user.click(screen.getByTestId('change-password-button'))
+
+    await waitFor(() => {
+      expect(screen.getByText('Password updated.')).toBeTruthy()
+    })
+
+    expect(controller.changePasswordCalls).toEqual([
+      {
+        currentPassword: 'password123',
+        newPassword: 'new-password-123',
+        sessionId: 'session-1',
+      },
+    ])
   })
 })

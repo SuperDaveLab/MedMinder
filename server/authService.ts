@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs'
 import crypto from 'node:crypto'
+import type { RowDataPacket } from 'mysql2/promise'
 import type {
   AuthAccount,
   AuthSession,
@@ -17,7 +18,7 @@ import {
 import { dbPool } from './db'
 import { serverConfig } from './config'
 
-interface DbUserRow {
+interface AuthUserRecord {
   user_id: string
   account_id: string
   email: string
@@ -25,6 +26,28 @@ interface DbUserRow {
   notification_delivery_policy: string | null
   password_hash: string
   created_at: Date
+}
+
+interface DbUserRow extends RowDataPacket, AuthUserRecord {}
+
+export class AuthServiceError extends Error {
+  statusCode: number
+
+  constructor(statusCode: number, message: string) {
+    super(message)
+    this.name = 'AuthServiceError'
+    this.statusCode = statusCode
+  }
+}
+
+function assertValidNewPassword(newPassword: string): void {
+  if (!newPassword || newPassword.trim().length === 0) {
+    throw new AuthServiceError(400, 'New password is required.')
+  }
+
+  if (newPassword.length < 10) {
+    throw new AuthServiceError(400, 'New password must be at least 10 characters.')
+  }
 }
 
 function generateToken(): string {
@@ -45,7 +68,7 @@ function buildSessionTimestamps(now: Date): { issuedAt: Date; expiresAt: Date; a
   return { issuedAt, expiresAt, accessTokenExpiresAt }
 }
 
-function toAuthAccount(row: DbUserRow): AuthAccount {
+function toAuthAccount(row: AuthUserRecord): AuthAccount {
   const notificationDeliveryPolicy = notificationDeliveryPolicies.includes(
     row.notification_delivery_policy as NotificationDeliveryPolicy,
   )
@@ -70,7 +93,7 @@ function toTokenSet(accessToken: string, refreshToken: string, accessTokenExpire
   }
 }
 
-async function issueSessionForUser(user: DbUserRow, provider: 'password'): Promise<{
+async function issueSessionForUser(user: AuthUserRecord, provider: 'password'): Promise<{
   session: AuthSession
   tokens: AuthTokenSet
 }> {
@@ -158,7 +181,7 @@ export async function createAccount(
     [userId, accountId, email, passwordHash, createdAt],
   )
 
-  const userRow: DbUserRow = {
+  const userRow: AuthUserRecord = {
     user_id: userId,
     account_id: accountId,
     email,
@@ -223,6 +246,64 @@ export async function signOutBySessionId(sessionId: string): Promise<void> {
       WHERE session_id = ?
     `,
     [new Date(), sessionId],
+  )
+}
+
+export async function changePassword(
+  accountId: string,
+  userId: string,
+  currentSessionId: string,
+  currentPassword: string,
+  newPassword: string,
+): Promise<void> {
+  if (!currentPassword || currentPassword.trim().length === 0) {
+    throw new AuthServiceError(400, 'Current password is required.')
+  }
+
+  assertValidNewPassword(newPassword)
+
+  const [[userRow]] = await dbPool.query<DbUserRow[]>(
+    `SELECT user_id, account_id, email, phone_e164, notification_delivery_policy, password_hash, created_at
+     FROM users
+     WHERE account_id = ? AND user_id = ?
+     LIMIT 1`,
+    [accountId, userId],
+  )
+
+  if (!userRow) {
+    throw new AuthServiceError(404, 'Account not found.')
+  }
+
+  const currentPasswordMatches = await bcrypt.compare(currentPassword, userRow.password_hash)
+
+  if (!currentPasswordMatches) {
+    throw new AuthServiceError(403, 'Current password is incorrect.')
+  }
+
+  const passwordIsUnchanged = await bcrypt.compare(newPassword, userRow.password_hash)
+
+  if (passwordIsUnchanged) {
+    throw new AuthServiceError(400, 'New password must be different from current password.')
+  }
+
+  const nextPasswordHash = await bcrypt.hash(newPassword, 12)
+  const revokedAt = new Date()
+
+  await dbPool.query(
+    `UPDATE users
+     SET password_hash = ?
+     WHERE account_id = ? AND user_id = ?`,
+    [nextPasswordHash, accountId, userId],
+  )
+
+  await dbPool.query(
+    `UPDATE sessions
+     SET revoked_at = ?
+     WHERE account_id = ?
+       AND user_id = ?
+       AND session_id <> ?
+       AND revoked_at IS NULL`,
+    [revokedAt, accountId, userId, currentSessionId],
   )
 }
 

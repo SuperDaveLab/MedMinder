@@ -29,6 +29,10 @@ interface MoreViewProps {
   onCreateAccount: (credentials: { email: string; password: string }) => Promise<void>
   onSignIn: (credentials: { email: string; password: string }) => Promise<void>
   onSignOut: () => Promise<void>
+  onChangePassword: (input: {
+    currentPassword: string
+    newPassword: string
+  }) => Promise<void>
   onUpdateAccountSettings: (input: {
     phoneE164: string | null
     notificationDeliveryPolicy: NotificationDeliveryPolicy
@@ -63,6 +67,7 @@ export function MoreView({
   onCreateAccount,
   onSignIn,
   onSignOut,
+  onChangePassword,
   onUpdateAccountSettings,
   onClearAuthError,
 }: MoreViewProps) {
@@ -74,8 +79,15 @@ export function MoreView({
   const backupFileInputRef = useRef<HTMLInputElement>(null)
   const [authEmailInput, setAuthEmailInput] = useState('')
   const [authPasswordInput, setAuthPasswordInput] = useState('')
+  const [currentPasswordInput, setCurrentPasswordInput] = useState('')
+  const [newPasswordInput, setNewPasswordInput] = useState('')
+  const [confirmNewPasswordInput, setConfirmNewPasswordInput] = useState('')
   const [authPhoneInput, setAuthPhoneInput] = useState('')
   const [authNotificationPolicyInput, setAuthNotificationPolicyInput] = useState<NotificationDeliveryPolicy>('push_then_email_fallback')
+  const [passwordStatusMessage, setPasswordStatusMessage] = useState<{
+    kind: 'error' | 'success'
+    text: string
+  } | null>(null)
 
 
   const handleExportBackup = async () => {
@@ -216,10 +228,53 @@ export function MoreView({
     })
   }
 
+  const handleChangePassword = async () => {
+    onClearAuthError()
+    setPasswordStatusMessage(null)
+
+    if (!currentPasswordInput || !newPasswordInput || !confirmNewPasswordInput) {
+      setPasswordStatusMessage({ kind: 'error', text: 'All password fields are required.' })
+      return
+    }
+
+    if (newPasswordInput !== confirmNewPasswordInput) {
+      setPasswordStatusMessage({ kind: 'error', text: 'New password and confirmation must match.' })
+      return
+    }
+
+    if (currentPasswordInput === newPasswordInput) {
+      setPasswordStatusMessage({ kind: 'error', text: 'New password must be different from current password.' })
+      return
+    }
+
+    try {
+      await onChangePassword({
+        currentPassword: currentPasswordInput,
+        newPassword: newPasswordInput,
+      })
+
+      setCurrentPasswordInput('')
+      setNewPasswordInput('')
+      setConfirmNewPasswordInput('')
+      setPasswordStatusMessage({ kind: 'success', text: 'Password updated.' })
+    } catch {
+      // Shared auth error handles server failures.
+    }
+  }
+
   useEffect(() => {
     setAuthPhoneInput(authState?.account.phoneE164 ?? '')
     setAuthNotificationPolicyInput(authState?.account.notificationDeliveryPolicy ?? 'push_then_email_fallback')
   }, [authState?.account.notificationDeliveryPolicy, authState?.account.phoneE164])
+
+  useEffect(() => {
+    if (!authState) {
+      setCurrentPasswordInput('')
+      setNewPasswordInput('')
+      setConfirmNewPasswordInput('')
+      setPasswordStatusMessage(null)
+    }
+  }, [authState])
 
   const accountSection = (
     <section className="admin-section no-print" data-testid="account-section">
@@ -257,6 +312,65 @@ export function MoreView({
               placeholder="+15551234567"
             />
           </label>
+          <div className="account-password-panel">
+            <h3>Change password</h3>
+            <label>
+              Current password
+              <input
+                data-testid="current-password-input"
+                type="password"
+                value={currentPasswordInput}
+                onChange={(event) => {
+                  onClearAuthError()
+                  setPasswordStatusMessage(null)
+                  setCurrentPasswordInput(event.target.value)
+                }}
+                autoComplete="current-password"
+              />
+            </label>
+            <label>
+              New password
+              <input
+                data-testid="new-password-input"
+                type="password"
+                value={newPasswordInput}
+                onChange={(event) => {
+                  onClearAuthError()
+                  setPasswordStatusMessage(null)
+                  setNewPasswordInput(event.target.value)
+                }}
+                autoComplete="new-password"
+              />
+            </label>
+            <label>
+              Confirm new password
+              <input
+                data-testid="confirm-new-password-input"
+                type="password"
+                value={confirmNewPasswordInput}
+                onChange={(event) => {
+                  onClearAuthError()
+                  setPasswordStatusMessage(null)
+                  setConfirmNewPasswordInput(event.target.value)
+                }}
+                autoComplete="new-password"
+              />
+            </label>
+            {passwordStatusMessage ? (
+              <p className={passwordStatusMessage.kind === 'error' ? 'form-error' : 'form-success'}>
+                {passwordStatusMessage.text}
+              </p>
+            ) : null}
+            {authError ? <p className="form-error">{authError}</p> : null}
+            <button
+              className="utility-button"
+              data-testid="change-password-button"
+              disabled={isAuthActionInProgress}
+              onClick={() => void handleChangePassword()}
+            >
+              {isAuthActionInProgress ? 'Working...' : 'Change password'}
+            </button>
+          </div>
           <div className="form-actions">
             <button
               className="utility-button"

@@ -71,6 +71,15 @@ export interface SignOutRequest {
   sessionId: string
 }
 
+export interface ChangePasswordRequest {
+  currentPassword: string
+  newPassword: string
+}
+
+export interface ChangePasswordResponse {
+  success: true
+}
+
 export interface UpdateAccountProfileRequest {
   phoneE164?: string | null
   notificationDeliveryPolicy?: NotificationDeliveryPolicy

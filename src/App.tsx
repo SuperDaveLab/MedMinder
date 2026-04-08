@@ -21,6 +21,7 @@ function App() {
     createAccount,
     signIn,
     signOut,
+    changePassword,
     updateAccountSettings,
     clearAuthError,
   } = useAuth()
@@ -436,6 +437,7 @@ function App() {
             onCreateAccount={createAccount}
             onSignIn={signIn}
             onSignOut={signOut}
+            onChangePassword={changePassword}
             onUpdateAccountSettings={updateAccountSettings}
             onClearAuthError={clearAuthError}
           />

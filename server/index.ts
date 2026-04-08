@@ -5,6 +5,8 @@ import { dbPool, initializeAuthSchema } from './db'
 import { applyCloudSyncRequest, getCloudAccountState, type AuthenticatedAccountContext } from './cloudService'
 import { serverConfig } from './config'
 import {
+  AuthServiceError,
+  changePassword,
   createAccount,
   getAccountById,
   signInWithPassword,
@@ -25,7 +27,7 @@ import type {
   DeletePushSubscriptionRequest,
   RegisterPushSubscriptionRequest,
 } from '../src/domain/pushNotifications'
-import type { UpdateAccountProfileRequest } from '../src/domain/auth'
+import type { ChangePasswordRequest, UpdateAccountProfileRequest } from '../src/domain/auth'
 import { notificationDeliveryPolicies } from '../src/domain/notificationPolicy'
 
 const app = express()
@@ -141,6 +143,32 @@ app.post('/api/auth/logout', async (request: Request, response: Response) => {
   const sessionId = String(request.body?.sessionId ?? '')
   await signOutBySessionId(sessionId)
   response.status(204).send()
+})
+
+app.post('/api/auth/change-password', async (request: Request, response: Response) => {
+  try {
+    const account = await requireSession(request)
+    const payload = request.body as ChangePasswordRequest
+
+    await changePassword(
+      account.accountId,
+      account.userId,
+      account.sessionId,
+      String(payload?.currentPassword ?? ''),
+      String(payload?.newPassword ?? ''),
+    )
+
+    response.status(200).json({ success: true as const })
+  } catch (error) {
+    if (error instanceof AuthServiceError) {
+      response.status(error.statusCode).json({ message: error.message })
+      return
+    }
+
+    response.status(401).json({
+      message: error instanceof Error ? error.message : 'Unable to change password.',
+    })
+  }
 })
 
 app.get('/api/auth/account', async (request: Request, response: Response) => {

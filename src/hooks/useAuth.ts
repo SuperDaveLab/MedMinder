@@ -16,6 +16,11 @@ interface AuthCredentials {
   password: string
 }
 
+interface ChangePasswordInput {
+  currentPassword: string
+  newPassword: string
+}
+
 export interface UseAuthResult {
   authState: AuthSessionState | null
   isAuthLoading: boolean
@@ -24,6 +29,7 @@ export interface UseAuthResult {
   createAccount: (credentials: AuthCredentials) => Promise<void>
   signIn: (credentials: AuthCredentials) => Promise<void>
   signOut: () => Promise<void>
+  changePassword: (input: ChangePasswordInput) => Promise<void>
   updateAccountSettings: (input: {
     phoneE164: string | null
     notificationDeliveryPolicy: NotificationDeliveryPolicy
@@ -210,6 +216,29 @@ export function useAuth(): UseAuthResult {
     }
   }, [authClient, authState])
 
+  const changePassword = useCallback(async (input: ChangePasswordInput) => {
+    if (!authState) {
+      const error = new Error('You need to sign in before changing password.')
+      setAuthError(error.message)
+      throw error
+    }
+
+    setAuthError(null)
+    setIsAuthActionInProgress(true)
+
+    try {
+      await authClient.changePassword(authState.session.sessionId, input)
+    } catch (error) {
+      const resolvedError = error instanceof Error
+        ? error
+        : new Error('Unable to change password right now.')
+      setAuthError(resolvedError.message)
+      throw resolvedError
+    } finally {
+      setIsAuthActionInProgress(false)
+    }
+  }, [authClient, authState])
+
   const clearAuthError = useCallback(() => {
     setAuthError(null)
   }, [])
@@ -222,6 +251,7 @@ export function useAuth(): UseAuthResult {
     createAccount,
     signIn,
     signOut,
+    changePassword,
     updateAccountSettings,
     clearAuthError,
   }

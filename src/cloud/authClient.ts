@@ -1,5 +1,7 @@
 import type {
   AuthAccount,
+  ChangePasswordRequest,
+  ChangePasswordResponse,
   CreateAccountRequest,
   CreateAccountResponse,
   SignInWithPasswordRequest,
@@ -13,6 +15,7 @@ export interface AuthApiClient {
   createAccount: (request: CreateAccountRequest) => Promise<CreateAccountResponse>
   signInWithPassword: (request: SignInWithPasswordRequest) => Promise<SignInWithPasswordResponse>
   signOut: (request: SignOutRequest) => Promise<void>
+  changePassword: (sessionId: string, request: ChangePasswordRequest) => Promise<ChangePasswordResponse>
   getAccountProfile: (sessionId: string) => Promise<AuthAccount>
   updateAccountProfile: (sessionId: string, request: UpdateAccountProfileRequest) => Promise<AuthAccount>
 }
@@ -56,6 +59,11 @@ export function createAuthApiClient(baseUrl: string): AuthApiClient {
     signOut: async (request) => {
       await postJson<SignOutRequest, void>('/api/auth/logout', request)
     },
+    changePassword: (sessionId, request) => postJson<ChangePasswordRequest, ChangePasswordResponse>(
+      '/api/auth/change-password',
+      request,
+      sessionId,
+    ),
     getAccountProfile: async (sessionId) => {
       const response = await fetch(`${normalizedBaseUrl}/api/auth/account`, {
         method: 'GET',
