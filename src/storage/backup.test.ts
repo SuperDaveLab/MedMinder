@@ -115,6 +115,22 @@ describe('backup validation', () => {
     expect(result.valid).toBe(false)
   })
 
+  it('rejects inventory-enabled medication with invalid inventory values', () => {
+    const result = validateBackup({
+      ...buildValidBackup(),
+      medications: [
+        {
+          ...buildValidBackup().medications[0],
+          inventoryEnabled: true,
+          initialQuantity: 30,
+          doseAmount: 0,
+        },
+      ],
+    })
+
+    expect(result.valid).toBe(false)
+  })
+
   it('rejects fixed_times schedule with invalid timesOfDay entries', () => {
     const invalidValueResult = validateBackup({
       ...buildValidBackup(),

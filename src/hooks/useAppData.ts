@@ -39,6 +39,24 @@ function trimOptional(value?: string): string | undefined {
   return trimmed ? trimmed : undefined
 }
 
+function normalizeInventoryFields(input: {
+  inventoryEnabled?: boolean
+  initialQuantity?: number
+  doseAmount?: number
+  doseUnit?: string
+  lowSupplyThreshold?: number
+}) {
+  const inventoryEnabled = input.inventoryEnabled === true
+
+  return {
+    inventoryEnabled,
+    initialQuantity: inventoryEnabled ? input.initialQuantity : undefined,
+    doseAmount: inventoryEnabled ? input.doseAmount : undefined,
+    doseUnit: inventoryEnabled ? trimOptional(input.doseUnit) : undefined,
+    lowSupplyThreshold: inventoryEnabled ? input.lowSupplyThreshold ?? 0 : undefined,
+  }
+}
+
 function readAndClearPreferredPatientIdFromUrl(): string | null {
   const url = new URL(window.location.href)
   const patientId = url.searchParams.get('patientId')?.trim()
@@ -413,6 +431,8 @@ export function useAppData(authState: AuthSessionState | null): UseAppDataResult
     }
 
     if (isCloudMode) {
+      const inventoryFields = normalizeInventoryFields(input)
+
       const medication: Medication = {
         id: crypto.randomUUID(),
         patientId: input.patientId,
@@ -423,6 +443,7 @@ export function useAppData(authState: AuthSessionState | null): UseAppDataResult
         active: input.active,
         schedule: input.schedule,
         reminderSettings: input.reminderSettings,
+        ...inventoryFields,
       }
 
       await commitCloudState(
@@ -451,6 +472,8 @@ export function useAppData(authState: AuthSessionState | null): UseAppDataResult
         throw new Error('Medication not found for update.')
       }
 
+      const inventoryFields = normalizeInventoryFields(input)
+
       await commitCloudState(
         {
           ...appState,
@@ -466,6 +489,7 @@ export function useAppData(authState: AuthSessionState | null): UseAppDataResult
                   active: input.active,
                   schedule: input.schedule,
                   reminderSettings: input.reminderSettings,
+                  ...inventoryFields,
                 }
               : medication,
           ),

@@ -64,6 +64,32 @@ function assertValidMedicationSchedule(schedule: Medication['schedule']): void {
   }
 }
 
+function assertValidMedicationInventory(input: {
+  inventoryEnabled?: boolean
+  initialQuantity?: number
+  doseAmount?: number
+  lowSupplyThreshold?: number
+}): void {
+  if (!input.inventoryEnabled) {
+    return
+  }
+
+  if (!Number.isFinite(input.initialQuantity) || (input.initialQuantity ?? 0) < 0) {
+    throw new Error('Inventory initialQuantity must be zero or a positive number when enabled.')
+  }
+
+  if (!Number.isFinite(input.doseAmount) || (input.doseAmount ?? 0) <= 0) {
+    throw new Error('Inventory doseAmount must be a positive number when enabled.')
+  }
+
+  if (
+    input.lowSupplyThreshold !== undefined &&
+    (!Number.isFinite(input.lowSupplyThreshold) || input.lowSupplyThreshold < 0)
+  ) {
+    throw new Error('Inventory lowSupplyThreshold must be zero or a positive number when provided.')
+  }
+}
+
 export async function getPatients(): Promise<Patient[]> {
   return medMinderDb.patients.toArray()
 }
@@ -296,6 +322,11 @@ export interface UpsertMedicationInput {
   schedule: Medication['schedule']
   reminderSettings?: Medication['reminderSettings']
   overdueReminderIntervalMinutes?: number
+  inventoryEnabled?: boolean
+  initialQuantity?: number
+  doseAmount?: number
+  doseUnit?: string
+  lowSupplyThreshold?: number
 }
 
 export async function createMedication(
@@ -319,6 +350,9 @@ export async function createMedication(
   }
 
   assertValidMedicationSchedule(input.schedule)
+  assertValidMedicationInventory(input)
+
+  const inventoryEnabled = input.inventoryEnabled === true
 
   const medication: Medication = {
     id: crypto.randomUUID(),
@@ -331,6 +365,11 @@ export async function createMedication(
     schedule: input.schedule,
     reminderSettings: input.reminderSettings,
     overdueReminderIntervalMinutes: input.overdueReminderIntervalMinutes ?? 30,
+    inventoryEnabled,
+    initialQuantity: inventoryEnabled ? input.initialQuantity : undefined,
+    doseAmount: inventoryEnabled ? input.doseAmount : undefined,
+    doseUnit: inventoryEnabled && input.doseUnit?.trim() ? input.doseUnit.trim() : undefined,
+    lowSupplyThreshold: inventoryEnabled ? input.lowSupplyThreshold ?? 0 : undefined,
   }
 
   await medMinderDb.medications.add(medication)
@@ -360,6 +399,9 @@ export async function updateMedication(
   }
 
   assertValidMedicationSchedule(input.schedule)
+  assertValidMedicationInventory(input)
+
+  const inventoryEnabled = input.inventoryEnabled === true
 
   const existingMedication = await medMinderDb.medications.get(medicationId)
 
@@ -378,6 +420,11 @@ export async function updateMedication(
     schedule: input.schedule,
     reminderSettings: input.reminderSettings,
     overdueReminderIntervalMinutes: input.overdueReminderIntervalMinutes ?? 30,
+    inventoryEnabled,
+    initialQuantity: inventoryEnabled ? input.initialQuantity : undefined,
+    doseAmount: inventoryEnabled ? input.doseAmount : undefined,
+    doseUnit: inventoryEnabled && input.doseUnit?.trim() ? input.doseUnit.trim() : undefined,
+    lowSupplyThreshold: inventoryEnabled ? input.lowSupplyThreshold ?? 0 : undefined,
   }
 
   await medMinderDb.medications.put(updatedMedication)

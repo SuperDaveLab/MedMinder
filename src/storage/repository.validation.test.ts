@@ -52,4 +52,40 @@ describe('repository validation guards', () => {
       }),
     ).rejects.toThrow('Medication patientId is invalid; patient not found.')
   })
+
+  it('rejects inventory-enabled medication without valid quantities', async () => {
+    const patient = await createPatient({ displayName: 'Alex' })
+
+    await expect(
+      createMedication({
+        patientId: patient.id,
+        name: 'Hydroxyzine',
+        defaultDoseText: '25 mg',
+        active: true,
+        schedule: {
+          type: 'interval',
+          intervalMinutes: 240,
+        },
+        inventoryEnabled: true,
+        initialQuantity: -1,
+        doseAmount: 25,
+      }),
+    ).rejects.toThrow('Inventory initialQuantity must be zero or a positive number when enabled.')
+
+    await expect(
+      createMedication({
+        patientId: patient.id,
+        name: 'Hydroxyzine',
+        defaultDoseText: '25 mg',
+        active: true,
+        schedule: {
+          type: 'interval',
+          intervalMinutes: 240,
+        },
+        inventoryEnabled: true,
+        initialQuantity: 100,
+        doseAmount: 0,
+      }),
+    ).rejects.toThrow('Inventory doseAmount must be a positive number when enabled.')
+  })
 })

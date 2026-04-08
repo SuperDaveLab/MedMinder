@@ -131,6 +131,27 @@ function checkMedication(raw: unknown): string | null {
     return `Medication "${String(m['id'])}": active must be boolean.`
   }
 
+  if (m['inventoryEnabled'] !== undefined && typeof m['inventoryEnabled'] !== 'boolean') {
+    return `Medication "${String(m['id'])}": inventoryEnabled must be boolean when provided.`
+  }
+
+  if (m['inventoryEnabled'] === true) {
+    if (typeof m['initialQuantity'] !== 'number' || m['initialQuantity'] < 0) {
+      return `Medication "${String(m['id'])}": initialQuantity must be zero or positive when inventory is enabled.`
+    }
+
+    if (typeof m['doseAmount'] !== 'number' || m['doseAmount'] <= 0) {
+      return `Medication "${String(m['id'])}": doseAmount must be positive when inventory is enabled.`
+    }
+
+    if (
+      m['lowSupplyThreshold'] !== undefined &&
+      (typeof m['lowSupplyThreshold'] !== 'number' || m['lowSupplyThreshold'] < 0)
+    ) {
+      return `Medication "${String(m['id'])}": lowSupplyThreshold must be zero or positive when provided.`
+    }
+  }
+
   return checkSchedule(String(m['id']), m['schedule'])
 }
 

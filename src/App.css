@@ -344,6 +344,26 @@ button {
   margin: 0.4rem 0;
   color: var(--muted);
 }
+.inventory-status {
+  margin: 0.35rem 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+  width: fit-content;
+}
+.inventory-status.is-ok {
+  background: #dcfce7;
+  color: #166534;
+}
+.inventory-status.is-low-supply {
+  background: #fef3c7;
+  color: #92400e;
+}
+.inventory-status.is-out-of-stock {
+  background: #fee2e2;
+  color: #991b1b;
+}
 
 .last-event-trust {
   margin: 0.15rem 0 0.5rem;
@@ -880,6 +900,15 @@ button {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(120px, 1fr);
   gap: 0.75rem;
+}
+.inventory-input-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0.75rem;
+  background: #fbfdff;
 }
 
 .fixed-times-editor {
@@ -1446,6 +1475,9 @@ button {
 
 @media (max-width: 560px) {
   .settings-item {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .inventory-input-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 

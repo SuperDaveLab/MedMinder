@@ -119,6 +119,11 @@ export function MedsView({
   const [medicationStrengthInput, setMedicationStrengthInput] = useState('')
   const [medicationDefaultDoseInput, setMedicationDefaultDoseInput] = useState('')
   const [medicationInstructionsInput, setMedicationInstructionsInput] = useState('')
+  const [inventoryEnabledInput, setInventoryEnabledInput] = useState(false)
+  const [inventoryInitialQuantityInput, setInventoryInitialQuantityInput] = useState('')
+  const [inventoryDoseAmountInput, setInventoryDoseAmountInput] = useState('')
+  const [inventoryDoseUnitInput, setInventoryDoseUnitInput] = useState('')
+  const [inventoryLowSupplyThresholdInput, setInventoryLowSupplyThresholdInput] = useState('')
   const [scheduleTypeInput, setScheduleTypeInput] = useState<MedicationScheduleType>('interval')
   const [intervalValueInput, setIntervalValueInput] = useState('8')
   const [intervalUnitInput, setIntervalUnitInput] = useState<'minutes' | 'hours'>('hours')
@@ -153,6 +158,28 @@ export function MedsView({
     }
 
     return totalMinutes
+  }
+
+  const parseNonNegativeNumber = (rawValue: string, errorMessage: string): number | null => {
+    const parsedValue = Number.parseFloat(rawValue)
+
+    if (!Number.isFinite(parsedValue) || parsedValue < 0) {
+      setMedicationFormError(errorMessage)
+      return null
+    }
+
+    return parsedValue
+  }
+
+  const parsePositiveNumber = (rawValue: string, errorMessage: string): number | null => {
+    const parsedValue = Number.parseFloat(rawValue)
+
+    if (!Number.isFinite(parsedValue) || parsedValue <= 0) {
+      setMedicationFormError(errorMessage)
+      return null
+    }
+
+    return parsedValue
   }
 
   const updateFixedTimeInput = (index: number, value: string) => {
@@ -279,6 +306,17 @@ export function MedsView({
     setMedicationStrengthInput(medication.strengthText ?? '')
     setMedicationDefaultDoseInput(medication.defaultDoseText)
     setMedicationInstructionsInput(medication.instructions ?? '')
+    setInventoryEnabledInput(medication.inventoryEnabled === true)
+    setInventoryInitialQuantityInput(
+      medication.initialQuantity !== undefined ? String(medication.initialQuantity) : '',
+    )
+    setInventoryDoseAmountInput(
+      medication.doseAmount !== undefined ? String(medication.doseAmount) : '',
+    )
+    setInventoryDoseUnitInput(medication.doseUnit ?? '')
+    setInventoryLowSupplyThresholdInput(
+      medication.lowSupplyThreshold !== undefined ? String(medication.lowSupplyThreshold) : '',
+    )
     setScheduleTypeInput(medication.schedule.type)
     setMedicationFormError(null)
 
@@ -319,6 +357,11 @@ export function MedsView({
     setMedicationStrengthInput('')
     setMedicationDefaultDoseInput('')
     setMedicationInstructionsInput('')
+    setInventoryEnabledInput(false)
+    setInventoryInitialQuantityInput('')
+    setInventoryDoseAmountInput('')
+    setInventoryDoseUnitInput('')
+    setInventoryLowSupplyThresholdInput('')
     setScheduleTypeInput('interval')
     setIntervalValueInput('8')
     setIntervalUnitInput('hours')
@@ -416,6 +459,43 @@ export function MedsView({
       alarmEnabled: existingMedication?.reminderSettings?.alarmEnabled ?? false,
     }
 
+    let initialQuantity: number | undefined
+    let doseAmount: number | undefined
+    let lowSupplyThreshold: number | undefined
+
+    if (inventoryEnabledInput) {
+      const parsedInitialQuantity = parseNonNegativeNumber(
+        inventoryInitialQuantityInput,
+        'Initial quantity must be zero or a positive number.',
+      )
+
+      if (parsedInitialQuantity === null) {
+        return
+      }
+
+      const parsedDoseAmount = parsePositiveNumber(
+        inventoryDoseAmountInput,
+        'Dose amount must be a positive number.',
+      )
+
+      if (parsedDoseAmount === null) {
+        return
+      }
+
+      const parsedLowSupplyThreshold = parseNonNegativeNumber(
+        inventoryLowSupplyThresholdInput || '0',
+        'Low supply threshold must be zero or a positive number.',
+      )
+
+      if (parsedLowSupplyThreshold === null) {
+        return
+      }
+
+      initialQuantity = parsedInitialQuantity
+      doseAmount = parsedDoseAmount
+      lowSupplyThreshold = parsedLowSupplyThreshold
+    }
+
     const medicationInput: UpsertMedicationInput = {
       patientId: selectedPatientId,
       name: medicationNameInput,
@@ -425,6 +505,11 @@ export function MedsView({
       active: existingMedication?.active ?? true,
       schedule,
       reminderSettings,
+      inventoryEnabled: inventoryEnabledInput,
+      initialQuantity,
+      doseAmount,
+      doseUnit: inventoryEnabledInput ? inventoryDoseUnitInput : undefined,
+      lowSupplyThreshold,
     }
 
     try {
@@ -639,6 +724,62 @@ export function MedsView({
             onChange={(event) => setMedicationInstructionsInput(event.target.value)}
           />
         </label>
+        <label className="checkbox-row">
+          <input
+            data-testid="inventory-enabled-input"
+            type="checkbox"
+            checked={inventoryEnabledInput}
+            onChange={(event) => setInventoryEnabledInput(event.target.checked)}
+          />
+          Track inventory
+        </label>
+        {inventoryEnabledInput ? (
+          <div className="inventory-input-grid">
+            <label>
+              Initial quantity
+              <input
+                data-testid="inventory-initial-quantity-input"
+                type="number"
+                min="0"
+                step="0.01"
+                value={inventoryInitialQuantityInput}
+                onChange={(event) => setInventoryInitialQuantityInput(event.target.value)}
+              />
+            </label>
+            <label>
+              Per-dose amount
+              <input
+                data-testid="inventory-dose-amount-input"
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={inventoryDoseAmountInput}
+                onChange={(event) => setInventoryDoseAmountInput(event.target.value)}
+              />
+            </label>
+            <label>
+              Dose unit (optional)
+              <input
+                data-testid="inventory-dose-unit-input"
+                type="text"
+                value={inventoryDoseUnitInput}
+                onChange={(event) => setInventoryDoseUnitInput(event.target.value)}
+                placeholder="tablet, mL, mg"
+              />
+            </label>
+            <label>
+              Low supply threshold
+              <input
+                data-testid="inventory-low-threshold-input"
+                type="number"
+                min="0"
+                step="0.01"
+                value={inventoryLowSupplyThresholdInput}
+                onChange={(event) => setInventoryLowSupplyThresholdInput(event.target.value)}
+              />
+            </label>
+          </div>
+        ) : null}
         <label>
           Schedule type
           <select

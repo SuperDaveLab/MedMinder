@@ -18,6 +18,7 @@ export const initialSampleState: MedMinderState = {
         type: 'interval',
         intervalMinutes: 8 * 60,
       },
+      inventoryEnabled: false,
       instructions: 'Take every 8 hours with water.',
     },
     {
@@ -30,6 +31,7 @@ export const initialSampleState: MedMinderState = {
         type: 'prn',
         minimumIntervalMinutes: 6 * 60,
       },
+      inventoryEnabled: false,
       instructions: 'As needed for pain, minimum 6 hours between doses.',
     },
     {
@@ -52,6 +54,7 @@ export const initialSampleState: MedMinderState = {
           },
         ],
       },
+      inventoryEnabled: false,
       instructions: 'Follow taper schedule exactly as prescribed.',
     },
   ],

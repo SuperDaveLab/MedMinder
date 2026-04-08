@@ -162,6 +162,7 @@ describe('App persistence flow', () => {
 
   it('deletes a dose entry from care history when clicked by mistake', async () => {
     const user = userEvent.setup()
+    let newlyLoggedDoseEventId: string | null = null
 
     render(<App />)
 
@@ -176,9 +177,15 @@ describe('App persistence flow', () => {
         (doseEvent) => doseEvent.medicationId === 'med-interval-1',
       )
       expect(matchingDoseEvents.length).toBe(2)
+      newlyLoggedDoseEventId = matchingDoseEvents.find((doseEvent) => doseEvent.id !== 'dose-seed-1')?.id ?? null
+      expect(newlyLoggedDoseEventId).toBeTruthy()
     })
 
-    const loggedDoseEntry = within(medicationCard).getByTestId('dose-entry-00000000-0000-4000-8000-000000000001')
+    await waitFor(() => {
+      expect(screen.getByTestId(`dose-entry-${newlyLoggedDoseEventId}`)).toBeTruthy()
+    })
+
+    const loggedDoseEntry = screen.getByTestId(`dose-entry-${newlyLoggedDoseEventId}`)
     await user.click(within(loggedDoseEntry).getByRole('button', { name: 'Delete dose entry' }))
 
     expect(window.confirm).toHaveBeenCalledWith('Delete this dose entry? This cannot be undone.')
@@ -192,7 +199,7 @@ describe('App persistence flow', () => {
     })
 
     await waitFor(() => {
-      expect(screen.queryByTestId('dose-entry-00000000-0000-4000-8000-000000000001')).toBeNull()
+      expect(screen.queryByTestId(`dose-entry-${newlyLoggedDoseEventId}`)).toBeNull()
     })
   })
 

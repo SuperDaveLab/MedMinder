@@ -222,6 +222,11 @@ function App() {
     defaultDoseText: medication.defaultDoseText,
     active: medication.active,
     schedule: medication.schedule,
+    inventoryEnabled: medication.inventoryEnabled === true,
+    initialQuantity: medication.initialQuantity,
+    doseAmount: medication.doseAmount,
+    doseUnit: medication.doseUnit,
+    lowSupplyThreshold: medication.lowSupplyThreshold,
     reminderSettings: {
       ...medication.reminderSettings,
       enabled: reminderEnabled,

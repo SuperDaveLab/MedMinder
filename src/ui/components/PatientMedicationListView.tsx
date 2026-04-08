@@ -6,6 +6,7 @@ import type {
   Patient,
 } from '../../domain/types'
 import { computeMedicationStatus } from '../../engine/contract'
+import { computeMedicationInventoryStatus } from '../../engine/inventory'
 import { MedicationCard } from './MedicationCard'
 
 interface PatientMedicationListViewProps {
@@ -100,6 +101,7 @@ export function PatientMedicationListView({
         .map((medication) => ({
         medication,
         status: computeMedicationStatus({ medication, doseEvents, now }),
+        inventoryStatus: computeMedicationInventoryStatus({ medication, doseEvents }),
       }))
         .sort((left, right) => {
           // Scheduled medications come before PRN medications
@@ -155,7 +157,7 @@ export function PatientMedicationListView({
         <p className="med-list-empty">No active medications for this patient yet.</p>
       ) : null}
       <div className="medication-list">
-        {medicationStatuses.map(({ medication, status }) => {
+        {medicationStatuses.map(({ medication, status, inventoryStatus }) => {
           const descriptor = describeStatus(status)
           const medicationDoseEvents = doseEvents
             .filter((doseEvent) => doseEvent.medicationId === medication.id)
@@ -173,6 +175,7 @@ export function PatientMedicationListView({
               medicationDoseEvents={medicationDoseEvents}
               actionsDisabled={Boolean(actionsDisabled)}
               patientNotificationsEnabled={patient.notificationsEnabled !== false}
+              inventoryStatus={inventoryStatus}
               onLogDose={onGiveDose}
               onCorrectDose={onCorrectDose}
               onDeleteDose={onDeleteDose}

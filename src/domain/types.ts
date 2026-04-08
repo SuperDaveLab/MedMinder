@@ -102,6 +102,24 @@ export interface Medication {
   schedule: MedicationSchedule
   reminderSettings?: ReminderSettings
   overdueReminderIntervalMinutes?: number
+  // Undefined should be treated as false for backward compatibility with older backups/cloud payloads.
+  inventoryEnabled?: boolean
+  initialQuantity?: number
+  doseAmount?: number
+  doseUnit?: string
+  lowSupplyThreshold?: number
+}
+
+export type InventoryStatusLabel = 'inventory_ok' | 'low_supply' | 'out_of_stock'
+
+export interface MedicationInventoryStatus {
+  inventoryEnabled: boolean
+  configured: boolean
+  statusLabel: InventoryStatusLabel | null
+  remainingQuantity: number | null
+  quantityUsed: number
+  effectiveDoseCount: number
+  lowSupplyThreshold: number | null
 }
 
 export interface DoseEventBase {

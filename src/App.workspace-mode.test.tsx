@@ -344,6 +344,7 @@ describe('App workspace mode flow', () => {
           active: true,
           defaultDoseText: '100 mg',
           schedule: { type: 'interval', intervalMinutes: 240 },
+          inventoryEnabled: false,
         },
       ],
       doseEvents: [],
@@ -371,6 +372,11 @@ describe('App workspace mode flow', () => {
     // Create a new medication in cloud mode
     await user.type(screen.getByTestId('medication-name-input'), 'Cloud Vitamin D')
     await user.type(screen.getByTestId('medication-default-dose-input'), '1 tablet')
+    await user.click(screen.getByTestId('inventory-enabled-input'))
+    await user.type(screen.getByTestId('inventory-initial-quantity-input'), '90')
+    await user.type(screen.getByTestId('inventory-dose-amount-input'), '1')
+    await user.type(screen.getByTestId('inventory-dose-unit-input'), 'tablet')
+    await user.type(screen.getByTestId('inventory-low-threshold-input'), '10')
     await user.clear(screen.getByTestId('interval-value-input'))
     await user.type(screen.getByTestId('interval-value-input'), '24')
     await user.click(screen.getByTestId('save-medication-button'))
@@ -381,6 +387,12 @@ describe('App workspace mode flow', () => {
 
     let cloudState = controller.getCloudState()
     expect(cloudState.medications.map((medication) => medication.name)).toContain('Cloud Vitamin D')
+    const createdMedication = cloudState.medications.find((medication) => medication.name === 'Cloud Vitamin D')
+    expect(createdMedication?.inventoryEnabled).toBe(true)
+    expect(createdMedication?.initialQuantity).toBe(90)
+    expect(createdMedication?.doseAmount).toBe(1)
+    expect(createdMedication?.doseUnit).toBe('tablet')
+    expect(createdMedication?.lowSupplyThreshold).toBe(10)
 
     let localState = await getLocalMedMinderState()
     expect(localState.medications).toHaveLength(0)

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { Medication } from '../../domain/types'
-import type { DoseEvent, MedicationStatusLabel } from '../../domain/types'
+import type { DoseEvent, MedicationInventoryStatus, MedicationStatusLabel } from '../../domain/types'
 import {
   formatAbsoluteDateTime,
   formatDurationMinutesCompact,
@@ -15,6 +15,7 @@ interface MedicationCardProps {
   nextEligibleAt: Date
   now: Date
   medicationDoseEvents: DoseEvent[]
+  inventoryStatus: MedicationInventoryStatus
   actionsDisabled: boolean
   patientNotificationsEnabled: boolean
   onLogDose: (medicationId: string) => void
@@ -66,6 +67,52 @@ function toDateTimeLocalValue(isoDateString: string): string {
   ].join('')
 }
 
+function formatQuantity(value: number): string {
+  if (Number.isInteger(value)) {
+    return String(value)
+  }
+
+  return value.toFixed(2).replace(/\.00$/, '')
+}
+
+function renderInventorySummary(medication: Medication, inventoryStatus: MedicationInventoryStatus): {
+  text: string
+  className: string
+} | null {
+  if (!inventoryStatus.inventoryEnabled) {
+    return null
+  }
+
+  if (!inventoryStatus.configured || inventoryStatus.remainingQuantity === null) {
+    return {
+      text: 'Inventory tracking enabled (setup incomplete).',
+      className: 'inventory-status is-low-supply',
+    }
+  }
+
+  const unitSuffix = medication.doseUnit?.trim() ? ` ${medication.doseUnit.trim()}` : ''
+  const remainingLabel = `${formatQuantity(inventoryStatus.remainingQuantity)}${unitSuffix}`
+
+  if (inventoryStatus.statusLabel === 'out_of_stock') {
+    return {
+      text: `Out of stock: ${remainingLabel} remaining`,
+      className: 'inventory-status is-out-of-stock',
+    }
+  }
+
+  if (inventoryStatus.statusLabel === 'low_supply') {
+    return {
+      text: `Low supply: ${remainingLabel} remaining`,
+      className: 'inventory-status is-low-supply',
+    }
+  }
+
+  return {
+    text: `Inventory: ${remainingLabel} remaining`,
+    className: 'inventory-status is-ok',
+  }
+}
+
 export function MedicationCard({
   medication,
   statusLabel,
@@ -74,6 +121,7 @@ export function MedicationCard({
   nextEligibleAt,
   now,
   medicationDoseEvents,
+  inventoryStatus,
   actionsDisabled,
   patientNotificationsEnabled,
   onLogDose,
@@ -120,6 +168,7 @@ export function MedicationCard({
 
   const latestDisplayedDoseEvent = recentDoseEvents[0]
   const reminderEnabled = Boolean(medication.reminderSettings?.enabled)
+  const inventorySummary = renderInventorySummary(medication, inventoryStatus)
 
   const latestDisplayedTrustText = latestDisplayedDoseEvent
     ? latestDisplayedDoseEvent.corrected
@@ -247,6 +296,7 @@ export function MedicationCard({
           ) : null}
           <p className="dose-label">Default dose: {medication.defaultDoseText}</p>
           <p className="schedule-label">{renderScheduleLabel(medication)}</p>
+          {inventorySummary ? <p className={inventorySummary.className}>{inventorySummary.text}</p> : null}
         </div>
         <div className="med-card-actions">
           <span className="status-pill">{statusText}</span>

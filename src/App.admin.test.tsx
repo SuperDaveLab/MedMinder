@@ -253,6 +253,37 @@ describe('App administration flow', () => {
     })
   })
 
+  it('saves inventory settings from medication form', async () => {
+    const user = userEvent.setup()
+
+    render(<App />)
+    await screen.findByRole('option', { name: 'Alex Rivera' })
+    await user.click(screen.getByTestId('tab-meds'))
+    await user.click(screen.getByTestId('start-add-medication-button'))
+
+    await user.type(screen.getByTestId('medication-name-input'), 'Hydroxyzine')
+    await user.type(screen.getByTestId('medication-default-dose-input'), '25 mg')
+    await user.click(screen.getByTestId('inventory-enabled-input'))
+    await user.type(screen.getByTestId('inventory-initial-quantity-input'), '120')
+    await user.type(screen.getByTestId('inventory-dose-amount-input'), '25')
+    await user.type(screen.getByTestId('inventory-dose-unit-input'), 'mg')
+    await user.type(screen.getByTestId('inventory-low-threshold-input'), '25')
+    await user.click(screen.getByTestId('save-medication-button'))
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Hydroxyzine').length).toBeGreaterThan(0)
+    })
+
+    const backup = await exportFullBackup()
+    const medication = backup.medications.find((entry) => entry.name === 'Hydroxyzine')
+
+    expect(medication?.inventoryEnabled).toBe(true)
+    expect(medication?.initialQuantity).toBe(120)
+    expect(medication?.doseAmount).toBe(25)
+    expect(medication?.doseUnit).toBe('mg')
+    expect(medication?.lowSupplyThreshold).toBe(25)
+  })
+
   it('edits an existing medication', async () => {
     const user = userEvent.setup()
 
