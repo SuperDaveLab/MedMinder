@@ -7,6 +7,7 @@ import type {
   SignOutRequest,
   UpdateAccountProfileRequest,
 } from '../domain/auth'
+import { getJsonErrorMessage, parseJsonResponse } from './http'
 
 export interface AuthApiClient {
   createAccount: (request: CreateAccountRequest) => Promise<CreateAccountResponse>
@@ -16,27 +17,8 @@ export interface AuthApiClient {
   updateAccountProfile: (sessionId: string, request: UpdateAccountProfileRequest) => Promise<AuthAccount>
 }
 
-interface JsonErrorPayload {
-  message?: string
-}
-
-async function parseJson<T>(response: Response): Promise<T> {
-  const payload = (await response.json()) as T
-  return payload
-}
-
 async function handleError(response: Response): Promise<never> {
-  let message = `Request failed (${String(response.status)})`
-
-  try {
-    const payload = await parseJson<JsonErrorPayload>(response)
-    if (payload?.message) {
-      message = payload.message
-    }
-  } catch {
-    // ignore parse failures and fall back to generic status text
-  }
-
+  const message = await getJsonErrorMessage(response)
   throw new Error(message)
 }
 
@@ -65,7 +47,7 @@ export function createAuthApiClient(baseUrl: string): AuthApiClient {
       return undefined as TResponse
     }
 
-    return parseJson<TResponse>(response)
+    return parseJsonResponse<TResponse>(response)
   }
 
   return {
@@ -86,7 +68,7 @@ export function createAuthApiClient(baseUrl: string): AuthApiClient {
         await handleError(response)
       }
 
-      return parseJson<AuthAccount>(response)
+      return parseJsonResponse<AuthAccount>(response)
     },
     updateAccountProfile: async (sessionId, request) => {
       const response = await fetch(`${normalizedBaseUrl}/api/auth/account`, {
@@ -102,7 +84,7 @@ export function createAuthApiClient(baseUrl: string): AuthApiClient {
         await handleError(response)
       }
 
-      return parseJson<AuthAccount>(response)
+      return parseJsonResponse<AuthAccount>(response)
     },
   }
 }

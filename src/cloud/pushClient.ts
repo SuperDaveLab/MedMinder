@@ -4,6 +4,7 @@ import type {
   PushPublicKeyResponse,
   RegisterPushSubscriptionRequest,
 } from '../domain/pushNotifications'
+import { getJsonErrorMessage, parseJsonResponse } from './http'
 
 export interface PushApiClient {
   getPublicKey: () => Promise<PushPublicKeyResponse>
@@ -17,27 +18,8 @@ export interface PushApiClient {
   ) => Promise<void>
 }
 
-interface JsonErrorPayload {
-  message?: string
-}
-
-async function parseJson<T>(response: Response): Promise<T> {
-  const payload = (await response.json()) as T
-  return payload
-}
-
 async function handleError(response: Response): Promise<never> {
-  let message = `Request failed (${String(response.status)})`
-
-  try {
-    const payload = await parseJson<JsonErrorPayload>(response)
-    if (payload?.message) {
-      message = payload.message
-    }
-  } catch {
-    // ignore parse failures and fall back to generic status text
-  }
-
+  const message = await getJsonErrorMessage(response)
   throw new Error(message)
 }
 
@@ -52,7 +34,7 @@ export function createPushApiClient(baseUrl: string): PushApiClient {
         await handleError(response)
       }
 
-      return parseJson<PushPublicKeyResponse>(response)
+      return parseJsonResponse<PushPublicKeyResponse>(response)
     },
 
     upsertSubscription: async (authState, request) => {

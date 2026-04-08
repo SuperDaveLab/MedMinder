@@ -1,32 +1,15 @@
 import type { AuthSessionState } from '../domain/auth'
 import type { CloudSyncRequest, CloudSyncResponse } from '../domain/cloudSync'
 import type { MedMinderState } from '../domain/types'
+import { getJsonErrorMessage, parseJsonResponse } from './http'
 
 export interface CloudSyncApiClient {
   sync: (authState: AuthSessionState, request: CloudSyncRequest) => Promise<CloudSyncResponse>
   getState: (authState: AuthSessionState) => Promise<MedMinderState>
 }
 
-interface JsonErrorPayload {
-  message?: string
-}
-
-async function parseJson<T>(response: Response): Promise<T> {
-  return (await response.json()) as T
-}
-
 async function handleError(response: Response): Promise<never> {
-  let message = `Request failed (${String(response.status)})`
-
-  try {
-    const payload = await parseJson<JsonErrorPayload>(response)
-    if (payload?.message) {
-      message = payload.message
-    }
-  } catch {
-    // no-op
-  }
-
+  const message = await getJsonErrorMessage(response)
   throw new Error(message)
 }
 
@@ -48,7 +31,7 @@ export function createCloudSyncApiClient(baseUrl: string): CloudSyncApiClient {
         await handleError(response)
       }
 
-      return parseJson<CloudSyncResponse>(response)
+      return parseJsonResponse<CloudSyncResponse>(response)
     },
     getState: async (authState) => {
       const response = await fetch(`${normalizedBaseUrl}/api/cloud/state`, {
@@ -62,7 +45,7 @@ export function createCloudSyncApiClient(baseUrl: string): CloudSyncApiClient {
         await handleError(response)
       }
 
-      return parseJson<MedMinderState>(response)
+      return parseJsonResponse<MedMinderState>(response)
     },
   }
 }
