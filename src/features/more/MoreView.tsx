@@ -375,283 +375,338 @@ export function MoreView({
   }, [resetToken])
 
   const accountSection = (
-    <section className="admin-section no-print" data-testid="account-section">
+    <section className="admin-section no-print account-section" data-testid="account-section">
       <h2>Account (optional cloud sync)</h2>
       {isAuthLoading ? <p className="subhead">Loading account state...</p> : null}
       {!isAuthLoading && authState ? (
         <>
-          <p className="subhead">Signed in as {authState.account.email}</p>
-          <p className="subhead">Cloud sync and premium reminder features can be enabled for this account.</p>
-          <label>
-            Notification delivery
-            <select
-              data-testid="account-notification-policy-select"
-              value={authNotificationPolicyInput}
-              onChange={(event) => setAuthNotificationPolicyInput(event.target.value as NotificationDeliveryPolicy)}
-            >
-              {notificationDeliveryPolicies.map((policy) => (
-                <option key={policy} value={policy}>
-                  {getNotificationDeliveryPolicyLabel(policy)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <p className="subhead">
-            Default recommended: Push first, then email only if push delivers to zero subscriptions.
-          </p>
-          <label>
-            SMS phone (E.164, e.g. +15551234567)
-            <input
-              data-testid="account-phone-input"
-              type="tel"
-              value={authPhoneInput}
-              onChange={(event) => setAuthPhoneInput(event.target.value)}
-              autoComplete="tel"
-              placeholder="+15551234567"
-            />
-          </label>
-          <div className="account-password-panel">
-            <h3>Change password</h3>
-            <label>
-              Current password
-              <input
-                data-testid="current-password-input"
-                type="password"
-                value={currentPasswordInput}
-                onChange={(event) => {
-                  onClearAuthError()
-                  setPasswordStatusMessage(null)
-                  setCurrentPasswordInput(event.target.value)
-                }}
-                autoComplete="current-password"
-              />
-            </label>
-            <label>
-              New password
-              <input
-                data-testid="new-password-input"
-                type="password"
-                value={newPasswordInput}
-                onChange={(event) => {
-                  onClearAuthError()
-                  setPasswordStatusMessage(null)
-                  setNewPasswordInput(event.target.value)
-                }}
-                autoComplete="new-password"
-              />
-            </label>
-            <label>
-              Confirm new password
-              <input
-                data-testid="confirm-new-password-input"
-                type="password"
-                value={confirmNewPasswordInput}
-                onChange={(event) => {
-                  onClearAuthError()
-                  setPasswordStatusMessage(null)
-                  setConfirmNewPasswordInput(event.target.value)
-                }}
-                autoComplete="new-password"
-              />
-            </label>
-            {passwordStatusMessage ? (
-              <p className={passwordStatusMessage.kind === 'error' ? 'form-error' : 'form-success'}>
-                {passwordStatusMessage.text}
-              </p>
-            ) : null}
-            {authError ? <p className="form-error">{authError}</p> : null}
-            <button
-              className="utility-button"
-              data-testid="change-password-button"
-              disabled={isAuthActionInProgress}
-              onClick={() => void handleChangePassword()}
-            >
-              {isAuthActionInProgress ? 'Working...' : 'Change password'}
-            </button>
+          <div className="account-section-header">
+            <p className="subhead">Signed in as {authState.account.email}</p>
+            <p className="subhead">Cloud sync and premium reminder features can be enabled for this account.</p>
           </div>
-          <div className="form-actions">
-            <button
-              className="utility-button"
-              data-testid="save-account-settings-button"
-              disabled={isAuthActionInProgress}
-              onClick={() => void handleSaveAccountSettings()}
-            >
-              {isAuthActionInProgress ? 'Working...' : 'Save notification settings'}
-            </button>
-            <button
-              className="utility-button"
-              data-testid="sign-out-button"
-              disabled={isAuthActionInProgress}
-              onClick={() => void onSignOut()}
-            >
-              {isAuthActionInProgress ? 'Working...' : 'Sign out'}
-            </button>
+          <div className="account-grid">
+            <section className="account-card account-preferences-card">
+              <div className="account-card-header">
+                <p className="account-card-eyebrow">Preferences</p>
+                <h3>Delivery and contact</h3>
+                <p>Set how reminder relay should reach you and keep your backup contact info ready for later account features.</p>
+              </div>
+              <div className="account-card-body">
+                <label>
+                  Notification delivery
+                  <select
+                    data-testid="account-notification-policy-select"
+                    value={authNotificationPolicyInput}
+                    onChange={(event) => setAuthNotificationPolicyInput(event.target.value as NotificationDeliveryPolicy)}
+                  >
+                    {notificationDeliveryPolicies.map((policy) => (
+                      <option key={policy} value={policy}>
+                        {getNotificationDeliveryPolicyLabel(policy)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <p className="account-field-hint">
+                  Default recommended: Push first, then email only if push delivers to zero subscriptions.
+                </p>
+                <label>
+                  SMS phone (E.164, e.g. +15551234567)
+                  <input
+                    data-testid="account-phone-input"
+                    type="tel"
+                    value={authPhoneInput}
+                    onChange={(event) => setAuthPhoneInput(event.target.value)}
+                    autoComplete="tel"
+                    placeholder="+15551234567"
+                  />
+                </label>
+              </div>
+              <div className="account-card-actions form-actions">
+                <button
+                  className="utility-button"
+                  data-testid="save-account-settings-button"
+                  disabled={isAuthActionInProgress}
+                  onClick={() => void handleSaveAccountSettings()}
+                >
+                  {isAuthActionInProgress ? 'Working...' : 'Save notification settings'}
+                </button>
+                <button
+                  className="utility-button"
+                  data-testid="sign-out-button"
+                  disabled={isAuthActionInProgress}
+                  onClick={() => void onSignOut()}
+                >
+                  {isAuthActionInProgress ? 'Working...' : 'Sign out'}
+                </button>
+              </div>
+            </section>
+
+            <section className="account-card account-password-panel">
+              <div className="account-card-header">
+                <p className="account-card-eyebrow">Security</p>
+                <h3>Change password</h3>
+                <p>Update your password without signing out on this device. Other signed-in sessions will be revoked.</p>
+              </div>
+              <div className="account-card-body">
+                <label>
+                  Current password
+                  <input
+                    data-testid="current-password-input"
+                    type="password"
+                    value={currentPasswordInput}
+                    onChange={(event) => {
+                      onClearAuthError()
+                      setPasswordStatusMessage(null)
+                      setCurrentPasswordInput(event.target.value)
+                    }}
+                    autoComplete="current-password"
+                  />
+                </label>
+                <label>
+                  New password
+                  <input
+                    data-testid="new-password-input"
+                    type="password"
+                    value={newPasswordInput}
+                    onChange={(event) => {
+                      onClearAuthError()
+                      setPasswordStatusMessage(null)
+                      setNewPasswordInput(event.target.value)
+                    }}
+                    autoComplete="new-password"
+                  />
+                </label>
+                <label>
+                  Confirm new password
+                  <input
+                    data-testid="confirm-new-password-input"
+                    type="password"
+                    value={confirmNewPasswordInput}
+                    onChange={(event) => {
+                      onClearAuthError()
+                      setPasswordStatusMessage(null)
+                      setConfirmNewPasswordInput(event.target.value)
+                    }}
+                    autoComplete="new-password"
+                  />
+                </label>
+                {passwordStatusMessage ? (
+                  <p className={passwordStatusMessage.kind === 'error' ? 'form-error' : 'form-success'}>
+                    {passwordStatusMessage.text}
+                  </p>
+                ) : null}
+                {authError ? <p className="form-error">{authError}</p> : null}
+              </div>
+              <div className="account-card-actions">
+                <button
+                  className="utility-button"
+                  data-testid="change-password-button"
+                  disabled={isAuthActionInProgress}
+                  onClick={() => void handleChangePassword()}
+                >
+                  {isAuthActionInProgress ? 'Working...' : 'Change password'}
+                </button>
+              </div>
+            </section>
           </div>
         </>
       ) : null}
 
       {!isAuthLoading && !authState ? (
         <>
-          <p className="subhead">Create an account to opt into cloud backup/sync and premium reminder delivery.</p>
-          <label>
-            Email
-            <input
-              data-testid="auth-email-input"
-              type="email"
-              value={authEmailInput}
-              onChange={(event) => {
-                onClearAuthError()
-                setAuthEmailInput(event.target.value)
-              }}
-              autoComplete="email"
-            />
-          </label>
-          <label>
-            Password
-            <input
-              data-testid="auth-password-input"
-              type="password"
-              value={authPasswordInput}
-              onChange={(event) => {
-                onClearAuthError()
-                setAuthPasswordInput(event.target.value)
-              }}
-              autoComplete="current-password"
-            />
-          </label>
-          {recoveryStatusMessage && !resetToken && !isForgotPasswordMode ? (
-            <p className={recoveryStatusMessage.kind === 'error' ? 'form-error' : 'form-success'}>
-              {recoveryStatusMessage.text}
-            </p>
-          ) : null}
-          {resetToken ? (
-            <div className="account-password-panel">
-              <h3>Reset password</h3>
-              <p className="subhead">Choose a new password for this account.</p>
-              <label>
-                New password
-                <input
-                  data-testid="reset-password-input"
-                  type="password"
-                  value={newPasswordInput}
-                  onChange={(event) => {
-                    onClearAuthError()
-                    setRecoveryStatusMessage(null)
-                    setNewPasswordInput(event.target.value)
-                  }}
-                  autoComplete="new-password"
-                />
-              </label>
-              <label>
-                Confirm new password
-                <input
-                  data-testid="reset-password-confirm-input"
-                  type="password"
-                  value={confirmNewPasswordInput}
-                  onChange={(event) => {
-                    onClearAuthError()
-                    setRecoveryStatusMessage(null)
-                    setConfirmNewPasswordInput(event.target.value)
-                  }}
-                  autoComplete="new-password"
-                />
-              </label>
-              {recoveryStatusMessage ? (
-                <p className={recoveryStatusMessage.kind === 'error' ? 'form-error' : 'form-success'}>
-                  {recoveryStatusMessage.text}
+          <div className="account-section-header">
+            <p className="subhead">Create an account to opt into cloud backup/sync and premium reminder delivery.</p>
+          </div>
+          <div className="account-grid">
+            <section className="account-card account-auth-card">
+              <div className="account-card-header">
+                <p className="account-card-eyebrow">Access</p>
+                <h3>{resetToken ? 'Reset your password' : 'Sign in or create account'}</h3>
+                <p>
+                  {resetToken
+                    ? 'Choose a new password for this account.'
+                    : 'Use the same form to sign in now or create an account for cloud sync.'}
                 </p>
-              ) : null}
-              {authError ? <p className="form-error">{authError}</p> : null}
-              <button
-                className="utility-button"
-                data-testid="reset-password-button"
-                disabled={isAuthActionInProgress}
-                onClick={() => void handleResetPassword()}
-              >
-                {isAuthActionInProgress ? 'Working...' : 'Reset password'}
-              </button>
-            </div>
-          ) : null}
-          {!resetToken && isForgotPasswordMode ? (
-            <div className="account-password-panel">
-              <h3>Forgot password</h3>
-              <p className="subhead">Enter your account email and we will send a reset link.</p>
-              <label>
-                Recovery email
-                <input
-                  data-testid="forgot-password-email-input"
-                  type="email"
-                  value={forgotPasswordEmailInput}
-                  onChange={(event) => {
-                    onClearAuthError()
-                    setRecoveryStatusMessage(null)
-                    setForgotPasswordEmailInput(event.target.value)
-                  }}
-                  autoComplete="email"
-                />
-              </label>
-              {recoveryStatusMessage ? (
-                <p className={recoveryStatusMessage.kind === 'error' ? 'form-error' : 'form-success'}>
-                  {recoveryStatusMessage.text}
-                </p>
-              ) : null}
-              {authError ? <p className="form-error">{authError}</p> : null}
-              <div className="form-actions">
-                <button
-                  className="utility-button"
-                  data-testid="request-password-reset-button"
-                  disabled={isAuthActionInProgress}
-                  onClick={() => void handleRequestPasswordReset()}
-                >
-                  {isAuthActionInProgress ? 'Working...' : 'Send reset link'}
-                </button>
-                <button
-                  className="utility-button"
-                  data-testid="cancel-forgot-password-button"
-                  disabled={isAuthActionInProgress}
-                  onClick={() => {
-                    onClearAuthError()
-                    setRecoveryStatusMessage(null)
-                    setIsForgotPasswordMode(false)
-                  }}
-                >
-                  Back to sign in
-                </button>
               </div>
-            </div>
-          ) : null}
-          {authError && !isForgotPasswordMode && !resetToken ? <p className="form-error">{authError}</p> : null}
-          <div className="form-actions">
-            <button
-              className="utility-button"
-              data-testid="create-account-button"
-              disabled={isAuthActionInProgress || Boolean(resetToken)}
-              onClick={() => void handleCreateAccount()}
-            >
-              {isAuthActionInProgress ? 'Working...' : 'Create account'}
-            </button>
-            <button
-              className="utility-button"
-              data-testid="sign-in-button"
-              disabled={isAuthActionInProgress || Boolean(resetToken)}
-              onClick={() => void handleSignIn()}
-            >
-              {isAuthActionInProgress ? 'Working...' : 'Sign in'}
-            </button>
-            {!resetToken ? (
-              <button
-                className="utility-button"
-                data-testid="forgot-password-button"
-                disabled={isAuthActionInProgress}
-                onClick={() => {
-                  onClearAuthError()
-                  setRecoveryStatusMessage(null)
-                  setForgotPasswordEmailInput(authEmailInput.trim())
-                  setIsForgotPasswordMode((previous) => !previous)
-                }}
-              >
-                {isForgotPasswordMode ? 'Hide reset form' : 'Forgot password'}
-              </button>
+              <div className="account-card-body">
+                <label>
+                  Email
+                  <input
+                    data-testid="auth-email-input"
+                    type="email"
+                    value={authEmailInput}
+                    onChange={(event) => {
+                      onClearAuthError()
+                      setAuthEmailInput(event.target.value)
+                    }}
+                    autoComplete="email"
+                  />
+                </label>
+                {!resetToken ? (
+                  <label>
+                    Password
+                    <input
+                      data-testid="auth-password-input"
+                      type="password"
+                      value={authPasswordInput}
+                      onChange={(event) => {
+                        onClearAuthError()
+                        setAuthPasswordInput(event.target.value)
+                      }}
+                      autoComplete="current-password"
+                    />
+                  </label>
+                ) : null}
+                {recoveryStatusMessage && !resetToken && !isForgotPasswordMode ? (
+                  <p className={recoveryStatusMessage.kind === 'error' ? 'form-error' : 'form-success'}>
+                    {recoveryStatusMessage.text}
+                  </p>
+                ) : null}
+                {authError && !isForgotPasswordMode && !resetToken ? <p className="form-error">{authError}</p> : null}
+              </div>
+              <div className="account-card-actions form-actions">
+                <button
+                  className="utility-button"
+                  data-testid="create-account-button"
+                  disabled={isAuthActionInProgress || Boolean(resetToken)}
+                  onClick={() => void handleCreateAccount()}
+                >
+                  {isAuthActionInProgress ? 'Working...' : 'Create account'}
+                </button>
+                <button
+                  className="utility-button"
+                  data-testid="sign-in-button"
+                  disabled={isAuthActionInProgress || Boolean(resetToken)}
+                  onClick={() => void handleSignIn()}
+                >
+                  {isAuthActionInProgress ? 'Working...' : 'Sign in'}
+                </button>
+                {!resetToken ? (
+                  <button
+                    className="utility-button"
+                    data-testid="forgot-password-button"
+                    disabled={isAuthActionInProgress}
+                    onClick={() => {
+                      onClearAuthError()
+                      setRecoveryStatusMessage(null)
+                      setForgotPasswordEmailInput(authEmailInput.trim())
+                      setIsForgotPasswordMode((previous) => !previous)
+                    }}
+                  >
+                    {isForgotPasswordMode ? 'Hide reset form' : 'Forgot password'}
+                  </button>
+                ) : null}
+              </div>
+            </section>
+
+            {resetToken ? (
+              <section className="account-card account-password-panel">
+                <div className="account-card-header">
+                  <p className="account-card-eyebrow">Security</p>
+                  <h3>Reset password</h3>
+                  <p>This reset link can only be used once. Choose a new password to finish recovery.</p>
+                </div>
+                <div className="account-card-body">
+                  <label>
+                    New password
+                    <input
+                      data-testid="reset-password-input"
+                      type="password"
+                      value={newPasswordInput}
+                      onChange={(event) => {
+                        onClearAuthError()
+                        setRecoveryStatusMessage(null)
+                        setNewPasswordInput(event.target.value)
+                      }}
+                      autoComplete="new-password"
+                    />
+                  </label>
+                  <label>
+                    Confirm new password
+                    <input
+                      data-testid="reset-password-confirm-input"
+                      type="password"
+                      value={confirmNewPasswordInput}
+                      onChange={(event) => {
+                        onClearAuthError()
+                        setRecoveryStatusMessage(null)
+                        setConfirmNewPasswordInput(event.target.value)
+                      }}
+                      autoComplete="new-password"
+                    />
+                  </label>
+                  {recoveryStatusMessage ? (
+                    <p className={recoveryStatusMessage.kind === 'error' ? 'form-error' : 'form-success'}>
+                      {recoveryStatusMessage.text}
+                    </p>
+                  ) : null}
+                  {authError ? <p className="form-error">{authError}</p> : null}
+                </div>
+                <div className="account-card-actions">
+                  <button
+                    className="utility-button"
+                    data-testid="reset-password-button"
+                    disabled={isAuthActionInProgress}
+                    onClick={() => void handleResetPassword()}
+                  >
+                    {isAuthActionInProgress ? 'Working...' : 'Reset password'}
+                  </button>
+                </div>
+              </section>
+            ) : null}
+
+            {!resetToken && isForgotPasswordMode ? (
+              <section className="account-card account-password-panel">
+                <div className="account-card-header">
+                  <p className="account-card-eyebrow">Recovery</p>
+                  <h3>Forgot password</h3>
+                  <p>Enter your account email and we will send a reset link once email delivery is available.</p>
+                </div>
+                <div className="account-card-body">
+                  <label>
+                    Recovery email
+                    <input
+                      data-testid="forgot-password-email-input"
+                      type="email"
+                      value={forgotPasswordEmailInput}
+                      onChange={(event) => {
+                        onClearAuthError()
+                        setRecoveryStatusMessage(null)
+                        setForgotPasswordEmailInput(event.target.value)
+                      }}
+                      autoComplete="email"
+                    />
+                  </label>
+                  {recoveryStatusMessage ? (
+                    <p className={recoveryStatusMessage.kind === 'error' ? 'form-error' : 'form-success'}>
+                      {recoveryStatusMessage.text}
+                    </p>
+                  ) : null}
+                  {authError ? <p className="form-error">{authError}</p> : null}
+                </div>
+                <div className="account-card-actions form-actions">
+                  <button
+                    className="utility-button"
+                    data-testid="request-password-reset-button"
+                    disabled={isAuthActionInProgress}
+                    onClick={() => void handleRequestPasswordReset()}
+                  >
+                    {isAuthActionInProgress ? 'Working...' : 'Send reset link'}
+                  </button>
+                  <button
+                    className="utility-button"
+                    data-testid="cancel-forgot-password-button"
+                    disabled={isAuthActionInProgress}
+                    onClick={() => {
+                      onClearAuthError()
+                      setRecoveryStatusMessage(null)
+                      setIsForgotPasswordMode(false)
+                    }}
+                  >
+                    Back to sign in
+                  </button>
+                </div>
+              </section>
             ) : null}
           </div>
         </>

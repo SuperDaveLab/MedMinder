@@ -896,6 +896,109 @@ button {
   margin: 0;
 }
 
+.account-section {
+  gap: 0.85rem;
+}
+
+.account-section-header {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.account-section-header .subhead {
+  margin: 0;
+}
+
+.account-grid {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.account-card {
+  display: grid;
+  gap: 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 0.95rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 251, 254, 0.98) 100%);
+  box-shadow: 0 16px 32px -28px rgba(15, 23, 42, 0.35);
+}
+
+.account-card-header {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.account-card-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--ink);
+}
+
+.account-card-header p:last-child {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  max-width: 58ch;
+}
+
+.account-card-eyebrow {
+  margin: 0;
+  color: var(--brand);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.account-card-body {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.account-card-actions {
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  align-items: center;
+  padding-top: 0.15rem;
+}
+
+.account-field-hint {
+  margin: -0.2rem 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.account-auth-card,
+.account-preferences-card,
+.account-password-panel {
+  position: relative;
+  overflow: hidden;
+}
+
+.account-auth-card::before,
+.account-preferences-card::before,
+.account-password-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, var(--brand) 0%, #22c55e 100%);
+  opacity: 0.9;
+}
+
+.account-auth-card .utility-button:first-child,
+.account-preferences-card .utility-button:first-child,
+.account-password-panel .utility-button:first-child {
+  background: var(--brand-soft);
+  border-color: transparent;
+  color: var(--brand);
+}
+
 .duration-input-row {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(120px, 1fr);
@@ -1064,6 +1167,15 @@ button {
   .admin-item-actions .utility-button {
     min-height: 36px;
   }
+
+  .account-card {
+    padding: 0.85rem;
+  }
+
+  .account-card-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
 }
 
 .summary-meta {
@@ -1147,6 +1259,11 @@ button {
 
   .view-tab {
     padding: 0.52rem 0.8rem;
+  }
+
+  .account-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
   }
 }
 
