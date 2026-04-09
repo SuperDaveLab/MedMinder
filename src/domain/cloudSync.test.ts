@@ -51,7 +51,7 @@ describe('cloud sync contracts', () => {
       device: {
         deviceId: 'device-1',
         platform: 'pwa',
-        appVersion: '0.1.0',
+        appVersion: '0.2.0',
         timezone: 'America/New_York',
       },
     })
