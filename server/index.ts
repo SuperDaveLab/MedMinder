@@ -1,6 +1,7 @@
 import cors from 'cors'
 import express from 'express'
 import type { Request, Response } from 'express'
+import type { RowDataPacket } from 'mysql2/promise'
 import { dbPool, initializeAuthSchema } from './db'
 import { applyCloudSyncRequest, getCloudAccountState, type AuthenticatedAccountContext } from './cloudService'
 import { serverConfig } from './config'
@@ -18,6 +19,7 @@ import {
   updateAccountPhoneE164,
 } from './authService'
 import { startNotificationScheduler } from './notificationScheduler'
+import { sendExportEmail } from './emailNotifier'
 import {
   deletePushSubscription,
   upsertPushSubscription,
@@ -46,7 +48,15 @@ import { notificationDeliveryPolicies } from '../src/domain/notificationPolicy'
 const app = express()
 
 app.use(cors({ origin: true }))
-app.use(express.json())
+app.use(express.json({ limit: '2mb' }))
+
+interface SessionLookupRow extends RowDataPacket {
+  session_id: string
+  account_id: string
+  user_id: string
+  expires_at: Date
+  revoked_at: Date | null
+}
 
 async function requireSession(request: Request): Promise<AuthenticatedAccountContext> {
   const sessionId = String(request.header('x-medminder-session-id') ?? '').trim()
@@ -55,13 +65,7 @@ async function requireSession(request: Request): Promise<AuthenticatedAccountCon
     throw new Error('Missing session id.')
   }
 
-  const [rows] = await dbPool.query<Array<{
-    session_id: string
-    account_id: string
-    user_id: string
-    expires_at: Date
-    revoked_at: Date | null
-  }>>(
+  const [rows] = await dbPool.query<SessionLookupRow[]>(
     `
       SELECT session_id, account_id, user_id, expires_at, revoked_at
       FROM sessions
@@ -347,6 +351,39 @@ app.delete('/api/notifications/push/subscriptions', async (request: Request, res
   } catch (error) {
     response.status(401).json({
       message: error instanceof Error ? error.message : 'Push unsubscription not authorized.',
+    })
+  }
+})
+
+app.post('/api/export/email', async (request: Request, response: Response) => {
+  try {
+    const accountContext = await requireSession(request)
+    const account = await getAccountById(accountContext.accountId)
+    const { filename, content, mimeType } = request.body as {
+      filename?: unknown
+      content?: unknown
+      mimeType?: unknown
+    }
+
+    if (
+      typeof filename !== 'string' || !filename.trim()
+      || typeof content !== 'string'
+      || typeof mimeType !== 'string' || !mimeType.trim()
+    ) {
+      response.status(400).json({ message: 'filename, content, and mimeType are required.' })
+      return
+    }
+
+    const subject = `Med-Minder export: ${filename}`
+    const sent = await sendExportEmail({ to: account.email, subject, filename, content, mimeType })
+    if (!sent) {
+      response.status(503).json({ message: 'Export email service is unavailable right now.' })
+      return
+    }
+    response.json({ sent: true })
+  } catch (error) {
+    response.status(401).json({
+      message: error instanceof Error ? error.message : 'Export email failed.',
     })
   }
 })

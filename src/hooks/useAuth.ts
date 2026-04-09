@@ -49,6 +49,7 @@ export interface UseAuthResult {
   }) => Promise<void>
   refreshAuthSessions: () => Promise<void>
   revokeOtherAuthSessions: () => Promise<void>
+  emailExport: (payload: { filename: string; content: string; mimeType: string }) => Promise<void>
   clearAuthError: () => void
 }
 
@@ -346,6 +347,13 @@ export function useAuth(): UseAuthResult {
     setAuthError(null)
   }, [])
 
+  const emailExport = useCallback(async (payload: { filename: string; content: string; mimeType: string }) => {
+    if (!authState) {
+      throw new Error('You need to sign in before emailing an export.')
+    }
+    await authClient.emailExport(authState.session.sessionId, payload)
+  }, [authClient, authState])
+
   return {
     authState,
     isAuthLoading,
@@ -362,6 +370,7 @@ export function useAuth(): UseAuthResult {
     updateAccountSettings,
     refreshAuthSessions,
     revokeOtherAuthSessions,
+    emailExport,
     clearAuthError,
   }
 }

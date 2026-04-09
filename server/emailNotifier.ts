@@ -132,3 +132,40 @@ export async function sendTransactionalEmail(
     return false
   }
 }
+
+export interface ExportEmailPayload {
+  to: string
+  subject: string
+  filename: string
+  content: string
+  mimeType: string
+}
+
+export async function sendExportEmail(payload: ExportEmailPayload): Promise<boolean> {
+  const transporter = getSmtpTransporter()
+
+  if (!transporter) {
+    console.log(`[email-stub] export email to ${payload.to} | ${payload.filename}`)
+    return false
+  }
+
+  try {
+    await transporter.sendMail({
+      from: serverConfig.smtp.from,
+      to: payload.to,
+      subject: payload.subject,
+      text: 'Please find your Med-Minder export attached.\n\n-- Med-Minder',
+      attachments: [
+        {
+          filename: payload.filename,
+          content: payload.content,
+          contentType: payload.mimeType,
+        },
+      ],
+    })
+    return true
+  } catch (error) {
+    console.error(`[email] Failed to send export email to ${payload.to}:`, error)
+    return false
+  }
+}

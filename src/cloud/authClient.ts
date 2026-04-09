@@ -29,6 +29,7 @@ export interface AuthApiClient {
   updateAccountProfile: (sessionId: string, request: UpdateAccountProfileRequest) => Promise<AuthAccount>
   listAccountSessions: (sessionId: string) => Promise<AccountSessionSummary[]>
   revokeOtherSessions: (sessionId: string) => Promise<RevokeOtherSessionsResponse>
+  emailExport: (sessionId: string, payload: { filename: string; content: string; mimeType: string }) => Promise<{ sent: boolean }>
 }
 
 async function handleError(response: Response): Promise<never> {
@@ -131,6 +132,11 @@ export function createAuthApiClient(baseUrl: string): AuthApiClient {
     revokeOtherSessions: (sessionId) => postJson<Record<string, never>, RevokeOtherSessionsResponse>(
       '/api/auth/sessions/revoke-others',
       {},
+      sessionId,
+    ),
+    emailExport: (sessionId, payload) => postJson<{ filename: string; content: string; mimeType: string }, { sent: boolean }>(
+      '/api/export/email',
+      payload,
       sessionId,
     ),
   }

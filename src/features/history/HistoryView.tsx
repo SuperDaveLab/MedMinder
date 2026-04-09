@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import type { AuthSessionState } from '../../domain/auth'
 import type { DoseEvent, Medication, Patient } from '../../domain/types'
 import { formatRelativeTime } from '../../ui/time'
 import { buildDoseHistoryCsv, buildDoseHistoryRows } from '../../export/doseHistoryCsv'
@@ -16,6 +18,8 @@ interface HistoryViewProps {
   medications: Medication[]
   doseEvents: DoseEvent[]
   now: Date
+  authState: AuthSessionState | null
+  onEmailExport: (payload: { filename: string; content: string; mimeType: string }) => Promise<void>
 }
 
 function toTimestamp(value: string): number {
@@ -46,19 +50,39 @@ function formatLocalDayLabel(dayKey: string): string {
   })
 }
 
-export function HistoryView({ patient, medications, doseEvents, now }: HistoryViewProps) {
+export function HistoryView({ patient, medications, doseEvents, now, authState, onEmailExport }: HistoryViewProps) {
+  const [shareStatusMessage, setShareStatusMessage] = useState<{ kind: 'success' | 'error'; text: string } | null>(null)
+  const [isSharing, setIsSharing] = useState(false)
   const medicationById = new Map(medications.map((medication) => [medication.id, medication.name]))
 
-  function handleExportCsv() {
+  function buildCsvExport(): { filename: string; csv: string } {
     const rows = buildDoseHistoryRows([patient], medications, doseEvents)
     const csv = buildDoseHistoryCsv(rows)
     const dateSlug = new Date().toISOString().slice(0, 10)
     const nameSlug = patient.displayName.toLowerCase().replace(/[^a-z0-9]+/g, '-')
-    downloadBlob(
-      new Blob([csv], { type: 'text/csv;charset=utf-8' }),
-      `med-minder-${nameSlug}-dose-history-${dateSlug}.csv`,
-    )
+    return { filename: `med-minder-${nameSlug}-dose-history-${dateSlug}.csv`, csv }
   }
+
+  function handleExportCsv() {
+    const { filename, csv } = buildCsvExport()
+    downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), filename)
+  }
+
+  async function handleShareCsv() {
+    if (isSharing) return
+    setIsSharing(true)
+    setShareStatusMessage(null)
+    try {
+      const { filename, csv } = buildCsvExport()
+      await onEmailExport({ filename, content: csv, mimeType: 'text/csv' })
+      setShareStatusMessage({ kind: 'success', text: `Dose history emailed to ${authState?.account.email ?? 'your account'}.` })
+    } catch {
+      setShareStatusMessage({ kind: 'error', text: 'Unable to email dose history right now.' })
+    } finally {
+      setIsSharing(false)
+    }
+  }
+
   const correctionBySupersededId = new Map(
     doseEvents
       .filter((doseEvent) => doseEvent.corrected)
@@ -90,13 +114,30 @@ export function HistoryView({ patient, medications, doseEvents, now }: HistoryVi
       <section className="history-section">
         <div className="history-section-header">
           <h2>All dose history for {patient.displayName}</h2>
-          <button
-            className="utility-button"
-            onClick={handleExportCsv}
-            data-testid="export-dose-history-button"
-          >
-            Export CSV
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <button
+              className="utility-button"
+              onClick={handleExportCsv}
+              data-testid="export-dose-history-button"
+            >
+              Export CSV
+            </button>
+            {authState ? (
+              <button
+                className="utility-button"
+                disabled={isSharing}
+                onClick={() => void handleShareCsv()}
+                data-testid="share-dose-history-button"
+              >
+                {isSharing ? 'Sending...' : `Email CSV to ${authState.account.email}`}
+              </button>
+            ) : null}
+          </div>
+          {shareStatusMessage ? (
+            <p style={{ margin: 0, fontSize: '0.85rem', color: shareStatusMessage.kind === 'error' ? '#991b1b' : '#166534' }}>
+              {shareStatusMessage.text}
+            </p>
+          ) : null}
         </div>
         {allPatientDoses.length === 0 ? (
           <ul className="history-list">

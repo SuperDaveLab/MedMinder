@@ -29,6 +29,7 @@ function App() {
     updateAccountSettings,
     refreshAuthSessions,
     revokeOtherAuthSessions,
+    emailExport,
     clearAuthError,
   } = useAuth()
 
@@ -422,7 +423,14 @@ function App() {
         ) : null}
 
         {activeView === 'history' ? (
-          <HistoryView patient={patient} medications={appState.medications} doseEvents={appState.doseEvents} now={now} />
+          <HistoryView
+            patient={patient}
+            medications={appState.medications}
+            doseEvents={appState.doseEvents}
+            now={now}
+            authState={authState}
+            onEmailExport={emailExport}
+          />
         ) : null}
 
         {activeView === 'meds' ? (
@@ -435,6 +443,8 @@ function App() {
             medicationsForAdministration={medicationsForAdministration}
             doseEvents={appState.doseEvents}
             now={now}
+            authState={authState}
+            onEmailExport={emailExport}
             onCreateMedication={handleCreateMedication}
             onUpdateMedication={handleUpdateMedication}
             onActivateMedication={handleActivateMedication}
@@ -484,6 +494,7 @@ function App() {
             onUpdateAccountSettings={updateAccountSettings}
             onRefreshAuthSessions={refreshAuthSessions}
             onRevokeOtherAuthSessions={revokeOtherAuthSessions}
+            onEmailExport={emailExport}
             onClearAuthError={clearAuthError}
           />
         ) : null}

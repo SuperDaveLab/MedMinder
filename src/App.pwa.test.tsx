@@ -140,26 +140,13 @@ describe('App PWA polish behavior', () => {
     })
   })
 
-  it('falls back to download when sharing summary is not supported', async () => {
+  it('hides summary share action when signed out', async () => {
     const user = userEvent.setup()
-
-    Object.defineProperty(window.navigator, 'share', {
-      configurable: true,
-      value: undefined,
-    })
-
-    const createObjectURLSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:summary')
-    const revokeObjectURLSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
 
     render(<App />)
     await screen.findByRole('option', { name: 'Alex Rivera' })
 
     await user.click(screen.getByTestId('tab-meds'))
-    await user.click(screen.getByTestId('share-summary-button'))
-
-    await waitFor(() => {
-      expect(createObjectURLSpy).toHaveBeenCalled()
-      expect(revokeObjectURLSpy).toHaveBeenCalled()
-    })
+    expect(screen.queryByTestId('share-summary-button')).toBeNull()
   })
 })

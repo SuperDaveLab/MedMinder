@@ -32,6 +32,8 @@ interface MedsViewProps {
   medicationsForAdministration: Medication[]
   doseEvents: DoseEvent[]
   now: Date
+  authState: import('../../domain/auth').AuthSessionState | null
+  onEmailExport: (payload: { filename: string; content: string; mimeType: string }) => Promise<void>
   onCreateMedication: (input: UpsertMedicationInput) => Promise<void>
   onUpdateMedication: (medicationId: string, input: UpsertMedicationInput) => Promise<void>
   onActivateMedication: (medicationId: string) => Promise<void>
@@ -105,6 +107,8 @@ export function MedsView({
   medicationsForAdministration,
   doseEvents,
   now,
+  authState,
+  onEmailExport,
   onCreateMedication,
   onUpdateMedication,
   onActivateMedication,
@@ -560,36 +564,10 @@ export function MedsView({
   }
 
   const handleShareSummary = async () => {
-    if (!patient) {
-      return
-    }
-
+    if (!patient) return
     const summaryText = buildPatientSummaryText(patient, now, summaryRows)
     const fileName = `${patient.displayName.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase()}-medication-summary-${now.toISOString().slice(0, 10)}.txt`
-
-    if (typeof navigator.share !== 'function') {
-      handleExportSummary()
-      return
-    }
-
-    try {
-      const summaryFile = new File([summaryText], fileName, { type: 'text/plain;charset=utf-8' })
-      if (navigator.canShare?.({ files: [summaryFile] })) {
-        await navigator.share({
-          title: `${patient.displayName} medication summary`,
-          files: [summaryFile],
-        })
-      } else {
-        await navigator.share({
-          title: `${patient.displayName} medication summary`,
-          text: summaryText,
-        })
-      }
-    } catch (error) {
-      if (!(error instanceof DOMException && error.name === 'AbortError')) {
-        handleExportSummary()
-      }
-    }
+    await onEmailExport({ filename: fileName, content: summaryText, mimeType: 'text/plain' })
   }
 
   const handleDeactivateMedication = async (medicationId: string) => {
@@ -1028,16 +1006,18 @@ export function MedsView({
       </section>
 
       <section className="summary-section print-summary" data-testid="medication-summary-section">
-        <div className="app-actions no-print">
-          <button className="utility-button" onClick={handlePrintSummary}>
-            Print summary
-          </button>
+        <div className="app-actions">
           <button className="utility-button" onClick={handleExportSummary}>
             Export summary (.txt)
           </button>
-          <button className="utility-button" onClick={() => void handleShareSummary()} data-testid="share-summary-button">
-            Share summary
+          <button className="utility-button" onClick={handlePrintSummary}>
+            Print summary
           </button>
+          {authState ? (
+            <button className="utility-button" onClick={() => void handleShareSummary()} data-testid="share-summary-button">
+              Email summary to {authState.account.email}
+            </button>
+          ) : null}
         </div>
         <h3>Patient medication summary</h3>
         <p className="summary-meta">Includes active medications only.</p>

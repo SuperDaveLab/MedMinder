@@ -48,6 +48,7 @@ interface MoreViewProps {
   }) => Promise<void>
   onRefreshAuthSessions: () => Promise<void>
   onRevokeOtherAuthSessions: () => Promise<void>
+  onEmailExport: (payload: { filename: string; content: string; mimeType: string }) => Promise<void>
   onClearAuthError: () => void
 }
 
@@ -96,6 +97,7 @@ export function MoreView({
   onUpdateAccountSettings,
   onRefreshAuthSessions,
   onRevokeOtherAuthSessions,
+  onEmailExport,
   onClearAuthError,
 }: MoreViewProps) {
   const [isBackupActionInProgress, setIsBackupActionInProgress] = useState(false)
@@ -149,38 +151,16 @@ export function MoreView({
 
   const handleShareBackup = async () => {
     if (isBackupActionInProgress) return
-
-    if (typeof navigator.share !== 'function') {
-      await handleExportBackup()
-      return
-    }
-
     setIsBackupActionInProgress(true)
     setBackupStatusMessage(null)
     try {
       const backup = await exportFullBackup()
       const json = JSON.stringify(backup, null, 2)
       const fileName = `med-minder-backup-${new Date().toISOString().slice(0, 10)}.json`
-      const backupFile = new File([json], fileName, { type: 'application/json;charset=utf-8' })
-
-      if (navigator.canShare?.({ files: [backupFile] })) {
-        await navigator.share({
-          title: 'Med-Minder backup',
-          files: [backupFile],
-        })
-        setBackupStatusMessage({ kind: 'success', text: 'Backup shared successfully.' })
-      } else {
-        const blob = new Blob([json], { type: 'application/json;charset=utf-8' })
-        downloadBlob(blob, fileName)
-        setBackupStatusMessage({
-          kind: 'success',
-          text: 'Native share not available for backup files on this device. Backup downloaded.',
-        })
-      }
-    } catch (error) {
-      if (!(error instanceof DOMException && error.name === 'AbortError')) {
-        setBackupStatusMessage({ kind: 'error', text: 'Unable to share backup right now.' })
-      }
+      await onEmailExport({ filename: fileName, content: json, mimeType: 'application/json' })
+      setBackupStatusMessage({ kind: 'success', text: `Backup emailed to ${authState?.account.email ?? 'your account'}.` })
+    } catch {
+      setBackupStatusMessage({ kind: 'error', text: 'Unable to email backup right now.' })
     } finally {
       setIsBackupActionInProgress(false)
     }
@@ -933,19 +913,21 @@ export function MoreView({
             <button
               className="utility-button"
               disabled={isBackupActionInProgress}
-              onClick={() => void handleShareBackup()}
-              data-testid="share-backup-button"
-            >
-              Share backup
-            </button>
-            <button
-              className="utility-button"
-              disabled={isBackupActionInProgress}
               onClick={() => backupFileInputRef.current?.click()}
               data-testid="import-backup-button"
             >
               Import backup JSON...
             </button>
+            {authState ? (
+              <button
+                className="utility-button"
+                disabled={isBackupActionInProgress}
+                onClick={() => void handleShareBackup()}
+                data-testid="share-backup-button"
+              >
+                {isBackupActionInProgress ? 'Working...' : `Email backup to ${authState.account.email}`}
+              </button>
+            ) : null}
           </div>
           <input
             ref={backupFileInputRef}
