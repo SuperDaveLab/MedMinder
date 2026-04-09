@@ -141,6 +141,11 @@ export function MedsView({
   const [medicationFormError, setMedicationFormError] = useState<string | null>(null)
   const [isMedicationActionInProgress, setIsMedicationActionInProgress] = useState(false)
   const [reminderToggleMedicationId, setReminderToggleMedicationId] = useState<string | null>(null)
+  const [isSummaryShareInProgress, setIsSummaryShareInProgress] = useState(false)
+  const [summaryShareStatusMessage, setSummaryShareStatusMessage] = useState<{
+    kind: 'success' | 'error'
+    text: string
+  } | null>(null)
   const patientNotificationsEnabled = patient?.notificationsEnabled !== false
 
   const parseDurationMinutes = (
@@ -418,6 +423,11 @@ export function MedsView({
     medicationNameInputRef.current?.focus()
   }, [isMedicationFormOpen, openMedicationFormRequestId])
 
+  useEffect(() => {
+    setSummaryShareStatusMessage(null)
+    setIsSummaryShareInProgress(false)
+  }, [selectedPatientId])
+
   const handleSaveMedication = async () => {
     if (isMedicationActionInProgress) {
       return
@@ -564,10 +574,27 @@ export function MedsView({
   }
 
   const handleShareSummary = async () => {
-    if (!patient) return
+    if (!patient || isSummaryShareInProgress) return
+
     const summaryText = buildPatientSummaryText(patient, now, summaryRows)
     const fileName = `${patient.displayName.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase()}-medication-summary-${now.toISOString().slice(0, 10)}.txt`
-    await onEmailExport({ filename: fileName, content: summaryText, mimeType: 'text/plain' })
+
+    setIsSummaryShareInProgress(true)
+    setSummaryShareStatusMessage(null)
+    try {
+      await onEmailExport({ filename: fileName, content: summaryText, mimeType: 'text/plain' })
+      setSummaryShareStatusMessage({
+        kind: 'success',
+        text: `Summary emailed to ${authState?.account.email ?? 'your account'}.`,
+      })
+    } catch {
+      setSummaryShareStatusMessage({
+        kind: 'error',
+        text: 'Unable to email summary right now.',
+      })
+    } finally {
+      setIsSummaryShareInProgress(false)
+    }
   }
 
   const handleDeactivateMedication = async (medicationId: string) => {
@@ -1014,11 +1041,23 @@ export function MedsView({
             Print summary
           </button>
           {authState ? (
-            <button className="utility-button" onClick={() => void handleShareSummary()} data-testid="share-summary-button">
-              Email summary to {authState.account.email}
+            <button
+              className="utility-button"
+              onClick={() => void handleShareSummary()}
+              data-testid="share-summary-button"
+              disabled={isSummaryShareInProgress}
+            >
+              {isSummaryShareInProgress
+                ? 'Sending...'
+                : `Email summary to ${authState.account.email}`}
             </button>
           ) : null}
         </div>
+        {summaryShareStatusMessage ? (
+          <p className={summaryShareStatusMessage.kind === 'error' ? 'form-error' : 'form-success'}>
+            {summaryShareStatusMessage.text}
+          </p>
+        ) : null}
         <h3>Patient medication summary</h3>
         <p className="summary-meta">Includes active medications only.</p>
         <p className="summary-meta">Patient: {patient?.displayName ?? ''}</p>
