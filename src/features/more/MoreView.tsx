@@ -720,60 +720,53 @@ export function MoreView({
         <section className="admin-section no-print app-settings-section">
           <h2>App Settings</h2>
           <div className="settings-grid">
-            <section className="settings-item">
-              <div>
-                <h3 className="settings-title">
-                  <span className="settings-icon" aria-hidden="true">🔔</span>
-                  <span>Due alerts</span>
-                </h3>
-                <p>
-                  {notificationPermission === 'granted'
-                    ? 'Enabled on this device.'
-                    : notificationPermission === 'unsupported'
+            {notificationPermission !== 'granted' ? (
+              <section className="settings-item">
+                <div>
+                  <h3 className="settings-title">
+                    <span className="settings-icon" aria-hidden="true">🔔</span>
+                    <span>Due alerts</span>
+                  </h3>
+                  <p>
+                    {notificationPermission === 'unsupported'
                       ? 'This browser does not support notifications.'
                       : notificationPermission === 'denied'
                         ? 'Blocked in browser settings.'
                         : 'Enable reminders for due and overdue doses.'}
-                </p>
-              </div>
-              <button
-                className="utility-button settings-action-button"
-                onClick={() => void requestNotificationPermission()}
-                disabled={notificationPermission !== 'default'}
-              >
-                {notificationPermission === 'granted'
-                  ? 'Notifications enabled'
-                  : notificationPermission === 'unsupported'
+                  </p>
+                </div>
+                <button
+                  className="utility-button settings-action-button"
+                  onClick={() => void requestNotificationPermission()}
+                  disabled={notificationPermission !== 'default'}
+                >
+                  {notificationPermission === 'unsupported'
                     ? 'Notifications unsupported'
                     : notificationPermission === 'denied'
                       ? 'Notifications denied'
                       : 'Enable due alerts'}
-              </button>
-            </section>
+                </button>
+              </section>
+            ) : null}
 
-            <section className="settings-item">
-              <div>
-                <h3 className="settings-title">
-                  <span className="settings-icon" aria-hidden="true">📲</span>
-                  <span>Install app</span>
-                </h3>
-                <p>
-                  {isInstalled
-                    ? 'Installed and ready for home-screen use.'
-                    : installPromptAvailable
-                      ? 'Install is available for quick launch.'
-                      : 'Install prompt is unavailable on this browser.'}
-                </p>
-              </div>
-              <button
-                className="utility-button settings-action-button"
-                onClick={() => void onInstallApp()}
-                disabled={!installPromptAvailable || isInstalled}
-                data-testid="install-app-button"
-              >
-                {isInstalled ? 'App installed' : installPromptAvailable ? 'Install app' : 'Install unavailable'}
-              </button>
-            </section>
+            {installPromptAvailable && !isInstalled ? (
+              <section className="settings-item">
+                <div>
+                  <h3 className="settings-title">
+                    <span className="settings-icon" aria-hidden="true">📲</span>
+                    <span>Install app</span>
+                  </h3>
+                  <p>Install is available for quick launch.</p>
+                </div>
+                <button
+                  className="utility-button settings-action-button"
+                  onClick={() => void onInstallApp()}
+                  data-testid="install-app-button"
+                >
+                  Install app
+                </button>
+              </section>
+            ) : null}
 
             <section className="settings-item">
               <div>

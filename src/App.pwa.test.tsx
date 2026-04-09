@@ -94,9 +94,24 @@ describe('App PWA polish behavior', () => {
     window.dispatchEvent(new Event('appinstalled'))
 
     await waitFor(() => {
-      expect(screen.getByText('Installed and ready for home-screen use.')).toBeTruthy()
-      expect(screen.getByTestId('install-app-button').getAttribute('disabled')).not.toBeNull()
+      expect(screen.queryByRole('heading', { name: 'Install app' })).toBeNull()
+      expect(screen.queryByTestId('install-app-button')).toBeNull()
     })
+  })
+
+  it('hides due alerts and install cards when actions are unavailable', async () => {
+    const user = userEvent.setup()
+
+    ;(Notification as unknown as { permission: NotificationPermission }).permission = 'granted'
+
+    render(<App />)
+    await screen.findByRole('option', { name: 'Alex Rivera' })
+    await user.click(screen.getByTestId('tab-more'))
+
+    expect(screen.queryByRole('heading', { name: 'Due alerts' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Notifications enabled' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Install app' })).toBeNull()
+    expect(screen.queryByTestId('install-app-button')).toBeNull()
   })
 
   it('handles wake lock supported and unsupported states', async () => {
