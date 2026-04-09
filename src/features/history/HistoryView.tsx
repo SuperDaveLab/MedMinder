@@ -1,5 +1,15 @@
 import type { DoseEvent, Medication, Patient } from '../../domain/types'
 import { formatRelativeTime } from '../../ui/time'
+import { buildDoseHistoryCsv, buildDoseHistoryRows } from '../../export/doseHistoryCsv'
+
+function downloadBlob(blob: Blob, fileName: string): void {
+  const objectUrl = URL.createObjectURL(blob)
+  const downloadLink = document.createElement('a')
+  downloadLink.href = objectUrl
+  downloadLink.download = fileName
+  downloadLink.click()
+  URL.revokeObjectURL(objectUrl)
+}
 
 interface HistoryViewProps {
   patient: Patient
@@ -38,6 +48,17 @@ function formatLocalDayLabel(dayKey: string): string {
 
 export function HistoryView({ patient, medications, doseEvents, now }: HistoryViewProps) {
   const medicationById = new Map(medications.map((medication) => [medication.id, medication.name]))
+
+  function handleExportCsv() {
+    const rows = buildDoseHistoryRows([patient], medications, doseEvents)
+    const csv = buildDoseHistoryCsv(rows)
+    const dateSlug = new Date().toISOString().slice(0, 10)
+    const nameSlug = patient.displayName.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+    downloadBlob(
+      new Blob([csv], { type: 'text/csv;charset=utf-8' }),
+      `med-minder-${nameSlug}-dose-history-${dateSlug}.csv`,
+    )
+  }
   const correctionBySupersededId = new Map(
     doseEvents
       .filter((doseEvent) => doseEvent.corrected)
@@ -67,7 +88,16 @@ export function HistoryView({ patient, medications, doseEvents, now }: HistoryVi
   return (
     <section className="workflow-section" data-testid="history-view">
       <section className="history-section">
-        <h2>All dose history for {patient.displayName}</h2>
+        <div className="history-section-header">
+          <h2>All dose history for {patient.displayName}</h2>
+          <button
+            className="utility-button"
+            onClick={handleExportCsv}
+            data-testid="export-dose-history-button"
+          >
+            Export CSV
+          </button>
+        </div>
         {allPatientDoses.length === 0 ? (
           <ul className="history-list">
             <li className="history-item history-item-empty">No doses logged yet.</li>

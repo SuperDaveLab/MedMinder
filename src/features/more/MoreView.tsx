@@ -960,14 +960,18 @@ export function MoreView({
         {accountSection}
 
         <section className="admin-section no-print app-info-section" data-testid="app-info-section">
-          <h2>App info</h2>
-          <p className="subhead">Version {__APP_VERSION__} | Build {__APP_BUILD__}</p>
+          <div className="app-info-hero">
+            <img src="/med-minder-icon.svg" alt="Med-Minder icon" className="app-info-icon" />
+            <div className="app-info-headline">
+              <h2>Med-Minder</h2>
+              <p className="app-info-byline">by Super Dave</p>
+            </div>
+          </div>
+          <p className="subhead app-info-build">v{__APP_VERSION__} &middot; Build {__APP_BUILD__}</p>
           <div className="app-info-grid">
-            <p><strong>App:</strong> Med-Minder</p>
-            <p><strong>Created by:</strong> Super Dave</p>
-            <p><strong>Source:</strong> <a href="https://github.com/SuperDaveLab/MedMinder" target="_blank" rel="noopener noreferrer">github.com/SuperDaveLab/MedMinder</a></p>
             <p><strong>Install mode:</strong> {isInstalled ? 'Installed PWA' : 'Browser tab'}</p>
             <p><strong>Notification permission:</strong> {String(notificationPermission)}</p>
+            <p><strong>Source:</strong> <a href="https://github.com/SuperDaveLab/MedMinder" target="_blank" rel="noopener noreferrer">github.com/SuperDaveLab/MedMinder</a></p>
           </div>
         </section>
       </section>

@@ -57,6 +57,19 @@ body {
   box-shadow: 0 14px 28px -22px rgba(15, 23, 42, 0.35);
 }
 
+.history-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.history-section-header h2 {
+  margin: 0;
+}
+
 .eyebrow {
   margin: 0;
   color: var(--brand);
@@ -221,6 +234,11 @@ button {
     background-color 0.14s ease,
     border-color 0.14s ease,
     color 0.14s ease;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 @media (hover: hover) {
@@ -875,6 +893,47 @@ button {
 
 .app-info-section {
   gap: 0.35rem;
+  background: linear-gradient(135deg, #0f766e14 0%, #0f766e05 100%);
+  border-color: #0f766e30 !important;
+}
+
+.app-info-hero {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.app-info-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px #0f766e30;
+  flex-shrink: 0;
+}
+
+.app-info-headline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.app-info-headline h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #0f766e;
+}
+
+.app-info-byline {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+.app-info-build {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin: 0;
 }
 
 .app-info-grid {
@@ -1053,6 +1112,8 @@ button {
   border-color: #ef4444;
   background: #fee2e2;
   color: #7f1d1d;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px -14px rgba(153, 27, 27, 0.45);
 }
 
 .duration-input-row {
