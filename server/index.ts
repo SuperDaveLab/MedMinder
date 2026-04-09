@@ -355,6 +355,10 @@ app.delete('/api/notifications/push/subscriptions', async (request: Request, res
   }
 })
 
+app.use('/api', (_request: Request, response: Response) => {
+  response.status(404).json({ message: 'API route not found.' })
+})
+
 app.post('/api/export/email', async (request: Request, response: Response) => {
   try {
     const accountContext = await requireSession(request)
