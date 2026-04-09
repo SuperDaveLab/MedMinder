@@ -315,13 +315,32 @@ describe('App administration flow', () => {
 
     await waitFor(() => {
       expect(within(medicationItem).getByTestId('activate-medication-med-interval-1')).toBeTruthy()
-      expect(within(medicationItem).getByText('Notifications off')).toBeTruthy()
+      expect(within(medicationItem).queryByTestId('meds-reminder-toggle-med-interval-1')).toBeNull()
     })
 
     await user.click(screen.getByTestId('delete-medication-med-interval-1'))
 
     await waitFor(() => {
       expect(screen.queryByTestId('medication-item-med-interval-1')).toBeNull()
+    })
+  })
+
+  it('hides medication notification toggles when patient notifications are off', async () => {
+    const user = userEvent.setup()
+
+    render(<App />)
+    await screen.findByRole('option', { name: 'Alex Rivera' })
+
+    await user.click(screen.getByTestId('tab-meds'))
+    expect(screen.queryByTestId('meds-reminder-toggle-med-interval-1')).toBeNull()
+
+    await user.click(screen.getByTestId('tab-care'))
+    await user.click(screen.getByRole('checkbox', { name: 'Patient notifications' }))
+
+    await user.click(screen.getByTestId('tab-meds'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('meds-reminder-toggle-med-interval-1')).toBeTruthy()
     })
   })
 

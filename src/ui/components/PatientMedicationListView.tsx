@@ -131,16 +131,18 @@ export function PatientMedicationListView({
       <div className="medication-section-header">
         <h2 aria-label={patient.displayName}>{patient.displayName}'s medications</h2>
         <div className="medication-section-header-actions">
-          <button
-            type="button"
-            className={`utility-button patient-notifications-toggle ${patient.notificationsEnabled === false ? 'is-muted' : ''}`}
-            aria-label={patient.notificationsEnabled === false ? 'Enable notifications for this patient' : 'Disable notifications for this patient'}
-            aria-pressed={patient.notificationsEnabled !== false}
-            title={patient.notificationsEnabled === false ? 'Notifications off' : 'Notifications on'}
-            onClick={() => void onTogglePatientNotifications(patient.id, patient.notificationsEnabled === false)}
-          >
-            {patient.notificationsEnabled === false ? '🔕' : '🔔'}
-          </button>
+          <label className="meds-reminder-toggle patient-reminder-toggle">
+            <input
+              type="checkbox"
+              checked={patient.notificationsEnabled !== false}
+              onChange={(event) => void onTogglePatientNotifications(patient.id, event.target.checked)}
+              aria-label="Patient notifications"
+            />
+            <span className="toggle-switch-track" aria-hidden="true">
+              <span className="toggle-switch-thumb" />
+            </span>
+            <span>{patient.notificationsEnabled === false ? 'Notifications off' : 'Notifications on'}</span>
+          </label>
           <button
             type="button"
             className="utility-button medication-add-button"

@@ -137,6 +137,7 @@ export function MedsView({
   const [medicationFormError, setMedicationFormError] = useState<string | null>(null)
   const [isMedicationActionInProgress, setIsMedicationActionInProgress] = useState(false)
   const [reminderToggleMedicationId, setReminderToggleMedicationId] = useState<string | null>(null)
+  const patientNotificationsEnabled = patient?.notificationsEnabled !== false
 
   const parseDurationMinutes = (
     rawValue: string,
@@ -958,27 +959,29 @@ export function MedsView({
               <div className="meds-item-main">
                 <div>
                   <strong>{medication.name}</strong>
-                  <label className="meds-reminder-toggle meds-reminder-toggle-inline">
-                    <input
-                      type="checkbox"
-                      checked={medication.active && Boolean(medication.reminderSettings?.enabled)}
-                      disabled={
-                        !medication.active ||
-                        isMedicationActionInProgress ||
-                        reminderToggleMedicationId === medication.id
-                      }
-                      onChange={(event) => void handleToggleMedicationReminder(medication, event.target.checked)}
-                      data-testid={`meds-reminder-toggle-${medication.id}`}
-                    />
-                    <span className="toggle-switch-track" aria-hidden="true">
-                      <span className="toggle-switch-thumb" />
-                    </span>
-                    <span>
-                      {medication.active && Boolean(medication.reminderSettings?.enabled)
-                        ? 'Notifications on'
-                        : 'Notifications off'}
-                    </span>
-                  </label>
+                  {patientNotificationsEnabled ? (
+                    <label className="meds-reminder-toggle meds-reminder-toggle-inline">
+                      <input
+                        type="checkbox"
+                        checked={medication.active && Boolean(medication.reminderSettings?.enabled)}
+                        disabled={
+                          !medication.active ||
+                          isMedicationActionInProgress ||
+                          reminderToggleMedicationId === medication.id
+                        }
+                        onChange={(event) => void handleToggleMedicationReminder(medication, event.target.checked)}
+                        data-testid={`meds-reminder-toggle-${medication.id}`}
+                      />
+                      <span className="toggle-switch-track" aria-hidden="true">
+                        <span className="toggle-switch-thumb" />
+                      </span>
+                      <span>
+                        {medication.active && Boolean(medication.reminderSettings?.enabled)
+                          ? 'Notifications on'
+                          : 'Notifications off'}
+                      </span>
+                    </label>
+                  ) : null}
                 </div>
               </div>
               <div className="admin-item-actions">

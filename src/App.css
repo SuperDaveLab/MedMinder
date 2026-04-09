@@ -256,18 +256,6 @@ button {
   flex-shrink: 0;
 }
 
-.patient-notifications-toggle {
-  background: transparent;
-  border-color: transparent;
-  min-width: 44px;
-  padding: 0.55rem 0.5rem;
-  font-size: 1.1rem;
-}
-
-.patient-notifications-toggle.is-muted {
-  opacity: 0.45;
-}
-
 .medication-add-button {
   background: var(--brand-soft);
   color: var(--brand);
@@ -488,6 +476,10 @@ button {
 .meds-reminder-toggle-inline {
   margin-top: 0.25rem;
   align-self: center;
+}
+
+.patient-reminder-toggle {
+  margin-top: 0;
 }
 
 .meds-list-panel .admin-item-actions {
@@ -1107,6 +1099,15 @@ button {
   margin: 0.15rem 0 0;
   color: var(--muted);
   font-size: 0.85rem;
+}
+
+.patient-item-main {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.patient-item-main .patient-reminder-toggle {
+  margin-top: 0.2rem;
 }
 
 .admin-item-empty {

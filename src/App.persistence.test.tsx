@@ -257,7 +257,7 @@ describe('App persistence flow', () => {
     render(<App />)
 
     await screen.findByRole('heading', { name: 'Alex Rivera' })
-    await user.click(screen.getByRole('button', { name: 'Enable notifications for this patient' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Patient notifications' }))
 
     await waitFor(() => {
       expect(NotificationMock.instances.some((entry) => entry.title.includes('Amoxicillin: due now'))).toBe(true)

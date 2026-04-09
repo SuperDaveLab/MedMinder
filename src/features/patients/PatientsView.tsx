@@ -213,23 +213,28 @@ export function PatientsView({
               ) : null}
               {patients.map((listedPatient) => (
                 <li key={listedPatient.id} className="admin-item" data-testid={`patient-item-${listedPatient.id}`}>
-                  <div>
+                  <div className="patient-item-main">
                     <strong>{listedPatient.displayName}</strong>
                     {listedPatient.notes ? <p>{listedPatient.notes}</p> : null}
+                    <label className="meds-reminder-toggle patient-reminder-toggle">
+                      <input
+                        type="checkbox"
+                        data-testid={`toggle-patient-notifications-${listedPatient.id}`}
+                        checked={listedPatient.notificationsEnabled !== false}
+                        disabled={isPatientActionInProgress}
+                        onChange={(event) => void handleTogglePatientNotifications(listedPatient.id, event.target.checked)}
+                      />
+                      <span className="toggle-switch-track" aria-hidden="true">
+                        <span className="toggle-switch-thumb" />
+                      </span>
+                      <span>
+                        {listedPatient.notificationsEnabled === false
+                          ? 'Notifications off'
+                          : 'Notifications on'}
+                      </span>
+                    </label>
                   </div>
                   <div className="admin-item-actions">
-                    <button
-                      type="button"
-                      data-testid={`toggle-patient-notifications-${listedPatient.id}`}
-                      className={`utility-button patient-notifications-toggle ${listedPatient.notificationsEnabled === false ? 'is-muted' : ''}`}
-                      disabled={isPatientActionInProgress}
-                      aria-label={listedPatient.notificationsEnabled === false ? 'Enable notifications for this patient' : 'Disable notifications for this patient'}
-                      aria-pressed={listedPatient.notificationsEnabled !== false}
-                      title={listedPatient.notificationsEnabled === false ? 'Notifications off' : 'Notifications on'}
-                      onClick={() => void handleTogglePatientNotifications(listedPatient.id, listedPatient.notificationsEnabled === false)}
-                    >
-                      {listedPatient.notificationsEnabled === false ? '🔕' : '🔔'}
-                    </button>
                     <button
                       data-testid={`edit-patient-${listedPatient.id}`}
                       className="utility-button"
