@@ -137,7 +137,7 @@ export function MoreView({
     try {
       const backup = await exportFullBackup()
       const json = JSON.stringify(backup, null, 2)
-      const fileName = `med-minder-backup-${new Date().toISOString().slice(0, 10)}.json`
+      const fileName = `nexpill-backup-${new Date().toISOString().slice(0, 10)}.json`
       const blob = new Blob([json], { type: 'application/json;charset=utf-8' })
       downloadBlob(blob, fileName)
       setBackupStatusMessage({ kind: 'success', text: 'Backup exported successfully.' })
@@ -156,7 +156,7 @@ export function MoreView({
     try {
       const backup = await exportFullBackup()
       const json = JSON.stringify(backup, null, 2)
-      const fileName = `med-minder-backup-${new Date().toISOString().slice(0, 10)}.json`
+      const fileName = `nexpill-backup-${new Date().toISOString().slice(0, 10)}.json`
       await onEmailExport({ filename: fileName, content: json, mimeType: 'application/json' })
       setBackupStatusMessage({ kind: 'success', text: `Backup emailed to ${authState?.account.email ?? 'your account'}.` })
     } catch {
@@ -943,9 +943,9 @@ export function MoreView({
 
         <section className="admin-section no-print app-info-section" data-testid="app-info-section">
           <div className="app-info-hero">
-            <img src="/med-minder-icon.svg" alt="Med-Minder icon" className="app-info-icon" />
+            <img src="/med-minder-icon.svg" alt="Nexpill icon" className="app-info-icon" />
             <div className="app-info-headline">
-              <h2>Med-Minder</h2>
+              <h2>Nexpill</h2>
               <p className="app-info-byline">by Super Dave</p>
             </div>
           </div>

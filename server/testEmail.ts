@@ -23,11 +23,11 @@ async function main(): Promise<void> {
     candidate: {
       medicationId: 'manual-email-test',
       patientId: 'sample-patient-id',
-      medicationName: 'Med-Minder',
+      medicationName: 'Nexpill',
       kind: 'due-now',
       nextEligibleAtIso: new Date().toISOString(),
       dedupeKey: `manual-email-test-${String(Date.now())}`,
-      title: 'Med-Minder SMTP test',
+      title: 'Nexpill SMTP test',
       body: 'If you received this email, SMTP delivery is working.',
     },
   })

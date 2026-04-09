@@ -158,7 +158,7 @@ describe('authService changePassword', () => {
     )
     expect(sendTransactionalEmailMock).toHaveBeenCalledWith({
       to: 'caregiver@example.com',
-      subject: 'Med-Minder password reset',
+      subject: 'Nexpill password reset',
       text: expect.stringContaining('https://example.com/app?view=more&resetToken='),
     })
   })

@@ -88,7 +88,7 @@ function buildPasswordResetLink(baseUrl: string, token: string): string {
 
 function buildPasswordResetEmailBody(resetLink: string): string {
   return [
-    'Med-Minder password reset',
+    'Nexpill password reset',
     '',
     'Use the link below to reset your password:',
     resetLink,
@@ -97,7 +97,7 @@ function buildPasswordResetEmailBody(resetLink: string): string {
     '',
     'If you did not request this, you can ignore this email.',
     '',
-    '-- Med-Minder',
+    '-- Nexpill',
   ].join('\n')
 }
 
@@ -410,7 +410,7 @@ export async function requestPasswordReset(
 
   await sendTransactionalEmail({
     to: userRow.email,
-    subject: 'Med-Minder password reset',
+    subject: 'Nexpill password reset',
     text: buildPasswordResetEmailBody(resetLink),
   })
 }

@@ -374,7 +374,7 @@ app.post('/api/export/email', async (request: Request, response: Response) => {
       return
     }
 
-    const subject = `Med-Minder export: ${filename}`
+    const subject = `Nexpill export: ${filename}`
     const sent = await sendExportEmail({ to: account.email, subject, filename, content, mimeType })
     if (!sent) {
       response.status(503).json({ message: 'Export email service is unavailable right now.' })

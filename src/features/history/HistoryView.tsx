@@ -60,7 +60,7 @@ export function HistoryView({ patient, medications, doseEvents, now, authState, 
     const csv = buildDoseHistoryCsv(rows)
     const dateSlug = new Date().toISOString().slice(0, 10)
     const nameSlug = patient.displayName.toLowerCase().replace(/[^a-z0-9]+/g, '-')
-    return { filename: `med-minder-${nameSlug}-dose-history-${dateSlug}.csv`, csv }
+    return { filename: `nexpill-${nameSlug}-dose-history-${dateSlug}.csv`, csv }
   }
 
   function handleExportCsv() {

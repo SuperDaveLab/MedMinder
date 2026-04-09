@@ -28,17 +28,17 @@ function formatCandidateKind(kind: ReminderNotificationCandidate['kind']): strin
 
 function buildEmailSubject(payload: NotificationEmailPayload): string {
   if (payload.patientName) {
-    return `Med-Minder: ${payload.patientName} - ${payload.candidate.medicationName}`
+    return `Nexpill: ${payload.patientName} - ${payload.candidate.medicationName}`
   }
 
-  return `Med-Minder: ${payload.candidate.medicationName}`
+  return `Nexpill: ${payload.candidate.medicationName}`
 }
 
 function buildPlainTextBody(payload: NotificationEmailPayload): string {
   const { candidate, patientName } = payload
 
   return [
-    'Med-Minder reminder',
+    'Nexpill reminder',
     '',
     `Patient: ${patientName ?? 'Unspecified'}`,
     `Medication: ${candidate.medicationName}`,
@@ -48,7 +48,7 @@ function buildPlainTextBody(payload: NotificationEmailPayload): string {
     candidate.title,
     candidate.body,
     '',
-    '-- Med-Minder',
+    '-- Nexpill',
   ].join('\n')
 }
 
@@ -94,7 +94,7 @@ function getSmtpTransporter(): nodemailer.Transporter | null {
  *   SMTP_PORT       — SMTP port, default 587 (STARTTLS)
  *   SMTP_USER       — SMTP username / API key
  *   SMTP_PASSWORD   — SMTP password / API secret
- *   SMTP_FROM       — From address (e.g. "Med-Minder <noreply@example.com>")
+ *   SMTP_FROM       — From address (e.g. "Nexpill <noreply@example.com>")
  */
 export async function sendNotificationEmail(
   payload: NotificationEmailPayload,
@@ -154,7 +154,7 @@ export async function sendExportEmail(payload: ExportEmailPayload): Promise<bool
       from: serverConfig.smtp.from,
       to: payload.to,
       subject: payload.subject,
-      text: 'Please find your Med-Minder export attached.\n\n-- Med-Minder',
+      text: 'Please find your Nexpill export attached.\n\n-- Nexpill',
       attachments: [
         {
           filename: payload.filename,

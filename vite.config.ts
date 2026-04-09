@@ -39,8 +39,8 @@ export default defineConfig({
       includeAssets: ['med-minder-icon.svg', 'screenshot-care.svg', 'screenshot-admin.svg'],
       manifest: {
         id: '/',
-        name: 'Med-Minder Care Tracker',
-        short_name: 'Med-Minder',
+        name: 'Nexpill Care Tracker',
+        short_name: 'Nexpill',
         description: 'Local-first medication timing tracker for caregivers.',
         theme_color: '#0f766e',
         background_color: '#f4f7f9',

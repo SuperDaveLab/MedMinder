@@ -27,7 +27,7 @@ export const serverConfig = {
   passwordResetTokenTtlMinutes: parseNumber(process.env.AUTH_PASSWORD_RESET_TTL_MINUTES, 60),
   // SMTP settings for email notification delivery.
   // Required env vars: SMTP_HOST, SMTP_PORT (default 587), SMTP_USER,
-  // SMTP_PASSWORD, SMTP_FROM (e.g. "Med-Minder <noreply@example.com>").
+  // SMTP_PASSWORD, SMTP_FROM (e.g. "Nexpill <noreply@example.com>").
   smtp: {
     host: process.env.SMTP_HOST ?? '',
     port: parseNumber(process.env.SMTP_PORT, 587),
