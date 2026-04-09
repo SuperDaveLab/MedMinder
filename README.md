@@ -40,12 +40,15 @@ The link above leads to the fully functional live production build. To get start
 - **Patient-first Workflow**: Dedicated Patients management, patient-scoped Meds view, and fast add/edit medication workflows optimized for mobile care rounds.
 - **Local-first by Default**: By default, data is stored locally in IndexedDB (`med-minder-db`).
 - **Complete History & Auditing**: See exactly what was given when, and log corrections that properly supersede accidental entries.
+- **Basic Inventory Tracking**: Track starting quantity, per-dose usage, dose units, and low-supply thresholds for medications where inventory matters.
 - **Smart Notifications**: Per-medication notification toggles, optional early notice (10/15 min), PRN default-off behavior, and overdue reminders.
 - **Noise Reduction for Caregivers**: Notifications are grouped per patient so multiple due medications can be delivered as a single alert.
 - **Optional Cloud Account Mode**: Sign in to sync data across devices and use server-backed reminder delivery channels.
 - **Configurable Delivery Policy**: Choose `Push only`, `Email only`, `Push first, email fallback`, or `Push and email`.
 - **In-App Alarm Mode**: For interval and fixed-time meds, enable alarm mode to trigger repeating in-app sound/vibration with acknowledge/snooze actions when due now.
-- **Data Portability**: Full JSON backup export and import logic allows you to safely copy data across devices.
+- **Data Portability**: Export full JSON backups, patient medication summaries, and per-patient dose history CSV files.
+- **Email Exports for Account Users**: Signed-in users can email backup files, summaries, and dose history exports directly to the account email address.
+- **Session Management**: Review active account sessions and sign out other devices from the app.
 
 ## ⏰ Alarm Behavior (Important)
 
@@ -93,6 +96,8 @@ Current behavior in account mode:
 
 - Syncs patient, medication, and dose history across signed-in devices.
 - Uses server-side reminder processing for push/email/SMS delivery channels.
+- Supports emailing exports to the signed-in account email address.
+- Shows active sessions and allows signing out other devices.
 - Supports delivery policy selection in-app:
    - `push_then_email_fallback`
    - `push_only`
