@@ -129,6 +129,7 @@ export function MedicationCard({
   onDeleteDose,
   onToggleReminderEnabled,
 }: MedicationCardProps) {
+  const [isDetailsExpanded, setIsDetailsExpanded] = useState(false)
   const [editingDoseEventId, setEditingDoseEventId] = useState<string | null>(null)
   const [replacementTimestampInput, setReplacementTimestampInput] = useState('')
   const [correctionDoseText, setCorrectionDoseText] = useState('')
@@ -179,6 +180,7 @@ export function MedicationCard({
     : 'No recent events yet.'
 
   const startCorrection = (doseEvent: DoseEvent) => {
+    setIsDetailsExpanded(true)
     setEditingDoseEventId(doseEvent.id)
     setReplacementTimestampInput(toDateTimeLocalValue(doseEvent.timestampGiven))
     setCorrectionDoseText(doseEvent.doseText ?? medication.defaultDoseText)
@@ -309,169 +311,185 @@ export function MedicationCard({
           </button>
         </div>
       </div>
-      <p className="last-given">
-        Last given:{' '}
-        <strong>
-          {lastGivenAt
-            ? `${formatAbsoluteDateTime(lastGivenAt)} (${formatRelativeTime(lastGivenAt, now)})`
-            : 'Never taken'}
-        </strong>
-      </p>
-      <p className="next-eligible">
-        Next eligible:{' '}
-        <strong>
-          {formatAbsoluteDateTime(nextEligibleAt)} ({formatRelativeTime(nextEligibleAt, now)})
-        </strong>
-      </p>
-      <p className="last-event-trust">{latestDisplayedTrustText}</p>
       {medication.instructions ? (
         <p className="instructions">{medication.instructions}</p>
       ) : null}
       {reminderToggleError ? <p className="correction-error">{reminderToggleError}</p> : null}
-      <div className="med-history-block">
-        <h4>Recent doses</h4>
-        {recentDoseEvents.length === 0 ? (
-          <p className="med-history-empty">No doses logged yet.</p>
-        ) : (
-          <ul className="med-history-list" data-testid={`med-history-${medication.id}`}>
-            {recentDoseEvents.map((doseEvent) => (
-              <li
-                key={doseEvent.id}
-                className="med-history-item"
-                data-testid={`dose-entry-${doseEvent.id}`}
-              >
-                <div className="med-history-primary-row">
-                  <div className="med-history-time">
-                    <strong>{formatAbsoluteDateTime(new Date(doseEvent.timestampGiven))}</strong>
-                    <span>{formatRelativeTime(new Date(doseEvent.timestampGiven), now)}</span>
-                  </div>
-                  {!supersededDoseEventIds.has(doseEvent.id) ? (
-                    <div className="dose-entry-actions">
-                      <button
-                        type="button"
-                        className="correct-button inline-edit-trigger"
-                        disabled={actionsDisabled || isSavingCorrection}
-                        onClick={() => startCorrection(doseEvent)}
-                        data-testid={`correct-dose-${doseEvent.id}`}
-                        aria-label="Edit dose entry"
-                      >
-                        <span className="inline-edit-icon" aria-hidden="true">✎</span>
-                        <span className="inline-edit-label">Edit</span>
-                      </button>
-                      <button
-                        type="button"
-                        className="correct-button inline-edit-trigger"
-                        disabled={actionsDisabled || isSavingCorrection}
-                        onClick={() => void deleteDose(doseEvent.id)}
-                        data-testid={`delete-dose-${doseEvent.id}`}
-                        aria-label="Delete dose entry"
-                      >
-                        <span className="inline-edit-icon" aria-hidden="true">🗑</span>
-                        <span className="inline-edit-label">Delete</span>
-                      </button>
-                    </div>
-                  ) : null}
-                </div>
-                <div className="entry-tags">
-                  {!doseEvent.corrected && supersededDoseEventIds.has(doseEvent.id) ? (
-                    <span className="entry-tag entry-tag-muted" data-testid={`entry-tag-superseded-${doseEvent.id}`}>
-                      Superseded
-                    </span>
-                  ) : null}
-                </div>
-                {doseEvent.doseText ? <span>Dose: {doseEvent.doseText}</span> : null}
-                {doseEvent.givenBy ? <span>Given by: {doseEvent.givenBy}</span> : null}
-                {doseEvent.notes ? <span>Notes: {doseEvent.notes}</span> : null}
-                {doseEvent.corrected ? (
-                  <div className="correction-meta-row">
-                    <span className="entry-tag" data-testid={`entry-tag-corrected-${doseEvent.id}`}>
-                      Corrected
-                    </span>
-                    <span className="correction-supersedes-label">
-                      Supersedes:{' '}
-                      {doseEvent.supersedesDoseEventId && correctionBySupersededId.has(doseEvent.supersedesDoseEventId)
-                        ? formatAbsoluteDateTime(
-                            new Date(
-                              medicationDoseEvents.find(
-                                (entry) => entry.id === doseEvent.supersedesDoseEventId,
-                              )?.timestampGiven ?? doseEvent.timestampGiven,
-                            ),
-                          )
-                        : doseEvent.supersedesDoseEventId}
-                    </span>
-                  </div>
-                ) : null}
-                {!doseEvent.corrected && correctionBySupersededId.has(doseEvent.id) ? (
-                  <span>
-                    Superseded by correction at{' '}
-                    {formatAbsoluteDateTime(
-                      new Date(correctionBySupersededId.get(doseEvent.id)?.timestampGiven ?? doseEvent.timestampGiven),
-                    )}
-                  </span>
-                ) : null}
-                {editingDoseEventId === doseEvent.id ? (
-                  <div className="correction-form" data-testid={`correction-form-${doseEvent.id}`}>
-                    <label>
-                      Replacement timestamp (local time)
-                      <input
-                        type="datetime-local"
-                        aria-label="Replacement timestamp (local time)"
-                        value={replacementTimestampInput}
-                        onChange={(event) => setReplacementTimestampInput(event.target.value)}
-                        required
-                      />
-                    </label>
-                    <p className="correction-helper">
-                      Uses your device local time ({Intl.DateTimeFormat().resolvedOptions().timeZone}).
-                    </p>
-                    <label>
-                      Dose amount
-                      <input
-                        type="text"
-                        aria-label="Dose amount"
-                        value={correctionDoseText}
-                        onChange={(event) => setCorrectionDoseText(event.target.value)}
-                        placeholder="e.g. 25mg or 50mg"
-                      />
-                    </label>
-                    <label>
-                      Notes (optional)
-                      <input
-                        type="text"
-                        aria-label="Notes (optional)"
-                        value={correctionNotes}
-                        onChange={(event) => setCorrectionNotes(event.target.value)}
-                        placeholder="Why this correction was needed"
-                      />
-                    </label>
-                    {correctionError ? <p className="correction-error">{correctionError}</p> : null}
-                    <div className="correction-form-actions">
-                      <button
-                        type="button"
-                        className="correct-save-button icon-action-button"
-                        disabled={actionsDisabled || isSavingCorrection}
-                        onClick={() => void saveCorrection(doseEvent.id)}
-                        aria-label="Save correction"
-                      >
-                        {isSavingCorrection ? 'Saving...' : <span className="icon-action-glyph" aria-hidden="true">✔</span>}
-                      </button>
-                      <button
-                        type="button"
-                        className="correct-cancel-button icon-action-button"
-                        disabled={actionsDisabled || isSavingCorrection}
-                        onClick={cancelCorrection}
-                        aria-label="Cancel correction"
-                      >
-                        <span className="icon-action-glyph" aria-hidden="true">X</span>
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        )}
+      <div className="med-card-last-given-row">
+        <p className="last-given">
+          Last given:{' '}
+          <strong>
+            {lastGivenAt
+              ? `${formatAbsoluteDateTime(lastGivenAt)} (${formatRelativeTime(lastGivenAt, now)})`
+              : 'Never taken'}
+          </strong>
+        </p>
+        <button
+          type="button"
+          className="utility-button med-card-details-toggle"
+          aria-expanded={isDetailsExpanded}
+          aria-controls={`med-card-details-${medication.id}`}
+          onClick={() => setIsDetailsExpanded((current) => !current)}
+          data-testid={`toggle-med-details-${medication.id}`}
+        >
+          {isDetailsExpanded ? 'Show less' : 'Show more'}
+        </button>
       </div>
+      {isDetailsExpanded ? (
+        <div className="med-card-details" id={`med-card-details-${medication.id}`}>
+          <p className="next-eligible">
+            Next eligible:{' '}
+            <strong>
+              {formatAbsoluteDateTime(nextEligibleAt)} ({formatRelativeTime(nextEligibleAt, now)})
+            </strong>
+          </p>
+          <p className="last-event-trust">{latestDisplayedTrustText}</p>
+          <div className="med-history-block">
+            <h4>Recent doses</h4>
+            {recentDoseEvents.length === 0 ? (
+              <p className="med-history-empty">No doses logged yet.</p>
+            ) : (
+              <ul className="med-history-list" data-testid={`med-history-${medication.id}`}>
+                {recentDoseEvents.map((doseEvent) => (
+                  <li
+                    key={doseEvent.id}
+                    className="med-history-item"
+                    data-testid={`dose-entry-${doseEvent.id}`}
+                  >
+                    <div className="med-history-primary-row">
+                      <div className="med-history-time">
+                        <strong>{formatAbsoluteDateTime(new Date(doseEvent.timestampGiven))}</strong>
+                        <span>{formatRelativeTime(new Date(doseEvent.timestampGiven), now)}</span>
+                      </div>
+                      {!supersededDoseEventIds.has(doseEvent.id) ? (
+                        <div className="dose-entry-actions">
+                          <button
+                            type="button"
+                            className="correct-button inline-edit-trigger"
+                            disabled={actionsDisabled || isSavingCorrection}
+                            onClick={() => startCorrection(doseEvent)}
+                            data-testid={`correct-dose-${doseEvent.id}`}
+                            aria-label="Edit dose entry"
+                          >
+                            <span className="inline-edit-icon" aria-hidden="true">✎</span>
+                            <span className="inline-edit-label">Edit</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="correct-button inline-edit-trigger"
+                            disabled={actionsDisabled || isSavingCorrection}
+                            onClick={() => void deleteDose(doseEvent.id)}
+                            data-testid={`delete-dose-${doseEvent.id}`}
+                            aria-label="Delete dose entry"
+                          >
+                            <span className="inline-edit-icon" aria-hidden="true">🗑</span>
+                            <span className="inline-edit-label">Delete</span>
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                    <div className="entry-tags">
+                      {!doseEvent.corrected && supersededDoseEventIds.has(doseEvent.id) ? (
+                        <span className="entry-tag entry-tag-muted" data-testid={`entry-tag-superseded-${doseEvent.id}`}>
+                          Superseded
+                        </span>
+                      ) : null}
+                    </div>
+                    {doseEvent.doseText ? <span>Dose: {doseEvent.doseText}</span> : null}
+                    {doseEvent.givenBy ? <span>Given by: {doseEvent.givenBy}</span> : null}
+                    {doseEvent.notes ? <span>Notes: {doseEvent.notes}</span> : null}
+                    {doseEvent.corrected ? (
+                      <div className="correction-meta-row">
+                        <span className="entry-tag" data-testid={`entry-tag-corrected-${doseEvent.id}`}>
+                          Corrected
+                        </span>
+                        <span className="correction-supersedes-label">
+                          Supersedes:{' '}
+                          {doseEvent.supersedesDoseEventId && correctionBySupersededId.has(doseEvent.supersedesDoseEventId)
+                            ? formatAbsoluteDateTime(
+                                new Date(
+                                  medicationDoseEvents.find(
+                                    (entry) => entry.id === doseEvent.supersedesDoseEventId,
+                                  )?.timestampGiven ?? doseEvent.timestampGiven,
+                                ),
+                              )
+                            : doseEvent.supersedesDoseEventId}
+                        </span>
+                      </div>
+                    ) : null}
+                    {!doseEvent.corrected && correctionBySupersededId.has(doseEvent.id) ? (
+                      <span>
+                        Superseded by correction at{' '}
+                        {formatAbsoluteDateTime(
+                          new Date(correctionBySupersededId.get(doseEvent.id)?.timestampGiven ?? doseEvent.timestampGiven),
+                        )}
+                      </span>
+                    ) : null}
+                    {editingDoseEventId === doseEvent.id ? (
+                      <div className="correction-form" data-testid={`correction-form-${doseEvent.id}`}>
+                        <label>
+                          Replacement timestamp (local time)
+                          <input
+                            type="datetime-local"
+                            aria-label="Replacement timestamp (local time)"
+                            value={replacementTimestampInput}
+                            onChange={(event) => setReplacementTimestampInput(event.target.value)}
+                            required
+                          />
+                        </label>
+                        <p className="correction-helper">
+                          Uses your device local time ({Intl.DateTimeFormat().resolvedOptions().timeZone}).
+                        </p>
+                        <label>
+                          Dose amount
+                          <input
+                            type="text"
+                            aria-label="Dose amount"
+                            value={correctionDoseText}
+                            onChange={(event) => setCorrectionDoseText(event.target.value)}
+                            placeholder="e.g. 25mg or 50mg"
+                          />
+                        </label>
+                        <label>
+                          Notes (optional)
+                          <input
+                            type="text"
+                            aria-label="Notes (optional)"
+                            value={correctionNotes}
+                            onChange={(event) => setCorrectionNotes(event.target.value)}
+                            placeholder="Why this correction was needed"
+                          />
+                        </label>
+                        {correctionError ? <p className="correction-error">{correctionError}</p> : null}
+                        <div className="correction-form-actions">
+                          <button
+                            type="button"
+                            className="correct-save-button icon-action-button"
+                            disabled={actionsDisabled || isSavingCorrection}
+                            onClick={() => void saveCorrection(doseEvent.id)}
+                            aria-label="Save correction"
+                          >
+                            {isSavingCorrection ? 'Saving...' : <span className="icon-action-glyph" aria-hidden="true">✔</span>}
+                          </button>
+                          <button
+                            type="button"
+                            className="correct-cancel-button icon-action-button"
+                            disabled={actionsDisabled || isSavingCorrection}
+                            onClick={cancelCorrection}
+                            aria-label="Cancel correction"
+                          >
+                            <span className="icon-action-glyph" aria-hidden="true">X</span>
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      ) : null}
     </article>
   )
 }

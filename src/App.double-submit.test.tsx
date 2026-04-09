@@ -78,6 +78,8 @@ describe('double-submit protection', () => {
     await screen.findByRole('heading', { name: 'Alex Rivera' })
     const card = await screen.findByTestId('med-card-med-interval-1')
 
+    await user.click(within(card).getByTestId('toggle-med-details-med-interval-1'))
+
     // Open the correction form for the seeded dose event.
     await user.click(within(card).getByTestId('correct-dose-dose-seed-1'))
     await user.clear(within(card).getByLabelText('Replacement timestamp (local time)'))

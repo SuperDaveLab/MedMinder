@@ -36,6 +36,10 @@ async function clearDatabase(): Promise<void> {
   )
 }
 
+async function expandMedicationDetails(user: ReturnType<typeof userEvent.setup>, medicationId: string): Promise<void> {
+  await user.click(screen.getByTestId(`toggle-med-details-${medicationId}`))
+}
+
 describe('App persistence flow', () => {
   beforeEach(async () => {
     mockClock.now = '2026-04-06T09:59:00.000Z'
@@ -84,6 +88,8 @@ describe('App persistence flow', () => {
     await screen.findByRole('heading', { name: 'Alex Rivera' })
     const medicationCard = await screen.findByTestId('med-card-med-interval-1')
 
+    await expandMedicationDetails(user, 'med-interval-1')
+
     const initialHistory = within(medicationCard).getByTestId('med-history-med-interval-1')
     expect(within(initialHistory).getAllByRole('listitem').length).toBe(1)
 
@@ -108,6 +114,9 @@ describe('App persistence flow', () => {
 
     await screen.findByRole('heading', { name: 'Alex Rivera' })
     const reloadedCard = await screen.findByTestId('med-card-med-interval-1')
+
+    await expandMedicationDetails(user, 'med-interval-1')
+
     const reloadedHistory = within(reloadedCard).getByTestId('med-history-med-interval-1')
 
     expect(within(reloadedHistory).getAllByRole('listitem').length).toBe(2)
@@ -123,6 +132,7 @@ describe('App persistence flow', () => {
 
     expect(within(medicationCard).getByText(/Overdue by|Missed by/)).toBeTruthy()
 
+    await expandMedicationDetails(user, 'med-interval-1')
     await user.click(within(medicationCard).getByTestId('correct-dose-dose-seed-1'))
     await user.clear(within(medicationCard).getByLabelText('Replacement timestamp (local time)'))
     await user.type(
@@ -169,6 +179,8 @@ describe('App persistence flow', () => {
     await screen.findByRole('heading', { name: 'Alex Rivera' })
     const medicationCard = await screen.findByTestId('med-card-med-interval-1')
 
+    await expandMedicationDetails(user, 'med-interval-1')
+
     await user.click(within(medicationCard).getByRole('button', { name: 'Give Dose' }))
 
     await waitFor(async () => {
@@ -212,6 +224,8 @@ describe('App persistence flow', () => {
     await screen.findByRole('heading', { name: 'Alex Rivera' })
     const medicationCard = await screen.findByTestId('med-card-med-interval-1')
 
+    await expandMedicationDetails(user, 'med-interval-1')
+
     await user.click(within(medicationCard).getByTestId('correct-dose-dose-seed-1'))
     await user.type(
       within(medicationCard).getByLabelText('Replacement timestamp (local time)'),
@@ -232,6 +246,8 @@ describe('App persistence flow', () => {
 
     await screen.findByRole('heading', { name: 'Alex Rivera' })
     const medicationCard = await screen.findByTestId('med-card-med-interval-1')
+
+    await expandMedicationDetails(user, 'med-interval-1')
 
     await user.click(within(medicationCard).getByTestId('correct-dose-dose-seed-1'))
     await user.clear(within(medicationCard).getByLabelText('Replacement timestamp (local time)'))

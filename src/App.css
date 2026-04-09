@@ -377,6 +377,30 @@ button:disabled {
   color: var(--muted);
 }
 
+.med-card-last-given-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0.4rem 0 0;
+}
+
+.med-card-last-given-row .last-given {
+  margin: 0;
+}
+
+.med-card-details-toggle {
+  flex-shrink: 0;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.72rem;
+}
+
+.med-card-details {
+  margin-top: 0.5rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
 .status-pill {
   text-transform: uppercase;
   letter-spacing: 0.08em;
