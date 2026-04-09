@@ -6,6 +6,7 @@ WEB_ROOT="${DEPLOY_WEB_ROOT:-/var/www/nexpill}"
 WEB_BACKUP_ROOT="${DEPLOY_WEB_BACKUP_ROOT:-/var/www/nexpill-backups}"
 API_ROOT="${DEPLOY_API_ROOT:-/opt/nexpill}"
 API_SERVICE="${DEPLOY_API_SERVICE:-nexpill-api}"
+API_PORT="${DEPLOY_API_PORT:-8788}"
 PUBLIC_BASE_URL="${DEPLOY_PUBLIC_BASE_URL:-}"
 RELEASE_ID="${RELEASE_ID:-$(date +%Y%m%d-%H%M%S)}"
 RUN_CHECKS=1
@@ -28,6 +29,7 @@ Environment overrides:
   DEPLOY_WEB_BACKUP_ROOT
   DEPLOY_API_ROOT
   DEPLOY_API_SERVICE
+  DEPLOY_API_PORT
   DEPLOY_PUBLIC_BASE_URL
   RELEASE_ID
 EOF
@@ -79,6 +81,7 @@ echo "[deploy] release id: $RELEASE_ID"
 echo "[deploy] host: $HOST"
 echo "[deploy] web root: $WEB_ROOT"
 echo "[deploy] api root: $API_ROOT"
+echo "[deploy] api port: $API_PORT"
 if [[ -n "$PUBLIC_BASE_URL" ]]; then
   echo "[deploy] public base url: $PUBLIC_BASE_URL"
 fi
@@ -120,7 +123,7 @@ echo "[deploy] validating Apache and reloading"
 ssh -o BatchMode=yes "$HOST" "set -e; apache2ctl configtest; systemctl reload apache2; systemctl is-active apache2"
 
 echo "[deploy] smoke checks"
-ssh -o BatchMode=yes "$HOST" "set -e; curl -fsS http://127.0.0.1:8787/health"
+ssh -o BatchMode=yes "$HOST" "set -e; curl -fsS http://127.0.0.1:$API_PORT/health"
 if [[ -n "$PUBLIC_BASE_URL" ]]; then
   curl -fsS "$PUBLIC_BASE_URL/api/notifications/push/public-key" >/dev/null
   curl -fsSI "$PUBLIC_BASE_URL" >/dev/null
