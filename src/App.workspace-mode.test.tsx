@@ -96,10 +96,28 @@ function installFetchMock(initialCloudState: MedMinderState, email = 'caregiver@
       token: string
       newPassword: string
     }>,
+    listSessionsCalls: 0,
+    revokeOtherSessionsCalls: 0,
     getCloudState: () => cloneState(cloudState),
   }
 
   const authResponse = buildAuthResponse(email)
+  let accountSessions = [
+    {
+      sessionId: 'session-1',
+      provider: 'password',
+      issuedAt: '2026-04-06T10:00:00.000Z',
+      expiresAt: '2026-04-07T10:00:00.000Z',
+      isCurrent: true,
+    },
+    {
+      sessionId: 'session-2',
+      provider: 'password',
+      issuedAt: '2026-04-05T10:00:00.000Z',
+      expiresAt: '2026-04-07T09:00:00.000Z',
+      isCurrent: false,
+    },
+  ]
 
   vi.stubGlobal(
     'fetch',
@@ -182,6 +200,18 @@ function installFetchMock(initialCloudState: MedMinderState, email = 'caregiver@
         }
 
         return jsonResponse(authResponse.account)
+      }
+
+      if (url.endsWith('/api/auth/sessions')) {
+        controller.listSessionsCalls += 1
+        return jsonResponse({ sessions: accountSessions })
+      }
+
+      if (url.endsWith('/api/auth/sessions/revoke-others')) {
+        controller.revokeOtherSessionsCalls += 1
+        const revokedCount = accountSessions.filter((session) => !session.isCurrent).length
+        accountSessions = accountSessions.filter((session) => session.isCurrent)
+        return jsonResponse({ revokedCount })
       }
 
       if (url.endsWith('/api/cloud/state')) {
@@ -398,6 +428,38 @@ describe('App workspace mode flow', () => {
     expect(localState.medications).toHaveLength(initialSampleState.medications.length)
     expect(localState.doseEvents).toHaveLength(initialSampleState.doseEvents.length)
     expect(controller.logoutCalls).toBe(1)
+  })
+
+  it('shows session activity and signs out other devices from More view', async () => {
+    const controller = installFetchMock({
+      patients: [{ id: 'cloud-patient-1', displayName: 'Cloud Riley' }],
+      medications: [],
+      doseEvents: [],
+    })
+
+    const user = userEvent.setup()
+
+    render(<App />)
+    await screen.findByRole('option', { name: 'Alex Rivera' })
+
+    await user.click(screen.getByTestId('tab-more'))
+    await user.type(screen.getByTestId('auth-email-input'), 'caregiver@example.com')
+    await user.type(screen.getByTestId('auth-password-input'), 'password123')
+    await user.click(screen.getByTestId('sign-in-button'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('account-sessions-panel')).toBeTruthy()
+      expect(screen.getByText('Other device')).toBeTruthy()
+    })
+
+    await user.click(screen.getByTestId('revoke-other-sessions-button'))
+
+    await waitFor(() => {
+      expect(screen.getByText('Signed out other devices.')).toBeTruthy()
+      expect(screen.queryByText('Other device')).toBeNull()
+    })
+
+    expect(controller.revokeOtherSessionsCalls).toBe(1)
   })
 
   it('cloud-mode medication CRUD (create, deactivate, delete) writes to cloud and never touches local DB', async () => {

@@ -28,6 +28,22 @@ export interface AuthSession {
   provider: AuthProvider
 }
 
+export interface AccountSessionSummary {
+  sessionId: string
+  provider: AuthProvider
+  issuedAt: ISODateString
+  expiresAt: ISODateString
+  isCurrent: boolean
+}
+
+export interface ListAccountSessionsResponse {
+  sessions: AccountSessionSummary[]
+}
+
+export interface RevokeOtherSessionsResponse {
+  revokedCount: number
+}
+
 export interface AuthSessionState {
   account: AuthAccount
   session: AuthSession

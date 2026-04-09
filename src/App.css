@@ -966,14 +966,16 @@ button {
 
 .account-auth-card,
 .account-preferences-card,
-.account-password-panel {
+.account-password-panel,
+.account-session-panel {
   position: relative;
   overflow: hidden;
 }
 
 .account-auth-card::before,
 .account-preferences-card::before,
-.account-password-panel::before {
+.account-password-panel::before,
+.account-session-panel::before {
   content: '';
   position: absolute;
   inset: 0 auto auto 0;
@@ -985,10 +987,60 @@ button {
 
 .account-auth-card .utility-button:first-child,
 .account-preferences-card .utility-button:first-child,
-.account-password-panel .utility-button:first-child {
+.account-password-panel .utility-button:first-child,
+.account-session-panel .utility-button:first-child {
   background: var(--brand-soft);
   border-color: transparent;
   color: var(--brand);
+}
+
+.session-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.session-item {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 0.55rem;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.session-item p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.83rem;
+}
+
+.session-item p:first-child {
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.session-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  padding: 0.08rem 0.45rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.session-badge.is-current {
+  border-color: #86efac;
+  background: #f0fdf4;
+  color: #166534;
 }
 
 .account-card .security-action-button {

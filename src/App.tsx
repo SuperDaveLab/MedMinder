@@ -17,6 +17,8 @@ function App() {
     authState,
     isAuthLoading,
     isAuthActionInProgress,
+    authSessions,
+    isAuthSessionsLoading,
     authError,
     createAccount,
     signIn,
@@ -25,6 +27,8 @@ function App() {
     requestPasswordReset,
     resetPassword,
     updateAccountSettings,
+    refreshAuthSessions,
+    revokeOtherAuthSessions,
     clearAuthError,
   } = useAuth()
 
@@ -468,6 +472,8 @@ function App() {
             authState={authState}
             isAuthLoading={isAuthLoading}
             isAuthActionInProgress={isAuthActionInProgress}
+            authSessions={authSessions}
+            isAuthSessionsLoading={isAuthSessionsLoading}
             authError={authError}
             onCreateAccount={createAccount}
             onSignIn={signIn}
@@ -476,6 +482,8 @@ function App() {
             onRequestPasswordReset={requestPasswordReset}
             onResetPassword={resetPassword}
             onUpdateAccountSettings={updateAccountSettings}
+            onRefreshAuthSessions={refreshAuthSessions}
+            onRevokeOtherAuthSessions={revokeOtherAuthSessions}
             onClearAuthError={clearAuthError}
           />
         ) : null}

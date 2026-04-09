@@ -27,6 +27,8 @@ vi.mock('../../server/emailNotifier', () => ({
 import {
   AuthServiceError,
   changePassword,
+  listActiveSessions,
+  revokeOtherSessions,
   requestPasswordReset,
   resetPassword,
 } from '../../server/authService'
@@ -208,5 +210,50 @@ describe('authService changePassword', () => {
       expect.stringContaining('UPDATE sessions'),
       [expect.any(Date), 'account-1', 'user-1'],
     )
+  })
+
+  it('lists active sessions and marks the current one', async () => {
+    queryMock.mockResolvedValueOnce([[
+      {
+        session_id: 'session-current',
+        provider: 'password',
+        issued_at: new Date('2026-04-09T10:00:00.000Z'),
+        expires_at: new Date('2026-04-10T10:00:00.000Z'),
+      },
+      {
+        session_id: 'session-other',
+        provider: 'password',
+        issued_at: new Date('2026-04-08T10:00:00.000Z'),
+        expires_at: new Date('2026-04-10T10:00:00.000Z'),
+      },
+    ]])
+
+    const sessions = await listActiveSessions('account-1', 'user-1', 'session-current')
+
+    expect(queryMock).toHaveBeenCalledWith(
+      expect.stringContaining('SELECT session_id, provider, issued_at, expires_at'),
+      ['account-1', 'user-1', expect.any(Date)],
+    )
+    expect(sessions).toHaveLength(2)
+    expect(sessions[0]).toMatchObject({
+      sessionId: 'session-current',
+      isCurrent: true,
+    })
+    expect(sessions[1]).toMatchObject({
+      sessionId: 'session-other',
+      isCurrent: false,
+    })
+  })
+
+  it('revokes other active sessions and returns affected count', async () => {
+    queryMock.mockResolvedValueOnce([{ affectedRows: 2 }])
+
+    const revokedCount = await revokeOtherSessions('account-1', 'user-1', 'session-current')
+
+    expect(queryMock).toHaveBeenCalledWith(
+      expect.stringContaining('UPDATE sessions'),
+      [expect.any(Date), 'account-1', 'user-1', 'session-current', expect.any(Date)],
+    )
+    expect(revokedCount).toBe(2)
   })
 })

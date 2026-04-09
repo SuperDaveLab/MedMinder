@@ -9,6 +9,8 @@ import {
   changePassword,
   createAccount,
   getAccountById,
+  listActiveSessions,
+  revokeOtherSessions,
   requestPasswordReset,
   resetPassword,
   signInWithPassword,
@@ -33,6 +35,8 @@ import type {
   ChangePasswordRequest,
   ForgotPasswordRequest,
   ForgotPasswordResponse,
+  ListAccountSessionsResponse,
+  RevokeOtherSessionsResponse,
   ResetPasswordRequest,
   ResetPasswordResponse,
   UpdateAccountProfileRequest,
@@ -213,6 +217,30 @@ app.post('/api/auth/change-password', async (request: Request, response: Respons
 
     response.status(401).json({
       message: error instanceof Error ? error.message : 'Unable to change password.',
+    })
+  }
+})
+
+app.get('/api/auth/sessions', async (request: Request, response: Response) => {
+  try {
+    const account = await requireSession(request)
+    const sessions = await listActiveSessions(account.accountId, account.userId, account.sessionId)
+    response.status(200).json({ sessions } satisfies ListAccountSessionsResponse)
+  } catch (error) {
+    response.status(401).json({
+      message: error instanceof Error ? error.message : 'Unable to read account sessions.',
+    })
+  }
+})
+
+app.post('/api/auth/sessions/revoke-others', async (request: Request, response: Response) => {
+  try {
+    const account = await requireSession(request)
+    const revokedCount = await revokeOtherSessions(account.accountId, account.userId, account.sessionId)
+    response.status(200).json({ revokedCount } satisfies RevokeOtherSessionsResponse)
+  } catch (error) {
+    response.status(401).json({
+      message: error instanceof Error ? error.message : 'Unable to revoke other sessions.',
     })
   }
 })

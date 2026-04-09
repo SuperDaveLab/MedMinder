@@ -1,4 +1,5 @@
 import type {
+  AccountSessionSummary,
   AuthAccount,
   ChangePasswordRequest,
   ChangePasswordResponse,
@@ -8,9 +9,11 @@ import type {
   ForgotPasswordResponse,
   ResetPasswordRequest,
   ResetPasswordResponse,
+  RevokeOtherSessionsResponse,
   SignInWithPasswordRequest,
   SignInWithPasswordResponse,
   SignOutRequest,
+  ListAccountSessionsResponse,
   UpdateAccountProfileRequest,
 } from '../domain/auth'
 import { getJsonErrorMessage, parseJsonResponse } from './http'
@@ -24,6 +27,8 @@ export interface AuthApiClient {
   resetPassword: (request: ResetPasswordRequest) => Promise<ResetPasswordResponse>
   getAccountProfile: (sessionId: string) => Promise<AuthAccount>
   updateAccountProfile: (sessionId: string, request: UpdateAccountProfileRequest) => Promise<AuthAccount>
+  listAccountSessions: (sessionId: string) => Promise<AccountSessionSummary[]>
+  revokeOtherSessions: (sessionId: string) => Promise<RevokeOtherSessionsResponse>
 }
 
 async function handleError(response: Response): Promise<never> {
@@ -108,5 +113,25 @@ export function createAuthApiClient(baseUrl: string): AuthApiClient {
 
       return parseJsonResponse<AuthAccount>(response)
     },
+    listAccountSessions: async (sessionId) => {
+      const response = await fetch(`${normalizedBaseUrl}/api/auth/sessions`, {
+        method: 'GET',
+        headers: {
+          'x-medminder-session-id': sessionId,
+        },
+      })
+
+      if (!response.ok) {
+        await handleError(response)
+      }
+
+      const payload = await parseJsonResponse<ListAccountSessionsResponse>(response)
+      return payload.sessions
+    },
+    revokeOtherSessions: (sessionId) => postJson<Record<string, never>, RevokeOtherSessionsResponse>(
+      '/api/auth/sessions/revoke-others',
+      {},
+      sessionId,
+    ),
   }
 }

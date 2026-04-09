@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createAuthApiClient } from '../cloud/authClient'
 import { bootstrapCloudFromLocal, startCloudSession } from '../cloud/syncOrchestrator'
-import type { AuthSessionState } from '../domain/auth'
+import type { AccountSessionSummary, AuthSessionState } from '../domain/auth'
 import type { NotificationDeliveryPolicy } from '../domain/notificationPolicy'
 import { unregisterPushSubscription } from '../reminders/pushRelay'
 import { clearLocalClinicalData } from '../storage/repository'
@@ -34,6 +34,8 @@ export interface UseAuthResult {
   authState: AuthSessionState | null
   isAuthLoading: boolean
   isAuthActionInProgress: boolean
+  authSessions: AccountSessionSummary[]
+  isAuthSessionsLoading: boolean
   authError: string | null
   createAccount: (credentials: AuthCredentials) => Promise<void>
   signIn: (credentials: AuthCredentials) => Promise<void>
@@ -45,6 +47,8 @@ export interface UseAuthResult {
     phoneE164: string | null
     notificationDeliveryPolicy: NotificationDeliveryPolicy
   }) => Promise<void>
+  refreshAuthSessions: () => Promise<void>
+  revokeOtherAuthSessions: () => Promise<void>
   clearAuthError: () => void
 }
 
@@ -60,6 +64,8 @@ export function useAuth(): UseAuthResult {
   const [authState, setAuthState] = useState<AuthSessionState | null>(null)
   const [isAuthLoading, setIsAuthLoading] = useState(true)
   const [isAuthActionInProgress, setIsAuthActionInProgress] = useState(false)
+  const [authSessions, setAuthSessions] = useState<AccountSessionSummary[]>([])
+  const [isAuthSessionsLoading, setIsAuthSessionsLoading] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
 
   const authClient = useMemo(() => createAuthApiClient(getApiBaseUrl()), [])
@@ -73,6 +79,7 @@ export function useAuth(): UseAuthResult {
 
         if (!canceled) {
           setAuthState(stored)
+          setAuthSessions([])
         }
       } finally {
         if (!canceled) {
@@ -121,6 +128,7 @@ export function useAuth(): UseAuthResult {
       await bootstrapCloudFromLocal(resolvedState)
       await saveAuthSessionState(resolvedState)
       setAuthState(resolvedState)
+      setAuthSessions([])
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Unable to create account right now.')
     } finally {
@@ -161,6 +169,7 @@ export function useAuth(): UseAuthResult {
       await startCloudSession(resolvedState)
       await saveAuthSessionState(resolvedState)
       setAuthState(resolvedState)
+      setAuthSessions([])
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Unable to sign in right now.')
     } finally {
@@ -223,6 +232,55 @@ export function useAuth(): UseAuthResult {
       await clearLocalClinicalData()
       await clearAuthSessionState()
       setAuthState(null)
+      setAuthSessions([])
+      setIsAuthActionInProgress(false)
+    }
+  }, [authClient, authState])
+
+  const refreshAuthSessions = useCallback(async () => {
+    if (!authState) {
+      setAuthSessions([])
+      return
+    }
+
+    setAuthError(null)
+    setIsAuthSessionsLoading(true)
+
+    try {
+      const sessions = await authClient.listAccountSessions(authState.session.sessionId)
+      setAuthSessions(sessions)
+    } catch (error) {
+      const resolvedError = error instanceof Error
+        ? error
+        : new Error('Unable to refresh account sessions right now.')
+      setAuthError(resolvedError.message)
+      throw resolvedError
+    } finally {
+      setIsAuthSessionsLoading(false)
+    }
+  }, [authClient, authState])
+
+  const revokeOtherAuthSessions = useCallback(async () => {
+    if (!authState) {
+      const error = new Error('You need to sign in before managing sessions.')
+      setAuthError(error.message)
+      throw error
+    }
+
+    setAuthError(null)
+    setIsAuthActionInProgress(true)
+
+    try {
+      await authClient.revokeOtherSessions(authState.session.sessionId)
+      const sessions = await authClient.listAccountSessions(authState.session.sessionId)
+      setAuthSessions(sessions)
+    } catch (error) {
+      const resolvedError = error instanceof Error
+        ? error
+        : new Error('Unable to revoke other sessions right now.')
+      setAuthError(resolvedError.message)
+      throw resolvedError
+    } finally {
       setIsAuthActionInProgress(false)
     }
   }, [authClient, authState])
@@ -292,6 +350,8 @@ export function useAuth(): UseAuthResult {
     authState,
     isAuthLoading,
     isAuthActionInProgress,
+    authSessions,
+    isAuthSessionsLoading,
     authError,
     createAccount,
     signIn,
@@ -300,6 +360,8 @@ export function useAuth(): UseAuthResult {
     requestPasswordReset,
     resetPassword,
     updateAccountSettings,
+    refreshAuthSessions,
+    revokeOtherAuthSessions,
     clearAuthError,
   }
 }

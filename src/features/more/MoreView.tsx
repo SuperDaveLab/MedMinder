@@ -1,5 +1,5 @@
 import { type ChangeEvent, useEffect, useRef, useState } from 'react'
-import type { AuthSessionState } from '../../domain/auth'
+import type { AccountSessionSummary, AuthSessionState } from '../../domain/auth'
 import {
   getNotificationDeliveryPolicyLabel,
   notificationDeliveryPolicies,
@@ -25,6 +25,8 @@ interface MoreViewProps {
   authState: AuthSessionState | null
   isAuthLoading: boolean
   isAuthActionInProgress: boolean
+  authSessions: AccountSessionSummary[]
+  isAuthSessionsLoading: boolean
   authError: string | null
   onCreateAccount: (credentials: { email: string; password: string }) => Promise<void>
   onSignIn: (credentials: { email: string; password: string }) => Promise<void>
@@ -44,7 +46,19 @@ interface MoreViewProps {
     phoneE164: string | null
     notificationDeliveryPolicy: NotificationDeliveryPolicy
   }) => Promise<void>
+  onRefreshAuthSessions: () => Promise<void>
+  onRevokeOtherAuthSessions: () => Promise<void>
   onClearAuthError: () => void
+}
+
+function formatSessionTime(isoTimestamp: string): string {
+  const timestamp = Date.parse(isoTimestamp)
+
+  if (Number.isNaN(timestamp)) {
+    return 'Unknown'
+  }
+
+  return new Date(timestamp).toLocaleString()
 }
 
 function downloadBlob(blob: Blob, fileName: string): void {
@@ -70,6 +84,8 @@ export function MoreView({
   authState,
   isAuthLoading,
   isAuthActionInProgress,
+  authSessions,
+  isAuthSessionsLoading,
   authError,
   onCreateAccount,
   onSignIn,
@@ -78,6 +94,8 @@ export function MoreView({
   onRequestPasswordReset,
   onResetPassword,
   onUpdateAccountSettings,
+  onRefreshAuthSessions,
+  onRevokeOtherAuthSessions,
   onClearAuthError,
 }: MoreViewProps) {
   const [isBackupActionInProgress, setIsBackupActionInProgress] = useState(false)
@@ -101,6 +119,10 @@ export function MoreView({
     text: string
   } | null>(null)
   const [recoveryStatusMessage, setRecoveryStatusMessage] = useState<{
+    kind: 'error' | 'success'
+    text: string
+  } | null>(null)
+  const [sessionStatusMessage, setSessionStatusMessage] = useState<{
     kind: 'error' | 'success'
     text: string
   } | null>(null)
@@ -343,6 +365,18 @@ export function MoreView({
     }
   }
 
+  const handleRevokeOtherSessions = async () => {
+    onClearAuthError()
+    setSessionStatusMessage(null)
+
+    try {
+      await onRevokeOtherAuthSessions()
+      setSessionStatusMessage({ kind: 'success', text: 'Signed out other devices.' })
+    } catch {
+      setSessionStatusMessage({ kind: 'error', text: 'Unable to sign out other devices right now.' })
+    }
+  }
+
   useEffect(() => {
     setAuthPhoneInput(authState?.account.phoneE164 ?? '')
     setAuthNotificationPolicyInput(authState?.account.notificationDeliveryPolicy ?? 'push_then_email_fallback')
@@ -354,8 +388,20 @@ export function MoreView({
       setNewPasswordInput('')
       setConfirmNewPasswordInput('')
       setPasswordStatusMessage(null)
+      setSessionStatusMessage(null)
     }
   }, [authState])
+
+  useEffect(() => {
+    if (!authState) {
+      return
+    }
+
+    setSessionStatusMessage(null)
+    void onRefreshAuthSessions().catch(() => {
+      // Shared auth error handles server failures.
+    })
+  }, [authState, onRefreshAuthSessions])
 
   useEffect(() => {
     if (authState) {
@@ -387,7 +433,7 @@ export function MoreView({
           <div className="account-grid">
             <section className="account-card account-preferences-card">
               <div className="account-card-header">
-                <p className="account-card-eyebrow">Preferences</p>
+                <p className="account-card-eyebrow">Delivery</p>
                 <h3>Delivery and contact</h3>
                 <p>Set how reminder relay should reach you and keep your backup contact info ready for later account features.</p>
               </div>
@@ -443,7 +489,7 @@ export function MoreView({
 
             <section className="account-card account-password-panel">
               <div className="account-card-header">
-                <p className="account-card-eyebrow">Security</p>
+                <p className="account-card-eyebrow">Password</p>
                 <h3>Change password</h3>
                 <p>Update your password without signing out on this device. Other signed-in sessions will be revoked.</p>
               </div>
@@ -505,6 +551,55 @@ export function MoreView({
                   onClick={() => void handleChangePassword()}
                 >
                   {isAuthActionInProgress ? 'Working...' : 'Change password'}
+                </button>
+              </div>
+            </section>
+
+            <section className="account-card account-session-panel" data-testid="account-sessions-panel">
+              <div className="account-card-header">
+                <p className="account-card-eyebrow">Sessions</p>
+                <h3>Session activity</h3>
+                <p>Review active sessions and sign out other devices when needed.</p>
+              </div>
+              <div className="account-card-body">
+                {isAuthSessionsLoading ? <p className="account-field-hint">Loading active sessions...</p> : null}
+                {!isAuthSessionsLoading && authSessions.length === 0 ? (
+                  <p className="account-field-hint">No active sessions found.</p>
+                ) : null}
+                {authSessions.length > 0 ? (
+                  <ul className="session-list" data-testid="account-session-list">
+                    {authSessions.map((session) => (
+                      <li key={session.sessionId} className="session-item">
+                        <p>
+                          <strong>{session.isCurrent ? 'Current device' : 'Other device'}</strong>
+                          <span className={`session-badge ${session.isCurrent ? 'is-current' : ''}`}>
+                            {session.provider}
+                          </span>
+                        </p>
+                        <p>Signed in: {formatSessionTime(session.issuedAt)}</p>
+                        <p>Expires: {formatSessionTime(session.expiresAt)}</p>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                {sessionStatusMessage ? (
+                  <p className={sessionStatusMessage.kind === 'error' ? 'form-error' : 'form-success'}>
+                    {sessionStatusMessage.text}
+                  </p>
+                ) : null}
+              </div>
+              <div className="account-card-actions form-actions">
+                <button
+                  className="utility-button security-action-button"
+                  data-testid="revoke-other-sessions-button"
+                  disabled={
+                    isAuthActionInProgress
+                    || isAuthSessionsLoading
+                    || authSessions.filter((session) => !session.isCurrent).length === 0
+                  }
+                  onClick={() => void handleRevokeOtherSessions()}
+                >
+                  {isAuthActionInProgress ? 'Working...' : 'Sign out other devices'}
                 </button>
               </div>
             </section>
@@ -602,7 +697,7 @@ export function MoreView({
             {resetToken ? (
               <section className="account-card account-password-panel">
                 <div className="account-card-header">
-                  <p className="account-card-eyebrow">Security</p>
+                  <p className="account-card-eyebrow">Password</p>
                   <h3>Reset password</h3>
                   <p>This reset link can only be used once. Choose a new password to finish recovery.</p>
                 </div>

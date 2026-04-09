@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs'
 import crypto from 'node:crypto'
 import type { RowDataPacket } from 'mysql2/promise'
 import type {
+  AccountSessionSummary,
   AuthAccount,
   AuthSession,
   AuthTokenSet,
@@ -509,4 +510,53 @@ export async function updateAccountPhoneE164(
   )
 
   return getAccountById(accountId)
+}
+
+export async function listActiveSessions(
+  accountId: string,
+  userId: string,
+  currentSessionId: string,
+): Promise<AccountSessionSummary[]> {
+  const [rows] = await dbPool.query<Array<{
+    session_id: string
+    provider: string
+    issued_at: Date
+    expires_at: Date
+  }>>(
+    `SELECT session_id, provider, issued_at, expires_at
+     FROM sessions
+     WHERE account_id = ?
+       AND user_id = ?
+       AND revoked_at IS NULL
+       AND expires_at > ?
+     ORDER BY issued_at DESC`,
+    [accountId, userId, new Date()],
+  )
+
+  return rows.map((row) => ({
+    sessionId: row.session_id,
+    provider: row.provider as AuthSession['provider'],
+    issuedAt: row.issued_at.toISOString(),
+    expiresAt: row.expires_at.toISOString(),
+    isCurrent: row.session_id === currentSessionId,
+  }))
+}
+
+export async function revokeOtherSessions(
+  accountId: string,
+  userId: string,
+  currentSessionId: string,
+): Promise<number> {
+  const [result] = await dbPool.query<{ affectedRows: number }>(
+    `UPDATE sessions
+     SET revoked_at = ?
+     WHERE account_id = ?
+       AND user_id = ?
+       AND session_id <> ?
+       AND revoked_at IS NULL
+       AND expires_at > ?`,
+    [new Date(), accountId, userId, currentSessionId, new Date()],
+  )
+
+  return result.affectedRows ?? 0
 }
