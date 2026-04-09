@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs'
 import crypto from 'node:crypto'
-import type { RowDataPacket } from 'mysql2/promise'
+import type { ResultSetHeader, RowDataPacket } from 'mysql2/promise'
 import type {
   AccountSessionSummary,
   AuthAccount,
@@ -42,6 +42,13 @@ interface PasswordResetTokenRow extends RowDataPacket {
   expires_at: Date
   used_at: Date | null
   created_at: Date
+}
+
+interface SessionSummaryRow extends RowDataPacket {
+  session_id: string
+  provider: string
+  issued_at: Date
+  expires_at: Date
 }
 
 export class AuthServiceError extends Error {
@@ -517,12 +524,7 @@ export async function listActiveSessions(
   userId: string,
   currentSessionId: string,
 ): Promise<AccountSessionSummary[]> {
-  const [rows] = await dbPool.query<Array<{
-    session_id: string
-    provider: string
-    issued_at: Date
-    expires_at: Date
-  }>>(
+  const [rows] = await dbPool.query<SessionSummaryRow[]>(
     `SELECT session_id, provider, issued_at, expires_at
      FROM sessions
      WHERE account_id = ?
@@ -547,7 +549,7 @@ export async function revokeOtherSessions(
   userId: string,
   currentSessionId: string,
 ): Promise<number> {
-  const [result] = await dbPool.query<{ affectedRows: number }>(
+  const [result] = await dbPool.query<ResultSetHeader>(
     `UPDATE sessions
      SET revoked_at = ?
      WHERE account_id = ?
