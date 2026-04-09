@@ -1,4 +1,4 @@
-# Med-Minder Deployment Runbook
+# Nexpill Deployment Runbook
 
 This runbook is for deploying the static PWA build to the live host.
 

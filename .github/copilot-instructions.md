@@ -1,6 +1,6 @@
-# Med-Minder Copilot Instructions
+# Nexpill Copilot Instructions
 
-This repository is for **Med-Minder**, a local-first PWA that helps users track medication timing for one or more patients.
+This repository is for **Nexpill**, a local-first PWA that helps users track medication timing for one or more patients.
 
 ## Core Product Goal
 The app must answer:

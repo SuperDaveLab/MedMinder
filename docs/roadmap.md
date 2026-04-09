@@ -1,4 +1,4 @@
-# Med-Minder Product Roadmap (Working Draft)
+# Nexpill Product Roadmap (Working Draft)
 
 Last updated: 2026-04-08
 

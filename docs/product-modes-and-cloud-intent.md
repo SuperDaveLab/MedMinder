@@ -1,10 +1,10 @@
-# Med-Minder Product Modes and Cloud Intent
+# Nexpill Product Modes and Cloud Intent
 
 Last updated: 2026-04-06
 
 ## Intent
 
-Med-Minder supports two product modes in one app:
+Nexpill supports two product modes in one app:
 
 1. Local-first mode (default, free, open-source)
 2. Account mode (optional, cloud-backed sync and premium reminder reliability)
@@ -23,7 +23,7 @@ Principles:
 
 User promise:
 
-- Anyone can install and use Med-Minder privately with no cloud dependency.
+- Anyone can install and use Nexpill privately with no cloud dependency.
 
 ## Mode 2: Account mode (optional)
 

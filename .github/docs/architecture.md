@@ -1,7 +1,7 @@
-# Med-Minder Architecture
+# Nexpill Architecture
 
 ## Purpose
-Med-Minder is a local-first PWA for tracking medication timing for one or more patients.
+Nexpill is a local-first PWA for tracking medication timing for one or more patients.
 
 Its primary job is to help caregivers answer:
 - what was given

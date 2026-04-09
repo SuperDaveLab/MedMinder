@@ -1,4 +1,4 @@
-# Med-Minder Product Scope
+# Nexpill Product Scope
 
 ## MVP Problem
 Caregivers struggle to track exact medication timing, especially when:

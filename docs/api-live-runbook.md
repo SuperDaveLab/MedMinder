@@ -1,4 +1,4 @@
-# Med-Minder API Live Runbook
+# Nexpill API Live Runbook
 
 This runbook sets up the Node/Express auth + cloud API on a live Linux host.
 
@@ -84,7 +84,7 @@ SMTP_HOST=
 SMTP_PORT=587
 SMTP_USER=
 SMTP_PASSWORD=
-SMTP_FROM=Med-Minder <noreply@example.com>
+SMTP_FROM=Nexpill <noreply@example.com>
 
 # SMS fanout channel (optional)
 TWILIO_ACCOUNT_SID=
@@ -95,7 +95,7 @@ EOF
 sudo chmod 600 /etc/medminder/api.env
 ```
 
-`AUTH_PUBLIC_APP_URL` must point at the public Med-Minder app URL that users open in their browser. Password reset emails use this value to generate the reset link.
+`AUTH_PUBLIC_APP_URL` must point at the public Nexpill app URL that users open in their browser. Password reset emails use this value to generate the reset link.
 
 ## 5. Initialize/Upgrade Tables
 
@@ -127,7 +127,7 @@ Create `/etc/systemd/system/medminder-api.service`:
 
 ```ini
 [Unit]
-Description=Med-Minder Auth/Cloud API
+Description=Nexpill Auth/Cloud API
 After=network.target
 
 [Service]
@@ -167,7 +167,7 @@ Enable modules once:
 sudo a2enmod proxy proxy_http headers
 ```
 
-Inside your TLS vhost for your public Med-Minder domain, add:
+Inside your TLS vhost for your public Nexpill domain, add:
 
 ```apache
 ProxyPreserveHost On
