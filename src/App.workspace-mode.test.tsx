@@ -7,13 +7,13 @@ import userEvent from '@testing-library/user-event'
 import App from './App'
 import type { CreateAccountResponse } from './domain/auth'
 import type { CloudSyncRequest } from './domain/cloudSync'
-import type { DoseEvent, MedMinderState, Medication, Patient } from './domain/types'
+import type { DoseEvent, NexpillState, Medication, Patient } from './domain/types'
 import { initialSampleState } from './data/sampleData'
-import { medMinderDb } from './storage/database'
-import { getLocalMedMinderState } from './storage/repository'
+import { nexpillDb } from './storage/database'
+import { getLocalNexpillState } from './storage/repository'
 
-function cloneState(state: MedMinderState): MedMinderState {
-  return JSON.parse(JSON.stringify(state)) as MedMinderState
+function cloneState(state: NexpillState): NexpillState {
+  return JSON.parse(JSON.stringify(state)) as NexpillState
 }
 
 function buildAuthResponse(email = 'caregiver@example.com'): CreateAccountResponse {
@@ -41,8 +41,8 @@ function buildAuthResponse(email = 'caregiver@example.com'): CreateAccountRespon
   }
 }
 
-function buildStateFromSyncRequest(request: CloudSyncRequest): MedMinderState {
-  const nextState: MedMinderState = {
+function buildStateFromSyncRequest(request: CloudSyncRequest): NexpillState {
+  const nextState: NexpillState = {
     patients: [],
     medications: [],
     doseEvents: [],
@@ -78,7 +78,7 @@ function jsonResponse(body: unknown, status = 200): Response {
   })
 }
 
-function installFetchMock(initialCloudState: MedMinderState, email = 'caregiver@example.com') {
+function installFetchMock(initialCloudState: NexpillState, email = 'caregiver@example.com') {
   let cloudState = cloneState(initialCloudState)
 
   const controller = {
@@ -145,7 +145,7 @@ function installFetchMock(initialCloudState: MedMinderState, email = 'caregiver@
           newPassword: string
         }
         const sessionIdHeader = init?.headers && typeof init.headers === 'object'
-          ? String((init.headers as Record<string, string>)['x-medminder-session-id'] ?? '')
+          ? String((init.headers as Record<string, string>)['x-nexpill-session-id'] ?? '')
           : ''
 
         controller.changePasswordCalls.push({
@@ -250,17 +250,17 @@ function installFetchMock(initialCloudState: MedMinderState, email = 'caregiver@
 }
 
 async function clearDatabase(): Promise<void> {
-  await medMinderDb.transaction(
+  await nexpillDb.transaction(
     'rw',
-    medMinderDb.patients,
-    medMinderDb.medications,
-    medMinderDb.doseEvents,
-    medMinderDb.appSettings,
+    nexpillDb.patients,
+    nexpillDb.medications,
+    nexpillDb.doseEvents,
+    nexpillDb.appSettings,
     async () => {
-      await medMinderDb.patients.clear()
-      await medMinderDb.medications.clear()
-      await medMinderDb.doseEvents.clear()
-      await medMinderDb.appSettings.clear()
+      await nexpillDb.patients.clear()
+      await nexpillDb.medications.clear()
+      await nexpillDb.doseEvents.clear()
+      await nexpillDb.appSettings.clear()
     },
   )
 }
@@ -296,7 +296,7 @@ describe('App workspace mode flow', () => {
     await screen.findByRole('option', { name: 'Alex Rivera' })
 
     await waitFor(async () => {
-      const localState = await getLocalMedMinderState()
+      const localState = await getLocalNexpillState()
 
       expect(localState.patients).toHaveLength(initialSampleState.patients.length)
       expect(localState.medications).toHaveLength(initialSampleState.medications.length)
@@ -331,7 +331,7 @@ describe('App workspace mode flow', () => {
       expect(screen.getByText('App workspace')).toBeTruthy()
     })
 
-    const localState = await getLocalMedMinderState()
+    const localState = await getLocalNexpillState()
     expect(localState).toEqual({ patients: [], medications: [], doseEvents: [] })
 
     const fetchMock = vi.mocked(fetch)
@@ -386,7 +386,7 @@ describe('App workspace mode flow', () => {
       expect(screen.queryByRole('option', { name: 'Alex Rivera' })).toBeNull()
     })
 
-    let localState = await getLocalMedMinderState()
+    let localState = await getLocalNexpillState()
     expect(localState).toEqual({ patients: [], medications: [], doseEvents: [] })
 
     await user.click(screen.getByTestId('tab-patients'))
@@ -405,7 +405,7 @@ describe('App workspace mode flow', () => {
       'Cloud Added',
     ])
 
-    localState = await getLocalMedMinderState()
+    localState = await getLocalNexpillState()
     expect(localState).toEqual({ patients: [], medications: [], doseEvents: [] })
 
     await user.click(screen.getByTestId('tab-more'))
@@ -423,7 +423,7 @@ describe('App workspace mode flow', () => {
       expect(screen.queryByRole('option', { name: 'Cloud Added' })).toBeNull()
     })
 
-    localState = await getLocalMedMinderState()
+    localState = await getLocalNexpillState()
     expect(localState.patients.map((patient) => patient.displayName)).toEqual(['Alex Rivera'])
     expect(localState.medications).toHaveLength(initialSampleState.medications.length)
     expect(localState.doseEvents).toHaveLength(initialSampleState.doseEvents.length)
@@ -523,7 +523,7 @@ describe('App workspace mode flow', () => {
     expect(createdMedication?.doseUnit).toBe('tablet')
     expect(createdMedication?.lowSupplyThreshold).toBe(10)
 
-    let localState = await getLocalMedMinderState()
+    let localState = await getLocalNexpillState()
     expect(localState.medications).toHaveLength(0)
 
     // Deactivate the original cloud medication
@@ -539,7 +539,7 @@ describe('App workspace mode flow', () => {
     )
     expect(deactivated?.active).toBe(false)
 
-    localState = await getLocalMedMinderState()
+    localState = await getLocalNexpillState()
     expect(localState.medications).toHaveLength(0)
 
     // Delete the original cloud medication
@@ -555,7 +555,7 @@ describe('App workspace mode flow', () => {
     ).toBeUndefined()
     expect(cloudState.medications.map((medication) => medication.name)).toContain('Cloud Vitamin D')
 
-    localState = await getLocalMedMinderState()
+    localState = await getLocalNexpillState()
     expect(localState.medications).toHaveLength(0)
   })
 
@@ -600,7 +600,7 @@ describe('App workspace mode flow', () => {
       expect(cloudState.doseEvents[0].medicationId).toBe('cloud-med-1')
     })
 
-    const localState = await getLocalMedMinderState()
+    const localState = await getLocalNexpillState()
     expect(localState.doseEvents).toHaveLength(0)
   })
 

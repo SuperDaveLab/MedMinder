@@ -1,11 +1,11 @@
 import type { AuthSessionState } from '../domain/auth'
 import type { CloudSyncRequest, CloudSyncResponse } from '../domain/cloudSync'
-import type { MedMinderState } from '../domain/types'
+import type { NexpillState } from '../domain/types'
 import { getJsonErrorMessage, parseJsonResponse } from './http'
 
 export interface CloudSyncApiClient {
   sync: (authState: AuthSessionState, request: CloudSyncRequest) => Promise<CloudSyncResponse>
-  getState: (authState: AuthSessionState) => Promise<MedMinderState>
+  getState: (authState: AuthSessionState) => Promise<NexpillState>
 }
 
 async function handleError(response: Response): Promise<never> {
@@ -22,7 +22,7 @@ export function createCloudSyncApiClient(baseUrl: string): CloudSyncApiClient {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-medminder-session-id': authState.session.sessionId,
+          'x-nexpill-session-id': authState.session.sessionId,
         },
         body: JSON.stringify(request),
       })
@@ -37,7 +37,7 @@ export function createCloudSyncApiClient(baseUrl: string): CloudSyncApiClient {
       const response = await fetch(`${normalizedBaseUrl}/api/cloud/state`, {
         method: 'GET',
         headers: {
-          'x-medminder-session-id': authState.session.sessionId,
+          'x-nexpill-session-id': authState.session.sessionId,
         },
       })
 
@@ -45,7 +45,7 @@ export function createCloudSyncApiClient(baseUrl: string): CloudSyncApiClient {
         await handleError(response)
       }
 
-      return parseJsonResponse<MedMinderState>(response)
+      return parseJsonResponse<NexpillState>(response)
     },
   }
 }

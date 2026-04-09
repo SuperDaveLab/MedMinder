@@ -136,8 +136,8 @@ Choose the simplest implementation that preserves correctness, readability, and 
 - Local MySQL/MariaDB connection env keys:
   - `AUTH_DB_HOST` (default `127.0.0.1`)
   - `AUTH_DB_PORT` (default `3306`)
-  - `AUTH_DB_USER` (default `medminder_app`)
+  - `AUTH_DB_USER` (default `nexpill_app`)
   - `AUTH_DB_PASSWORD` (set in `.env`)
-  - `AUTH_DB_NAME` (default `medminder_auth`)
+  - `AUTH_DB_NAME` (default `nexpill`)
 - Use `npm run auth:db:reset` to clear local auth tables (`accounts`, `users`, `sessions`) for repeatable testing.
 - Keep auth/database credentials in `.env` and out of committed files.

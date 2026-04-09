@@ -13,9 +13,9 @@ fi
 
 : "${AUTH_DB_HOST:=127.0.0.1}"
 : "${AUTH_DB_PORT:=3306}"
-: "${AUTH_DB_USER:=medminder_app}"
+: "${AUTH_DB_USER:=nexpill_app}"
 : "${AUTH_DB_PASSWORD:=}"
-: "${AUTH_DB_NAME:=medminder_auth}"
+: "${AUTH_DB_NAME:=nexpill}"
 
 if ! command -v mysql >/dev/null 2>&1; then
   echo "mysql client not found. Install mysql/mariadb client first." >&2

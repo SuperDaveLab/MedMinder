@@ -1,20 +1,20 @@
 import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { medMinderDb } from './database'
+import { nexpillDb } from './database'
 import { createMedication, createPatient, updatePatient } from './repository'
 
 async function clearDatabase(): Promise<void> {
-  await medMinderDb.transaction(
+  await nexpillDb.transaction(
     'rw',
-    medMinderDb.patients,
-    medMinderDb.medications,
-    medMinderDb.doseEvents,
-    medMinderDb.appSettings,
+    nexpillDb.patients,
+    nexpillDb.medications,
+    nexpillDb.doseEvents,
+    nexpillDb.appSettings,
     async () => {
-      await medMinderDb.patients.clear()
-      await medMinderDb.medications.clear()
-      await medMinderDb.doseEvents.clear()
-      await medMinderDb.appSettings.clear()
+      await nexpillDb.patients.clear()
+      await nexpillDb.medications.clear()
+      await nexpillDb.doseEvents.clear()
+      await nexpillDb.appSettings.clear()
     },
   )
 }

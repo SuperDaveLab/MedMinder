@@ -1,5 +1,5 @@
 <div align="center">
-   <img src="public/med-minder-icon.svg" width="100" height="100" alt="Nexpill Icon" />
+   <img src="public/nexpill-icon.svg" width="100" height="100" alt="Nexpill Icon" />
    <h1>Nexpill</h1>
   <p>A beautiful, local-first progressive web app for tracking medication schedules.</p>
 </div>
@@ -38,7 +38,7 @@ The link above leads to the fully functional live production build. To get start
 - **Schedule-Aware Status Engine**: Automatically calculates if a medication is "Eligible now", "Due soon", "Too early", or "Overdue" natively within the browser format.
 - **Complex Schedules Supported**: Fully supports `interval` (e.g. every 6 hours), `fixed_times` (e.g. 08:00 and 20:00), `prn` (as needed), and complex `taper` schedules!
 - **Patient-first Workflow**: Dedicated Patients management, patient-scoped Meds view, and fast add/edit medication workflows optimized for mobile care rounds.
-- **Local-first by Default**: By default, data is stored locally in IndexedDB (`med-minder-db`).
+- **Local-first by Default**: By default, data is stored locally in IndexedDB (`nexpill-db`).
 - **Complete History & Auditing**: See exactly what was given when, and log corrections that properly supersede accidental entries.
 - **Basic Inventory Tracking**: Track starting quantity, per-dose usage, dose units, and low-supply thresholds for medications where inventory matters.
 - **Smart Notifications**: Per-medication notification toggles, optional early notice (10/15 min), PRN default-off behavior, and overdue reminders.

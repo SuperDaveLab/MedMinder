@@ -1,7 +1,7 @@
 import type { DoseEvent, Medication, Patient } from '../domain/types'
 import { parseLocalDateToTimestamp } from '../domain/dateParsing'
 
-export interface MedMinderBackup {
+export interface NexpillBackup {
   schemaVersion: 1
   exportedAt: string
   patients: Patient[]
@@ -11,7 +11,7 @@ export interface MedMinderBackup {
 }
 
 export type BackupValidationResult =
-  | { valid: true; backup: MedMinderBackup }
+  | { valid: true; backup: NexpillBackup }
   | { valid: false; error: string }
 
 function fail(error: string): { valid: false; error: string } {
@@ -27,7 +27,7 @@ export function validateBackup(raw: unknown): BackupValidationResult {
 
   if (obj['schemaVersion'] !== 1) {
     return fail(
-      `Unrecognized backup schemaVersion: "${String(obj['schemaVersion'])}". This backup may be from a different version of Med-Minder.`,
+      `Unrecognized backup schemaVersion: "${String(obj['schemaVersion'])}". This backup may be from a different version of Nexpill.`,
     )
   }
 

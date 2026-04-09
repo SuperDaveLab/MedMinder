@@ -49,7 +49,7 @@ export function createAuthApiClient(baseUrl: string): AuthApiClient {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(sessionId ? { 'x-medminder-session-id': sessionId } : {}),
+        ...(sessionId ? { 'x-nexpill-session-id': sessionId } : {}),
       },
       body: JSON.stringify(body),
     })
@@ -88,7 +88,7 @@ export function createAuthApiClient(baseUrl: string): AuthApiClient {
       const response = await fetch(`${normalizedBaseUrl}/api/auth/account`, {
         method: 'GET',
         headers: {
-          'x-medminder-session-id': sessionId,
+          'x-nexpill-session-id': sessionId,
         },
       })
 
@@ -103,7 +103,7 @@ export function createAuthApiClient(baseUrl: string): AuthApiClient {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'x-medminder-session-id': sessionId,
+          'x-nexpill-session-id': sessionId,
         },
         body: JSON.stringify(request),
       })
@@ -118,7 +118,7 @@ export function createAuthApiClient(baseUrl: string): AuthApiClient {
       const response = await fetch(`${normalizedBaseUrl}/api/auth/sessions`, {
         method: 'GET',
         headers: {
-          'x-medminder-session-id': sessionId,
+          'x-nexpill-session-id': sessionId,
         },
       })
 

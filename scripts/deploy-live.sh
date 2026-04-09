@@ -2,10 +2,10 @@
 set -euo pipefail
 
 HOST="${DEPLOY_HOST:-}"
-WEB_ROOT="${DEPLOY_WEB_ROOT:-/var/www/medminder}"
-WEB_BACKUP_ROOT="${DEPLOY_WEB_BACKUP_ROOT:-/var/www/medminder-backups}"
-API_ROOT="${DEPLOY_API_ROOT:-/opt/med-minder}"
-API_SERVICE="${DEPLOY_API_SERVICE:-medminder-api}"
+WEB_ROOT="${DEPLOY_WEB_ROOT:-/var/www/nexpill}"
+WEB_BACKUP_ROOT="${DEPLOY_WEB_BACKUP_ROOT:-/var/www/nexpill-backups}"
+API_ROOT="${DEPLOY_API_ROOT:-/opt/nexpill}"
+API_SERVICE="${DEPLOY_API_SERVICE:-nexpill-api}"
 PUBLIC_BASE_URL="${DEPLOY_PUBLIC_BASE_URL:-}"
 RELEASE_ID="${RELEASE_ID:-$(date +%Y%m%d-%H%M%S)}"
 RUN_CHECKS=1
@@ -111,7 +111,7 @@ rsync -az --delete \
   ./ "$HOST:$API_ROOT/"
 
 echo "[deploy] installing API deps and applying schema"
-ssh -o BatchMode=yes "$HOST" "set -e; cd '$API_ROOT'; npm ci; set -a; source /etc/medminder/api.env; set +a; npm run api:init-db"
+ssh -o BatchMode=yes "$HOST" "set -e; cd '$API_ROOT'; npm ci; set -a; source /etc/nexpill/api.env; set +a; npm run api:init-db"
 
 echo "[deploy] restarting API service"
 ssh -o BatchMode=yes "$HOST" "set -e; systemctl restart '$API_SERVICE'; systemctl is-active '$API_SERVICE'"

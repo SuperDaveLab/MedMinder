@@ -1,6 +1,6 @@
-import type { MedMinderState } from '../domain/types'
+import type { NexpillState } from '../domain/types'
 
-export const initialSampleState: MedMinderState = {
+export const initialSampleState: NexpillState = {
   patients: [
     {
       id: 'patient-1',

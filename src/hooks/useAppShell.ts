@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { AuthSessionState } from '../domain/auth'
-import type { MedMinderState } from '../domain/types'
+import type { NexpillState } from '../domain/types'
 import {
   buildReminderNotificationCandidates,
   filterUnsentReminderCandidates,
@@ -59,7 +59,7 @@ function isStandaloneDisplayMode(): boolean {
 }
 
 interface UseAppShellParams {
-  appState: MedMinderState | null
+  appState: NexpillState | null
   now: Date
   authState: AuthSessionState | null
 }
@@ -250,7 +250,7 @@ export function useAppShell({ appState, now, authState }: UseAppShellParams) {
   }
 
   const checkAndSendReminders = useCallback(async (
-    currentState: MedMinderState,
+    currentState: NexpillState,
     currentNow: Date,
   ) => {
     if (notificationPermission !== 'granted' || typeof Notification === 'undefined') {
@@ -298,8 +298,8 @@ export function useAppShell({ appState, now, authState }: UseAppShellParams) {
         const notification = new Notification(candidate.title, {
           body: candidate.body,
           tag: candidate.dedupeKey,
-          badge: 'med-minder-icon.svg',
-          icon: 'med-minder-icon.svg',
+          badge: 'nexpill-icon.svg',
+          icon: 'nexpill-icon.svg',
           requireInteraction: candidate.kind !== 'due-soon',
         })
 

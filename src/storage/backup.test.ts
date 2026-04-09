@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { medMinderDb } from './database'
+import { nexpillDb } from './database'
 import { validateBackup } from './backup'
 import {
   exportFullBackup,
@@ -9,17 +9,17 @@ import {
 } from './repository'
 
 async function clearDatabase(): Promise<void> {
-  await medMinderDb.transaction(
+  await nexpillDb.transaction(
     'rw',
-    medMinderDb.patients,
-    medMinderDb.medications,
-    medMinderDb.doseEvents,
-    medMinderDb.appSettings,
+    nexpillDb.patients,
+    nexpillDb.medications,
+    nexpillDb.doseEvents,
+    nexpillDb.appSettings,
     async () => {
-      await medMinderDb.patients.clear()
-      await medMinderDb.medications.clear()
-      await medMinderDb.doseEvents.clear()
-      await medMinderDb.appSettings.clear()
+      await nexpillDb.patients.clear()
+      await nexpillDb.medications.clear()
+      await nexpillDb.doseEvents.clear()
+      await nexpillDb.appSettings.clear()
     },
   )
 }
@@ -243,29 +243,29 @@ describe('backup repository round-trip', () => {
   it('exports and imports full data with full-replace behavior', async () => {
     const backup = buildValidBackup()
 
-    await medMinderDb.patients.bulkPut(backup.patients)
-    await medMinderDb.medications.bulkPut(backup.medications)
-    await medMinderDb.doseEvents.bulkPut(backup.doseEvents)
-    await medMinderDb.appSettings.put({
+    await nexpillDb.patients.bulkPut(backup.patients)
+    await nexpillDb.medications.bulkPut(backup.medications)
+    await nexpillDb.doseEvents.bulkPut(backup.doseEvents)
+    await nexpillDb.appSettings.put({
       key: 'reminderNotificationLog',
       value: JSON.stringify(backup.reminderNotificationLog),
     })
 
     const exported = await exportFullBackup()
 
-    await medMinderDb.patients.put({ id: 'patient-old', displayName: 'Old Patient' })
-    await medMinderDb.appSettings.put({
+    await nexpillDb.patients.put({ id: 'patient-old', displayName: 'Old Patient' })
+    await nexpillDb.appSettings.put({
       key: 'lastSelectedPatientId',
       value: 'patient-old',
     })
 
     await importFullBackup(exported)
 
-    const patients = await medMinderDb.patients.toArray()
-    const medications = await medMinderDb.medications.toArray()
-    const doseEvents = await medMinderDb.doseEvents.toArray()
+    const patients = await nexpillDb.patients.toArray()
+    const medications = await nexpillDb.medications.toArray()
+    const doseEvents = await nexpillDb.doseEvents.toArray()
     const reminderLog = await getReminderNotificationLog()
-    const lastSelected = await medMinderDb.appSettings.get('lastSelectedPatientId')
+    const lastSelected = await nexpillDb.appSettings.get('lastSelectedPatientId')
 
     expect(patients).toHaveLength(1)
     expect(patients[0].id).toBe('patient-1')

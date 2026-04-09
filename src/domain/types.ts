@@ -143,7 +143,7 @@ export type DoseEvent = DoseEventBase & (
     }
 )
 
-export interface MedMinderState {
+export interface NexpillState {
   patients: Patient[]
   medications: Medication[]
   doseEvents: DoseEvent[]

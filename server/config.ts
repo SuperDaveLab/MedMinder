@@ -18,9 +18,9 @@ export const serverConfig = {
   db: {
     host: process.env.AUTH_DB_HOST ?? '127.0.0.1',
     port: parseNumber(process.env.AUTH_DB_PORT, 3306),
-    user: process.env.AUTH_DB_USER ?? 'medminder_app',
+    user: process.env.AUTH_DB_USER ?? 'nexpill_app',
     password: process.env.AUTH_DB_PASSWORD ?? '',
-    database: process.env.AUTH_DB_NAME ?? 'medminder_auth',
+    database: process.env.AUTH_DB_NAME ?? 'nexpill',
   },
   accessTokenTtlMinutes: parseNumber(process.env.AUTH_ACCESS_TOKEN_TTL_MINUTES, 30),
   sessionTtlDays: parseNumber(process.env.AUTH_SESSION_TTL_DAYS, 30),

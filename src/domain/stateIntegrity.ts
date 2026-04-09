@@ -1,14 +1,14 @@
-import type { MedMinderState } from './types'
+import type { NexpillState } from './types'
 
-export interface SanitizedMedMinderStateResult {
-  state: MedMinderState
+export interface SanitizedNexpillStateResult {
+  state: NexpillState
   removedMedicationIds: string[]
   removedDoseEventIds: string[]
 }
 
-export function sanitizeMedMinderState(
-  state: MedMinderState,
-): SanitizedMedMinderStateResult {
+export function sanitizeNexpillState(
+  state: NexpillState,
+): SanitizedNexpillStateResult {
   const validPatientIds = new Set(state.patients.map((patient) => patient.id))
   const medications = state.medications.filter((medication) => validPatientIds.has(medication.patientId))
   const validMedicationIds = new Set(medications.map((medication) => medication.id))

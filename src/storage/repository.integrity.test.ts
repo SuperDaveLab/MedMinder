@@ -1,21 +1,21 @@
 import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { DoseEvent, Medication, Patient } from '../domain/types'
-import { medMinderDb } from './database'
-import { ensureSeeded, getLocalMedMinderState } from './repository'
+import { nexpillDb } from './database'
+import { ensureSeeded, getLocalNexpillState } from './repository'
 
 async function clearDatabase(): Promise<void> {
-  await medMinderDb.transaction(
+  await nexpillDb.transaction(
     'rw',
-    medMinderDb.patients,
-    medMinderDb.medications,
-    medMinderDb.doseEvents,
-    medMinderDb.appSettings,
+    nexpillDb.patients,
+    nexpillDb.medications,
+    nexpillDb.doseEvents,
+    nexpillDb.appSettings,
     async () => {
-      await medMinderDb.patients.clear()
-      await medMinderDb.medications.clear()
-      await medMinderDb.doseEvents.clear()
-      await medMinderDb.appSettings.clear()
+      await nexpillDb.patients.clear()
+      await nexpillDb.medications.clear()
+      await nexpillDb.doseEvents.clear()
+      await nexpillDb.appSettings.clear()
     },
   )
 }
@@ -76,9 +76,9 @@ describe('repository integrity repair', () => {
       corrected: false,
     }
 
-    await medMinderDb.patients.put(patient)
-    await medMinderDb.medications.bulkPut([validMedication, orphanedMedication])
-    await medMinderDb.doseEvents.bulkPut([
+    await nexpillDb.patients.put(patient)
+    await nexpillDb.medications.bulkPut([validMedication, orphanedMedication])
+    await nexpillDb.doseEvents.bulkPut([
       validDoseEvent,
       orphanedMedicationDoseEvent,
       missingMedicationDoseEvent,
@@ -86,7 +86,7 @@ describe('repository integrity repair', () => {
 
     await ensureSeeded()
 
-    const state = await getLocalMedMinderState()
+    const state = await getLocalNexpillState()
 
     expect(state.patients.map((entry) => entry.id)).toEqual(['patient-1'])
     expect(state.medications.map((entry) => entry.id)).toEqual(['med-valid'])

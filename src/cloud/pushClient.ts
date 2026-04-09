@@ -42,7 +42,7 @@ export function createPushApiClient(baseUrl: string): PushApiClient {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-medminder-session-id': authState.session.sessionId,
+          'x-nexpill-session-id': authState.session.sessionId,
         },
         body: JSON.stringify(request),
       })
@@ -57,7 +57,7 @@ export function createPushApiClient(baseUrl: string): PushApiClient {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          'x-medminder-session-id': authState.session.sessionId,
+          'x-nexpill-session-id': authState.session.sessionId,
         },
         body: JSON.stringify(request),
       })

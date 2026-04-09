@@ -6,14 +6,14 @@ export interface AppSetting {
   value: string
 }
 
-export class MedMinderDatabase extends Dexie {
+export class NexpillDatabase extends Dexie {
   patients!: Table<Patient, string>
   medications!: Table<Medication, string>
   doseEvents!: Table<DoseEvent, string>
   appSettings!: Table<AppSetting, string>
 
   constructor() {
-    super('med-minder-db')
+    super('nexpill-db')
 
     this.version(1).stores({
       patients: 'id',
@@ -24,4 +24,4 @@ export class MedMinderDatabase extends Dexie {
   }
 }
 
-export const medMinderDb = new MedMinderDatabase()
+export const nexpillDb = new NexpillDatabase()

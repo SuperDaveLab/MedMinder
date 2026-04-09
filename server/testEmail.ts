@@ -33,7 +33,7 @@ async function main(): Promise<void> {
   })
 
   if (!sent) {
-    throw new Error('Email was not sent. Verify SMTP_* values in /etc/medminder/api.env.')
+    throw new Error('Email was not sent. Verify SMTP_* values in /etc/nexpill/api.env.')
   }
 
   console.log(`SMTP test email sent to ${to}`)

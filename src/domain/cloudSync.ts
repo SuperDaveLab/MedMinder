@@ -1,4 +1,4 @@
-import type { DoseEvent, ISODateString, MedMinderState, Medication, Patient } from './types'
+import type { DoseEvent, ISODateString, NexpillState, Medication, Patient } from './types'
 
 export const cloudEntityTypes = ['patient', 'medication', 'dose_event'] as const
 export type CloudEntityType = (typeof cloudEntityTypes)[number]
@@ -118,7 +118,7 @@ export interface BuildBootstrapSyncRequestOptions {
 }
 
 export function buildBootstrapSyncRequest(
-  state: MedMinderState,
+  state: NexpillState,
   options: BuildBootstrapSyncRequestOptions,
 ): CloudSyncRequest {
   const changedAt = options.now.toISOString()

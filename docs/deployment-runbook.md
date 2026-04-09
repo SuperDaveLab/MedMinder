@@ -18,8 +18,8 @@ Deploy the latest main branch build safely, with a quick rollback path.
 - Public URL: keep runtime-configured via `DEPLOY_PUBLIC_BASE_URL`
 - SSH user: `root` or your deploy user
 - Web server: `apache2` or `nginx`
-- Apache/nginx document root example: `/var/www/medminder`
-- Backup location example: `/var/www/medminder-backups/<RELEASE_ID>`
+- Apache/nginx document root example: `/var/www/nexpill`
+- Backup location example: `/var/www/nexpill-backups/<RELEASE_ID>`
 
 Do not commit personal hostnames, domains, or server addresses into this runbook. Pass them at deploy time with environment variables.
 
@@ -44,9 +44,9 @@ For the current production host profile, use:
 Behavior:
 
 - Runs local checks (`npm ci`, `npm test`, `npm run lint`) and build.
-- Backs up `/var/www/medminder` to `/var/www/medminder-backups/<RELEASE_ID>`.
-- Deploys frontend `dist/` to `/var/www/medminder`.
-- Syncs API code to `/opt/med-minder`, runs `npm ci`, applies schema (`npm run api:init-db`), and restarts `medminder-api`.
+- Backs up `/var/www/nexpill` to `/var/www/nexpill-backups/<RELEASE_ID>`.
+- Deploys frontend `dist/` to `/var/www/nexpill`.
+- Syncs API code to `/opt/nexpill`, runs `npm ci`, applies schema (`npm run api:init-db`), and restarts `nexpill-api`.
 - Validates Apache config/reload and performs smoke checks.
 
 Common options:
@@ -69,10 +69,10 @@ Set release ID locally:
 - `npm run build`
 
 2) Create server backup
-- `ssh -o BatchMode=yes ${DEPLOY_HOST} "set -e; mkdir -p /var/www/medminder-backups/${RELEASE_ID}; rsync -a --delete /var/www/medminder/ /var/www/medminder-backups/${RELEASE_ID}/"`
+- `ssh -o BatchMode=yes ${DEPLOY_HOST} "set -e; mkdir -p /var/www/nexpill-backups/${RELEASE_ID}; rsync -a --delete /var/www/nexpill/ /var/www/nexpill-backups/${RELEASE_ID}/"`
 
 3) Upload new build
-- `rsync -avz --delete dist/ ${DEPLOY_HOST}:/var/www/medminder/`
+- `rsync -avz --delete dist/ ${DEPLOY_HOST}:/var/www/nexpill/`
 
 4) Validate + reload Apache
 - `ssh -o BatchMode=yes ${DEPLOY_HOST} "set -e; apache2ctl configtest; systemctl reload apache2; systemctl is-active apache2"`
@@ -84,7 +84,7 @@ Set release ID locally:
 ## Rollback
 If validation fails, restore from the backup created for that release:
 
-- `ssh -o BatchMode=yes ${DEPLOY_HOST} "set -e; rsync -a --delete /var/www/medminder-backups/<RELEASE_ID>/ /var/www/medminder/; apache2ctl configtest; systemctl reload apache2"`
+- `ssh -o BatchMode=yes ${DEPLOY_HOST} "set -e; rsync -a --delete /var/www/nexpill-backups/<RELEASE_ID>/ /var/www/nexpill/; apache2ctl configtest; systemctl reload apache2"`
 
 ## Generic Template (Other Hosts)
 Use this only when not deploying to the current production host.
@@ -92,7 +92,7 @@ Use this only when not deploying to the current production host.
 - Variables:
    - `APP_HOST=your-server`
    - `APP_USER=your-user`
-   - `APP_ROOT=/var/www/medminder`
+   - `APP_ROOT=/var/www/nexpill`
    - `RELEASE_ID=$(date +%Y%m%d-%H%M%S)`
 
 - Example commands:

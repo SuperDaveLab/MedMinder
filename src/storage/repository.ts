@@ -1,9 +1,9 @@
 import type { DoseEvent, Medication, Patient } from '../domain/types'
 import { parseLocalDateToTimestamp } from '../domain/dateParsing'
-import { sanitizeMedMinderState } from '../domain/stateIntegrity'
-import type { MedMinderBackup } from './backup'
+import { sanitizeNexpillState } from '../domain/stateIntegrity'
+import type { NexpillBackup } from './backup'
 import { initialSampleState } from '../data/sampleData'
-import { medMinderDb } from './database'
+import { nexpillDb } from './database'
 
 const LAST_SELECTED_PATIENT_ID_KEY = 'lastSelectedPatientId'
 const REMINDER_NOTIFICATION_LOG_KEY = 'reminderNotificationLog'
@@ -92,18 +92,18 @@ function assertValidMedicationInventory(input: {
 }
 
 export async function getPatients(): Promise<Patient[]> {
-  return medMinderDb.patients.toArray()
+  return nexpillDb.patients.toArray()
 }
 
-export async function getLocalMedMinderState(): Promise<{
+export async function getLocalNexpillState(): Promise<{
   patients: Patient[]
   medications: Medication[]
   doseEvents: DoseEvent[]
 }> {
   const [patients, medications, doseEvents] = await Promise.all([
-    medMinderDb.patients.toArray(),
-    medMinderDb.medications.toArray(),
-    medMinderDb.doseEvents.toArray(),
+    nexpillDb.patients.toArray(),
+    nexpillDb.medications.toArray(),
+    nexpillDb.doseEvents.toArray(),
   ])
 
   return {
@@ -116,13 +116,13 @@ export async function getLocalMedMinderState(): Promise<{
 export async function getMedicationsByPatient(
   patientId: string,
 ): Promise<Medication[]> {
-  return medMinderDb.medications.where('patientId').equals(patientId).toArray()
+  return nexpillDb.medications.where('patientId').equals(patientId).toArray()
 }
 
 export async function getDoseEventsByMedication(
   medicationId: string,
 ): Promise<DoseEvent[]> {
-  const doseEvents = await medMinderDb.doseEvents
+  const doseEvents = await nexpillDb.doseEvents
     .where('medicationId')
     .equals(medicationId)
     .toArray()
@@ -139,7 +139,7 @@ export async function getDoseEventsByMedicationIds(
     return []
   }
 
-  const doseEvents = await medMinderDb.doseEvents
+  const doseEvents = await nexpillDb.doseEvents
     .where('medicationId')
     .anyOf(medicationIds)
     .toArray()
@@ -150,12 +150,12 @@ export async function getDoseEventsByMedicationIds(
 }
 
 export async function addDoseEvent(doseEvent: DoseEvent): Promise<void> {
-  await medMinderDb.doseEvents.add(doseEvent)
+  await nexpillDb.doseEvents.add(doseEvent)
 }
 
 export async function deleteDoseEventCascade(doseEventId: string): Promise<void> {
-  await medMinderDb.transaction('rw', medMinderDb.doseEvents, async () => {
-    const doseEvents = await medMinderDb.doseEvents.toArray()
+  await nexpillDb.transaction('rw', nexpillDb.doseEvents, async () => {
+    const doseEvents = await nexpillDb.doseEvents.toArray()
     const idsToDelete = new Set<string>()
     const queue: string[] = [doseEventId]
 
@@ -176,7 +176,7 @@ export async function deleteDoseEventCascade(doseEventId: string): Promise<void>
     }
 
     if (idsToDelete.size > 0) {
-      await medMinderDb.doseEvents.where('id').anyOf([...idsToDelete]).delete()
+      await nexpillDb.doseEvents.where('id').anyOf([...idsToDelete]).delete()
     }
   })
 }
@@ -191,7 +191,7 @@ export interface CreateDoseCorrectionInput {
 export async function createDoseCorrectionEvent(
   input: CreateDoseCorrectionInput,
 ): Promise<DoseEvent> {
-  const originalDoseEvent = await medMinderDb.doseEvents.get(input.originalDoseEventId)
+  const originalDoseEvent = await nexpillDb.doseEvents.get(input.originalDoseEventId)
 
   if (!originalDoseEvent) {
     throw new Error('Original dose event not found for correction.')
@@ -212,13 +212,13 @@ export async function createDoseCorrectionEvent(
     supersedesDoseEventId: originalDoseEvent.id,
   }
 
-  await medMinderDb.doseEvents.add(correctionDoseEvent)
+  await nexpillDb.doseEvents.add(correctionDoseEvent)
 
   return correctionDoseEvent
 }
 
 export async function savePatient(patient: Patient): Promise<void> {
-  await medMinderDb.patients.put(patient)
+  await nexpillDb.patients.put(patient)
 }
 
 export interface UpsertPatientInput {
@@ -239,7 +239,7 @@ export async function createPatient(input: UpsertPatientInput): Promise<Patient>
     notes: input.notes?.trim() ? input.notes.trim() : undefined,
   }
 
-  await medMinderDb.patients.add(patient)
+  await nexpillDb.patients.add(patient)
 
   return patient
 }
@@ -254,7 +254,7 @@ export async function updatePatient(
     throw new Error('Patient displayName is required.')
   }
 
-  const existingPatient = await medMinderDb.patients.get(patientId)
+  const existingPatient = await nexpillDb.patients.get(patientId)
 
   if (!existingPatient) {
     throw new Error('Patient not found for update.')
@@ -266,19 +266,19 @@ export async function updatePatient(
     notes: input.notes?.trim() ? input.notes.trim() : undefined,
   }
 
-  await medMinderDb.patients.put(updatedPatient)
+  await nexpillDb.patients.put(updatedPatient)
 
   return updatedPatient
 }
 
 export async function setPatientNotificationsEnabled(patientId: string, enabled: boolean): Promise<void> {
-  const patient = await medMinderDb.patients.get(patientId)
+  const patient = await nexpillDb.patients.get(patientId)
 
   if (!patient) {
     throw new Error('Patient not found for notification update.')
   }
 
-  await medMinderDb.patients.put({
+  await nexpillDb.patients.put({
     ...patient,
     notificationsEnabled: enabled,
   })
@@ -289,28 +289,28 @@ export async function setPatientNotificationsEnabled(patientId: string, enabled:
  * Cascades to all medications for the patient and all associated dose events.
  */
 export async function deletePatientCascade(patientId: string): Promise<void> {
-  await medMinderDb.transaction(
+  await nexpillDb.transaction(
     'rw',
-    medMinderDb.patients,
-    medMinderDb.medications,
-    medMinderDb.doseEvents,
+    nexpillDb.patients,
+    nexpillDb.medications,
+    nexpillDb.doseEvents,
     async () => {
       const medicationIds = (
-        await medMinderDb.medications.where('patientId').equals(patientId).toArray()
+        await nexpillDb.medications.where('patientId').equals(patientId).toArray()
       ).map((medication) => medication.id)
 
       if (medicationIds.length > 0) {
-        await medMinderDb.doseEvents.where('medicationId').anyOf(medicationIds).delete()
-        await medMinderDb.medications.where('id').anyOf(medicationIds).delete()
+        await nexpillDb.doseEvents.where('medicationId').anyOf(medicationIds).delete()
+        await nexpillDb.medications.where('id').anyOf(medicationIds).delete()
       }
 
-      await medMinderDb.patients.delete(patientId)
+      await nexpillDb.patients.delete(patientId)
     },
   )
 }
 
 export async function saveMedication(medication: Medication): Promise<void> {
-  await medMinderDb.medications.put(medication)
+  await nexpillDb.medications.put(medication)
 }
 
 export interface UpsertMedicationInput {
@@ -333,7 +333,7 @@ export interface UpsertMedicationInput {
 export async function createMedication(
   input: UpsertMedicationInput,
 ): Promise<Medication> {
-  const patient = await medMinderDb.patients.get(input.patientId)
+  const patient = await nexpillDb.patients.get(input.patientId)
 
   if (!patient) {
     throw new Error('Medication patientId is invalid; patient not found.')
@@ -373,7 +373,7 @@ export async function createMedication(
     lowSupplyThreshold: inventoryEnabled ? input.lowSupplyThreshold ?? 0 : undefined,
   }
 
-  await medMinderDb.medications.add(medication)
+  await nexpillDb.medications.add(medication)
 
   return medication
 }
@@ -382,7 +382,7 @@ export async function updateMedication(
   medicationId: string,
   input: UpsertMedicationInput,
 ): Promise<Medication> {
-  const patient = await medMinderDb.patients.get(input.patientId)
+  const patient = await nexpillDb.patients.get(input.patientId)
 
   if (!patient) {
     throw new Error('Medication patientId is invalid; patient not found.')
@@ -404,7 +404,7 @@ export async function updateMedication(
 
   const inventoryEnabled = input.inventoryEnabled === true
 
-  const existingMedication = await medMinderDb.medications.get(medicationId)
+  const existingMedication = await nexpillDb.medications.get(medicationId)
 
   if (!existingMedication) {
     throw new Error('Medication not found for update.')
@@ -428,54 +428,54 @@ export async function updateMedication(
     lowSupplyThreshold: inventoryEnabled ? input.lowSupplyThreshold ?? 0 : undefined,
   }
 
-  await medMinderDb.medications.put(updatedMedication)
+  await nexpillDb.medications.put(updatedMedication)
 
   return updatedMedication
 }
 
 export async function deactivateMedication(medicationId: string): Promise<void> {
-  const medication = await medMinderDb.medications.get(medicationId)
+  const medication = await nexpillDb.medications.get(medicationId)
 
   if (!medication) {
     throw new Error('Medication not found for deactivation.')
   }
 
-  await medMinderDb.medications.put({
+  await nexpillDb.medications.put({
     ...medication,
     active: false,
   })
 }
 
 export async function activateMedication(medicationId: string): Promise<void> {
-  const medication = await medMinderDb.medications.get(medicationId)
+  const medication = await nexpillDb.medications.get(medicationId)
 
   if (!medication) {
     throw new Error('Medication not found for activation.')
   }
 
-  await medMinderDb.medications.put({
+  await nexpillDb.medications.put({
     ...medication,
     active: true,
   })
 }
 
 export async function deleteMedicationCascade(medicationId: string): Promise<void> {
-  await medMinderDb.transaction(
+  await nexpillDb.transaction(
     'rw',
-    medMinderDb.medications,
-    medMinderDb.doseEvents,
+    nexpillDb.medications,
+    nexpillDb.doseEvents,
     async () => {
-      await medMinderDb.doseEvents.where('medicationId').equals(medicationId).delete()
-      await medMinderDb.medications.delete(medicationId)
+      await nexpillDb.doseEvents.where('medicationId').equals(medicationId).delete()
+      await nexpillDb.medications.delete(medicationId)
     },
   )
 }
 
 export async function ensureSeeded(): Promise<void> {
   const [patientCount, medicationCount, doseEventCount] = await Promise.all([
-    medMinderDb.patients.count(),
-    medMinderDb.medications.count(),
-    medMinderDb.doseEvents.count(),
+    nexpillDb.patients.count(),
+    nexpillDb.medications.count(),
+    nexpillDb.doseEvents.count(),
   ])
 
   if (patientCount !== 0 || medicationCount !== 0 || doseEventCount !== 0) {
@@ -483,15 +483,15 @@ export async function ensureSeeded(): Promise<void> {
     return
   }
 
-  await medMinderDb.transaction(
+  await nexpillDb.transaction(
     'rw',
-    medMinderDb.patients,
-    medMinderDb.medications,
-    medMinderDb.doseEvents,
+    nexpillDb.patients,
+    nexpillDb.medications,
+    nexpillDb.doseEvents,
     async () => {
-      await medMinderDb.patients.bulkPut(initialSampleState.patients)
-      await medMinderDb.medications.bulkPut(initialSampleState.medications)
-      await medMinderDb.doseEvents.bulkPut(initialSampleState.doseEvents)
+      await nexpillDb.patients.bulkPut(initialSampleState.patients)
+      await nexpillDb.medications.bulkPut(initialSampleState.medications)
+      await nexpillDb.doseEvents.bulkPut(initialSampleState.doseEvents)
     },
   )
 }
@@ -500,8 +500,8 @@ export async function repairLocalClinicalDataIntegrity(): Promise<{
   removedMedicationCount: number
   removedDoseEventCount: number
 }> {
-  const localState = await getLocalMedMinderState()
-  const sanitized = sanitizeMedMinderState(localState)
+  const localState = await getLocalNexpillState()
+  const sanitized = sanitizeNexpillState(localState)
 
   if (
     sanitized.removedMedicationIds.length === 0
@@ -513,15 +513,15 @@ export async function repairLocalClinicalDataIntegrity(): Promise<{
     }
   }
 
-  await medMinderDb.transaction(
+  await nexpillDb.transaction(
     'rw',
-    medMinderDb.medications,
-    medMinderDb.doseEvents,
+    nexpillDb.medications,
+    nexpillDb.doseEvents,
     async () => {
-      await medMinderDb.medications.clear()
-      await medMinderDb.doseEvents.clear()
-      await medMinderDb.medications.bulkPut(sanitized.state.medications)
-      await medMinderDb.doseEvents.bulkPut(sanitized.state.doseEvents)
+      await nexpillDb.medications.clear()
+      await nexpillDb.doseEvents.clear()
+      await nexpillDb.medications.bulkPut(sanitized.state.medications)
+      await nexpillDb.doseEvents.bulkPut(sanitized.state.doseEvents)
     },
   )
 
@@ -544,20 +544,20 @@ export async function loadPatientMedicationView(patientId: string): Promise<{
 }
 
 export async function getLastSelectedPatientId(): Promise<string | null> {
-  const record = await medMinderDb.appSettings.get(LAST_SELECTED_PATIENT_ID_KEY)
+  const record = await nexpillDb.appSettings.get(LAST_SELECTED_PATIENT_ID_KEY)
 
   return record?.value ?? null
 }
 
 export async function saveLastSelectedPatientId(patientId: string): Promise<void> {
-  await medMinderDb.appSettings.put({
+  await nexpillDb.appSettings.put({
     key: LAST_SELECTED_PATIENT_ID_KEY,
     value: patientId,
   })
 }
 
 export async function getReminderNotificationLog(): Promise<Record<string, string>> {
-  const record = await medMinderDb.appSettings.get(REMINDER_NOTIFICATION_LOG_KEY)
+  const record = await nexpillDb.appSettings.get(REMINDER_NOTIFICATION_LOG_KEY)
 
   if (!record?.value) {
     return {}
@@ -581,7 +581,7 @@ export async function saveReminderNotificationLog(
 ): Promise<void> {
   const prunedLog = pruneReminderNotificationLog(reminderLog, new Date())
 
-  await medMinderDb.appSettings.put({
+  await nexpillDb.appSettings.put({
     key: REMINDER_NOTIFICATION_LOG_KEY,
     value: JSON.stringify(prunedLog),
   })
@@ -624,12 +624,12 @@ export function pruneReminderNotificationLog(
  * re-fire after a restore. lastSelectedPatientId is intentionally excluded
  * because it is transient UI state.
  */
-export async function exportFullBackup(): Promise<MedMinderBackup> {
+export async function exportFullBackup(): Promise<NexpillBackup> {
   const [patients, medications, doseEvents, reminderLogRecord] = await Promise.all([
-    medMinderDb.patients.toArray(),
-    medMinderDb.medications.toArray(),
-    medMinderDb.doseEvents.toArray(),
-    medMinderDb.appSettings.get(REMINDER_NOTIFICATION_LOG_KEY),
+    nexpillDb.patients.toArray(),
+    nexpillDb.medications.toArray(),
+    nexpillDb.doseEvents.toArray(),
+    nexpillDb.appSettings.get(REMINDER_NOTIFICATION_LOG_KEY),
   ])
 
   let reminderNotificationLog: Record<string, string> = {}
@@ -659,23 +659,23 @@ export async function exportFullBackup(): Promise<MedMinderBackup> {
  * Runs inside a single Dexie transaction so the operation is atomic.
  * Call validateBackup() before this to ensure the data is well-formed.
  */
-export async function importFullBackup(backup: MedMinderBackup): Promise<void> {
-  await medMinderDb.transaction(
+export async function importFullBackup(backup: NexpillBackup): Promise<void> {
+  await nexpillDb.transaction(
     'rw',
-    medMinderDb.patients,
-    medMinderDb.medications,
-    medMinderDb.doseEvents,
-    medMinderDb.appSettings,
+    nexpillDb.patients,
+    nexpillDb.medications,
+    nexpillDb.doseEvents,
+    nexpillDb.appSettings,
     async () => {
-      await medMinderDb.patients.clear()
-      await medMinderDb.medications.clear()
-      await medMinderDb.doseEvents.clear()
-      await medMinderDb.appSettings.clear()
+      await nexpillDb.patients.clear()
+      await nexpillDb.medications.clear()
+      await nexpillDb.doseEvents.clear()
+      await nexpillDb.appSettings.clear()
 
-      await medMinderDb.patients.bulkPut(backup.patients)
-      await medMinderDb.medications.bulkPut(backup.medications)
-      await medMinderDb.doseEvents.bulkPut(backup.doseEvents)
-      await medMinderDb.appSettings.put({
+      await nexpillDb.patients.bulkPut(backup.patients)
+      await nexpillDb.medications.bulkPut(backup.medications)
+      await nexpillDb.doseEvents.bulkPut(backup.doseEvents)
+      await nexpillDb.appSettings.put({
         key: REMINDER_NOTIFICATION_LOG_KEY,
         value: JSON.stringify(backup.reminderNotificationLog),
       })
@@ -684,17 +684,17 @@ export async function importFullBackup(backup: MedMinderBackup): Promise<void> {
 }
 
 export async function clearLocalClinicalData(): Promise<void> {
-  await medMinderDb.transaction(
+  await nexpillDb.transaction(
     'rw',
-    medMinderDb.patients,
-    medMinderDb.medications,
-    medMinderDb.doseEvents,
-    medMinderDb.appSettings,
+    nexpillDb.patients,
+    nexpillDb.medications,
+    nexpillDb.doseEvents,
+    nexpillDb.appSettings,
     async () => {
-      await medMinderDb.patients.clear()
-      await medMinderDb.medications.clear()
-      await medMinderDb.doseEvents.clear()
-      await medMinderDb.appSettings.delete(LAST_SELECTED_PATIENT_ID_KEY)
+      await nexpillDb.patients.clear()
+      await nexpillDb.medications.clear()
+      await nexpillDb.doseEvents.clear()
+      await nexpillDb.appSettings.delete(LAST_SELECTED_PATIENT_ID_KEY)
     },
   )
 }

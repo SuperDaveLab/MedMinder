@@ -1,8 +1,8 @@
 import type { AuthSessionState } from '../domain/auth'
 import { buildBootstrapSyncRequest } from '../domain/cloudSync'
-import { sanitizeMedMinderState } from '../domain/stateIntegrity'
-import type { MedMinderState } from '../domain/types'
-import { clearLocalClinicalData, getLocalMedMinderState } from '../storage/repository'
+import { sanitizeNexpillState } from '../domain/stateIntegrity'
+import type { NexpillState } from '../domain/types'
+import { clearLocalClinicalData, getLocalNexpillState } from '../storage/repository'
 import { createCloudSyncApiClient } from './syncClient'
 
 function getApiBaseUrl(): string {
@@ -17,8 +17,8 @@ function buildDeviceIdentity() {
   }
 }
 
-function buildBootstrapRequest(authState: AuthSessionState, state: MedMinderState) {
-  return buildBootstrapSyncRequest(sanitizeMedMinderState(state).state, {
+function buildBootstrapRequest(authState: AuthSessionState, state: NexpillState) {
+  return buildBootstrapSyncRequest(sanitizeNexpillState(state).state, {
     accountId: authState.account.accountId,
     now: new Date(),
     device: buildDeviceIdentity(),
@@ -27,7 +27,7 @@ function buildBootstrapRequest(authState: AuthSessionState, state: MedMinderStat
 
 export async function bootstrapCloudFromLocal(authState: AuthSessionState): Promise<void> {
   const client = createCloudSyncApiClient(getApiBaseUrl())
-  const localState = await getLocalMedMinderState()
+  const localState = await getLocalNexpillState()
 
   await client.sync(authState, buildBootstrapRequest(authState, localState))
   await clearLocalClinicalData()
@@ -39,10 +39,10 @@ export async function startCloudSession(authState: AuthSessionState): Promise<vo
   await clearLocalClinicalData()
 }
 
-export async function fetchCloudState(authState: AuthSessionState): Promise<MedMinderState> {
+export async function fetchCloudState(authState: AuthSessionState): Promise<NexpillState> {
   const client = createCloudSyncApiClient(getApiBaseUrl())
   const state = await client.getState(authState)
-  return sanitizeMedMinderState(state).state
+  return sanitizeNexpillState(state).state
 }
 
 // Write strategy: cloud writes currently use full-state replacement via a
@@ -54,7 +54,7 @@ export async function fetchCloudState(authState: AuthSessionState): Promise<MedM
 // queue that sends only changed records with their recorded baseVersion.
 export async function replaceCloudState(
   authState: AuthSessionState,
-  state: MedMinderState,
+  state: NexpillState,
 ): Promise<void> {
   const client = createCloudSyncApiClient(getApiBaseUrl())
   await client.sync(authState, buildBootstrapRequest(authState, state))

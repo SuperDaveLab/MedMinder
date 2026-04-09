@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { buildBootstrapSyncRequest } from './cloudSync'
-import type { MedMinderState } from './types'
+import type { NexpillState } from './types'
 
-const baseState: MedMinderState = {
+const baseState: NexpillState = {
   patients: [
     {
       id: 'patient-1',

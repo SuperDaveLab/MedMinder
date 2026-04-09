@@ -176,7 +176,7 @@ function App() {
     const onServiceWorkerMessage = (event: MessageEvent<unknown>) => {
       const payload = event.data as { type?: string; patientId?: string } | null
 
-      if (payload?.type !== 'medminder-select-patient' || !payload.patientId) {
+      if (payload?.type !== 'nexpill-select-patient' || !payload.patientId) {
         return
       }
 

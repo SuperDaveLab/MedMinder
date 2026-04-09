@@ -2,7 +2,7 @@ import type {
   ISODateString,
   Medication,
   MedicationSchedule,
-  MedMinderState,
+  NexpillState,
   ReminderSettings,
 } from './types'
 import { calculateMedicationSchedule } from '../engine/scheduling'
@@ -80,7 +80,7 @@ function isPremiumReminderEligibleMedication(medication: Medication): boolean {
  * - omission means the record is no longer monitored by the relay
  */
 export function buildPremiumReminderSyncPayload(
-  appState: MedMinderState,
+  appState: NexpillState,
   options: BuildPremiumReminderSyncPayloadOptions,
 ): PremiumReminderSyncPayload {
   const monitoredMedications = appState.medications

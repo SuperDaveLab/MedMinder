@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import type { MedMinderState } from './types'
+import type { NexpillState } from './types'
 import { buildPremiumReminderSyncPayload } from './premiumReminderRelay'
 
-const baseState: MedMinderState = {
+const baseState: NexpillState = {
   patients: [
     {
       id: 'patient-1',

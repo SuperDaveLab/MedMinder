@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchCloudState, replaceCloudState } from '../cloud/syncOrchestrator'
 import type { AuthSessionState } from '../domain/auth'
-import type { DoseEvent, Medication, MedMinderState } from '../domain/types'
+import type { DoseEvent, Medication, NexpillState } from '../domain/types'
 import type { UpsertMedicationInput, UpsertPatientInput } from '../storage/repository'
 import { getCurrentTime } from '../ui/clock'
 import {
@@ -71,7 +71,7 @@ function readAndClearPreferredPatientIdFromUrl(): string | null {
 }
 
 export interface UseAppDataResult {
-  appState: MedMinderState | null
+  appState: NexpillState | null
   selectedPatientId: string | null
   now: Date
   uiError: string | null
@@ -99,7 +99,7 @@ export interface UseAppDataResult {
 }
 
 export function useAppData(authState: AuthSessionState | null): UseAppDataResult {
-  const [appState, setAppState] = useState<MedMinderState | null>(null)
+  const [appState, setAppState] = useState<NexpillState | null>(null)
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null)
   const [pendingPreferredPatientId, setPendingPreferredPatientId] = useState<string | null>(
     () => readAndClearPreferredPatientIdFromUrl(),
@@ -125,7 +125,7 @@ export function useAppData(authState: AuthSessionState | null): UseAppDataResult
   }, [])
 
   const resolveAndSetState = useCallback(async (
-    nextState: MedMinderState,
+    nextState: NexpillState,
     preferredPatientId?: string | null,
   ) => {
     if (nextState.patients.length === 0) {
@@ -198,7 +198,7 @@ export function useAppData(authState: AuthSessionState | null): UseAppDataResult
   }, [isCloudMode, loadCloudWorkspaceState, loadLocalWorkspaceState])
 
   const commitCloudState = useCallback(async (
-    nextState: MedMinderState,
+    nextState: NexpillState,
     preferredPatientId?: string | null,
   ) => {
     if (!authState) {

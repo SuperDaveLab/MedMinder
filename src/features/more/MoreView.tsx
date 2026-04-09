@@ -943,7 +943,7 @@ export function MoreView({
 
         <section className="admin-section no-print app-info-section" data-testid="app-info-section">
           <div className="app-info-hero">
-            <img src="/med-minder-icon.svg" alt="Nexpill icon" className="app-info-icon" />
+            <img src="/nexpill-icon.svg" alt="Nexpill icon" className="app-info-icon" />
             <div className="app-info-headline">
               <h2>Nexpill</h2>
               <p className="app-info-byline">by Super Dave</p>

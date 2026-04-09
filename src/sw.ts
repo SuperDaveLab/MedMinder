@@ -28,9 +28,9 @@ self.addEventListener('push', (event) => {
     payload = event.data.json() as PushMessagePayload
   } catch {
     payload = {
-      title: 'Med-Minder reminder',
+      title: 'Nexpill reminder',
       body: event.data.text(),
-      tag: 'med-minder-reminder',
+      tag: 'nexpill-reminder',
     }
   }
 
@@ -43,8 +43,8 @@ self.addEventListener('push', (event) => {
       body: payload.body,
       tag: payload.tag,
       requireInteraction: payload.requireInteraction ?? false,
-      icon: '/med-minder-icon.svg',
-      badge: '/med-minder-icon.svg',
+      icon: '/nexpill-icon.svg',
+      badge: '/nexpill-icon.svg',
       data: {
         url: payload.url ?? '/?view=care',
         patientId: payload.patientId,
@@ -72,7 +72,7 @@ self.addEventListener('notificationclick', (event) => {
         await windowClient.focus()
         if (targetPatientId) {
           windowClient.postMessage({
-            type: 'medminder-select-patient',
+            type: 'nexpill-select-patient',
             patientId: targetPatientId,
           })
         }

@@ -59,7 +59,7 @@ interface SessionLookupRow extends RowDataPacket {
 }
 
 async function requireSession(request: Request): Promise<AuthenticatedAccountContext> {
-  const sessionId = String(request.header('x-medminder-session-id') ?? '').trim()
+  const sessionId = String(request.header('x-nexpill-session-id') ?? '').trim()
 
   if (!sessionId) {
     throw new Error('Missing session id.')
