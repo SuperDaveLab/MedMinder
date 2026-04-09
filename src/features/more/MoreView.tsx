@@ -953,7 +953,7 @@ export function MoreView({
           <div className="app-info-grid">
             <p><strong>Install mode:</strong> {isInstalled ? 'Installed PWA' : 'Browser tab'}</p>
             <p><strong>Notification permission:</strong> {String(notificationPermission)}</p>
-            <p><strong>Source:</strong> <a href="https://github.com/SuperDaveLab/MedMinder" target="_blank" rel="noopener noreferrer">github.com/SuperDaveLab/MedMinder</a></p>
+            <p><strong>Source:</strong> <a href="https://github.com/SuperDaveLab/Nexpill" target="_blank" rel="noopener noreferrer">github.com/SuperDaveLab/Nexpill</a></p>
           </div>
         </section>
       </section>

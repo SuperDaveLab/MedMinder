@@ -1,8 +1,16 @@
 {
-  "name": "med-minder",
+  "name": "nexpill",
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SuperDaveLab/Nexpill.git"
+  },
+  "homepage": "https://github.com/SuperDaveLab/Nexpill",
+  "bugs": {
+    "url": "https://github.com/SuperDaveLab/Nexpill/issues"
+  },
   "scripts": {
     "dev": "vite",
     "api:dev": "tsx server/index.ts",
